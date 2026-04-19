@@ -574,6 +574,250 @@ export function timeSlotMessage(
 }
 
 /** Step 5 — Booking confirmation with confirm / cancel buttons. */
+// ======================= AI BOOKING FLEX (Beautiful Design) =======================
+
+/** AI-parsed booking confirmation — premium card design. */
+export function aiBookingConfirmMessage(opts: {
+  serviceName: string;
+  durationMin: number;
+  price: number;
+  staffName: string;
+  dateDisplay: string;
+  timeRange: string;
+  serviceId: number;
+  staffId: number | null;
+  date: string;
+  timeLabel: string;
+}) {
+  return {
+    type: "flex",
+    altText: `ยืนยันจอง ${opts.serviceName} ${opts.timeRange}`,
+    contents: {
+      type: "bubble",
+      size: "kilo",
+      header: {
+        type: "box",
+        layout: "vertical",
+        background: { type: "linearGradient", angle: "135deg", startColor: "#06c755", endColor: "#049040" },
+        paddingAll: "20px",
+        contents: [
+          { type: "box", layout: "horizontal", contents: [
+            { type: "text", text: "✨", size: "2xl" },
+            { type: "text", text: " เข้าใจแล้วค่ะ!", color: "#ffffff", weight: "bold", size: "lg", gravity: "center" }
+          ]},
+          { type: "text", text: "ตรวจสอบรายละเอียดก่อนยืนยัน", color: "#ffffffcc", size: "xs", margin: "sm" }
+        ]
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "lg",
+        paddingAll: "20px",
+        contents: [
+          { type: "box", layout: "horizontal", spacing: "md", paddingAll: "12px", cornerRadius: "12px", backgroundColor: "#f0fdf4",
+            contents: [
+              { type: "text", text: "✂️", size: "xl", gravity: "center" },
+              { type: "box", layout: "vertical", flex: 1, spacing: "xs", contents: [
+                { type: "text", text: opts.serviceName, weight: "bold", size: "md" },
+                { type: "text", text: `${opts.durationMin} นาที · ${opts.price.toLocaleString()} บาท`, size: "xs", color: "#666" }
+              ]}
+            ]
+          },
+          { type: "box", layout: "horizontal", spacing: "md", paddingAll: "12px", cornerRadius: "12px", backgroundColor: "#f8fafc",
+            contents: [
+              { type: "text", text: "📅", size: "xl", gravity: "center" },
+              { type: "box", layout: "vertical", flex: 1, spacing: "xs", contents: [
+                { type: "text", text: opts.dateDisplay, weight: "bold", size: "sm" },
+                { type: "text", text: `🕐 ${opts.timeRange}`, size: "sm", color: "#333" }
+              ]}
+            ]
+          },
+          { type: "box", layout: "horizontal", spacing: "md", paddingAll: "12px", cornerRadius: "12px", backgroundColor: "#f8fafc",
+            contents: [
+              { type: "text", text: "💇", size: "xl", gravity: "center" },
+              { type: "box", layout: "vertical", flex: 1, spacing: "xs", contents: [
+                { type: "text", text: `ช่าง ${opts.staffName}`, weight: "bold", size: "sm" }
+              ]}
+            ]
+          },
+          { type: "box", layout: "horizontal", paddingAll: "14px", cornerRadius: "12px", backgroundColor: "#1a1a1a", margin: "sm",
+            contents: [
+              { type: "text", text: "ยอดรวม", color: "#ffffffcc", size: "sm", gravity: "center" },
+              { type: "text", text: `${opts.price.toLocaleString()} บาท`, color: "#ffffff", weight: "bold", size: "xl", align: "end", gravity: "center" }
+            ]
+          },
+          { type: "box", layout: "horizontal", spacing: "sm", margin: "xl", contents: [
+            { type: "button", style: "primary", color: BRAND, flex: 3, height: "md", action: {
+              type: "postback", label: "✅ ยืนยันจอง", data: `action=book_go&svc=${opts.serviceId}&stf=${opts.staffId ?? 0}&d=${opts.date}&t=${opts.timeLabel}`
+            }},
+            { type: "button", style: "secondary", flex: 2, height: "md", action: { type: "postback", label: "เลือกใหม่", data: "action=book" } }
+          ]}
+        ]
+      }
+    }
+  };
+}
+
+/** Ask for missing time — show available slots. */
+export function aiAskTimeMessage(slots: Slot[], serviceId: number, staffId: number | null, date: string, dateDisplay: string, serviceName: string) {
+  const shown = slots.slice(0, 12);
+  const rows: any[] = [];
+  for (let i = 0; i < shown.length; i += 3) {
+    const chunk = shown.slice(i, i + 3);
+    const padded = [...chunk];
+    while (padded.length < 3) padded.push(null as any);
+    rows.push({ type: "box", layout: "horizontal", spacing: "sm", margin: i === 0 ? "none" : "sm",
+      contents: padded.map((s) => s ? { type: "button", flex: 1, style: "primary", color: BRAND, height: "sm", action: { type: "postback", label: s.label, data: `action=book_time&svc=${serviceId}&stf=${staffId ?? 0}&d=${date}&t=${s.label}` } } : { type: "filler", flex: 1 })
+    });
+  }
+  return { type: "flex", altText: `เลือกเวลา — ${serviceName}`, contents: { type: "bubble",
+    header: { type: "box", layout: "vertical", background: { type: "linearGradient", angle: "135deg", startColor: "#06c755", endColor: "#049040" }, paddingAll: "16px",
+      contents: [
+        { type: "text", text: "🕐 เลือกเวลาที่ต้องการ", color: "#ffffff", weight: "bold" },
+        { type: "text", text: `${serviceName} · ${dateDisplay}`, color: "#ffffffcc", size: "xs", margin: "sm" }
+      ]
+    },
+    body: { type: "box", layout: "vertical", paddingAll: "16px", contents: slots.length === 0 ? [
+      { type: "text", text: "😢 ไม่มีเวลาว่างในวันนี้", align: "center", color: "#999" },
+      { type: "button", style: "secondary", margin: "lg", action: { type: "postback", label: "← เลือกวันอื่น", data: `action=book_stf&svc=${serviceId}&id=${staffId ?? 0}` } }
+    ] : rows }
+  }};
+}
+
+/** Admin: queue summary header. */
+export function adminQueueHeader(date: string, total: number, pending: number, confirmed: number, completed: number, revenue: number) {
+  const stat = (label: string, value: number, bg: string) => ({ type: "box", layout: "vertical", flex: 1, paddingAll: "12px", cornerRadius: "12px", backgroundColor: bg,
+    contents: [{ type: "text", text: String(value), weight: "bold", size: "xl", align: "center" }, { type: "text", text: label, size: "xs", color: "#666", align: "center" }]
+  });
+  return { type: "flex", altText: `สรุปคิว ${date}`, contents: { type: "bubble",
+    header: { type: "box", layout: "vertical", background: { type: "linearGradient", angle: "135deg", startColor: "#06c755", endColor: "#049040" }, paddingAll: "18px",
+      contents: [
+        { type: "text", text: "📋 คิววันนี้", color: "#ffffff", weight: "bold", size: "lg" },
+        { type: "text", text: date, color: "#ffffffcc", size: "xs", margin: "xs" }
+      ]
+    },
+    body: { type: "box", layout: "vertical", spacing: "md", paddingAll: "16px",
+      contents: [
+        { type: "box", layout: "horizontal", spacing: "sm", contents: [stat("คิวทั้งหมด", total, "#f0fdf4"), stat("รอยืนยัน", pending, "#fffbeb")] },
+        { type: "box", layout: "horizontal", spacing: "sm", contents: [stat("ยืนยันแล้ว", confirmed, "#f0fdf4"), stat("เสร็จสิ้น", completed, "#f1f5f9")] },
+        { type: "box", layout: "horizontal", paddingAll: "14px", cornerRadius: "12px", backgroundColor: "#1a1a1a", margin: "sm",
+          contents: [
+            { type: "text", text: "💰 ยอดรวม", color: "#ffffffcc", size: "sm", gravity: "center" },
+            { type: "text", text: `${revenue.toLocaleString()} ฿`, color: BRAND, weight: "bold", size: "xl", align: "end", gravity: "center" }
+          ]
+        }
+      ]
+    }
+  }};
+}
+
+/** Admin: single booking card for carousel. */
+export function adminBookingCard(b: BookingWithJoins) {
+  const styles: Record<string, { bg: string; label: string }> = {
+    pending: { bg: "#f59e0b", label: "⏳ รอยืนยัน" }, confirmed: { bg: BRAND, label: "✅ ยืนยันแล้ว" },
+    completed: { bg: "#64748b", label: "✅ เสร็จสิ้น" }, cancelled: { bg: "#94a3b8", label: "❌ ยกเลิก" }, no_show: { bg: "#ef4444", label: "🚫 ไม่มา" }
+  };
+  const st = styles[b.status] ?? { bg: "#64748b", label: b.status };
+  const time = new Date(b.starts_at).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", timeZone: process.env.SHOP_TIMEZONE || "Asia/Bangkok" });
+  const btns: any[] = [];
+  if (b.status === "pending") btns.push({ type: "button", style: "primary", color: BRAND, height: "sm", flex: 1, action: { type: "postback", label: "ยืนยัน", data: `action=adm_confirm&id=${b.id}` } });
+  if (b.status === "pending" || b.status === "confirmed") {
+    btns.push({ type: "button", style: "secondary", height: "sm", flex: 1, action: { type: "postback", label: "เสร็จ", data: `action=adm_complete&id=${b.id}` } });
+    btns.push({ type: "button", style: "secondary", height: "sm", flex: 1, action: { type: "postback", label: "ยกเลิก", data: `action=adm_cancel&id=${b.id}` } });
+    btns.push({ type: "button", style: "secondary", height: "sm", flex: 1, action: { type: "postback", label: "ไม่มา", data: `action=adm_noshow&id=${b.id}` } });
+  }
+  return { type: "bubble", size: "micro",
+    header: { type: "box", layout: "horizontal", backgroundColor: st.bg, paddingAll: "10px", contents: [
+      { type: "text", text: st.label, color: "#ffffff", weight: "bold", size: "sm", flex: 1 },
+      { type: "text", text: `#${b.id}`, color: "#ffffffaa", size: "xs" }
+    ]},
+    body: { type: "box", layout: "vertical", spacing: "xs", paddingAll: "12px", contents: [
+      { type: "text", text: time, weight: "bold", size: "xl" },
+      { type: "text", text: b.service?.name ?? "-", size: "sm", weight: "bold" },
+      { type: "text", text: `💇 ${b.staff?.nickname ?? b.staff?.name ?? "—"} · ฿${b.price.toLocaleString()}`, size: "xs", color: "#666" },
+      { type: "text", text: `👤 ${b.customer?.full_name ?? b.customer?.display_name ?? "ลูกค้า"}${b.customer?.phone ? ` · ${b.customer.phone}` : ""}`, size: "xs", color: "#888" },
+      ...(btns.length > 0 ? [{ type: "box", layout: "horizontal", spacing: "xs", margin: "sm", contents: btns } as any] : [])
+    ]}
+  };
+}
+
+/** Admin: revenue summary. */
+export function adminRevenueMessage(opts: {
+  date: string; totalBookings: number; completed: number; cancelled: number; noShows: number;
+  totalRevenue: number; byService: Array<{ name: string; count: number; revenue: number }>;
+}) {
+  const stat = (label: string, value: number, bg: string) => ({ type: "box", layout: "vertical", flex: 1, paddingAll: "12px", cornerRadius: "12px", backgroundColor: bg,
+    contents: [{ type: "text", text: String(value), weight: "bold", size: "xl", align: "center" }, { type: "text", text: label, size: "xs", color: "#666", align: "center" }]
+  });
+  return { type: "flex", altText: `ยอดวันนี้ ${opts.totalRevenue.toLocaleString()}฿`, contents: { type: "bubble",
+    header: { type: "box", layout: "vertical", background: { type: "linearGradient", angle: "135deg", startColor: "#1a1a1a", endColor: "#333333" }, paddingAll: "20px",
+      contents: [
+        { type: "text", text: "💰 สรุปยอดวันนี้", color: "#ffffff", weight: "bold", size: "lg" },
+        { type: "text", text: opts.date, color: "#ffffffaa", size: "xs", margin: "xs" },
+        { type: "text", text: `${opts.totalRevenue.toLocaleString()} บาท`, color: BRAND, weight: "bold", size: "3xl", margin: "md" }
+      ]
+    },
+    body: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "16px",
+      contents: [
+        { type: "box", layout: "horizontal", spacing: "sm", contents: [stat("จอง", opts.totalBookings, "#f0fdf4"), stat("เสร็จ", opts.completed, "#f0fdf4"), stat("ยกเลิก", opts.cancelled, "#fef2f2")] },
+        { type: "separator", margin: "md" },
+        { type: "text", text: "📊 แยกตามบริการ", weight: "bold", size: "sm", margin: "md" },
+        ...opts.byService.slice(0, 5).map((s) => ({ type: "box", layout: "horizontal", margin: "xs", contents: [
+          { type: "text", text: s.name, size: "xs", color: "#666", flex: 3 },
+          { type: "text", text: `${s.count} คิว`, size: "xs", color: "#999", flex: 1, align: "center" },
+          { type: "text", text: `${s.revenue.toLocaleString()}฿`, size: "xs", weight: "bold", color: "#333", flex: 2, align: "end" }
+        ]}))
+      ]
+    }
+  }};
+}
+
+/** Admin: action result. */
+export function adminActionResultMessage(bookingId: number, action: string, customerName: string) {
+  const m: Record<string, { e: string; t: string }> = {
+    confirmed: { e: "✅", t: "ยืนยันแล้ว" }, completed: { e: "🎉", t: "เสร็จสิ้น + บวกแต้ม" },
+    cancelled: { e: "❌", t: "ยกเลิกแล้ว" }, no_show: { e: "🚫", t: "บันทึกไม่มาตามนัด" }
+  };
+  const info = m[action] ?? { e: "✓", t: action };
+  return { type: "flex", altText: `#${bookingId} ${info.t}`, contents: { type: "bubble",
+    body: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "20px",
+      contents: [
+        { type: "text", text: `${info.e} ${info.t}`, weight: "bold", size: "lg" },
+        { type: "text", text: `#${bookingId} · ${customerName}`, size: "sm", color: "#666" }
+      ]
+    }
+  }};
+}
+
+/** AI-powered welcome with NLP hint. */
+export function smartWelcomeMessage(name: string) {
+  return { type: "flex", altText: `สวัสดีค่ะ คุณ ${name}`, contents: { type: "bubble",
+    header: { type: "box", layout: "vertical", background: { type: "linearGradient", angle: "135deg", startColor: "#06c755", endColor: "#049040" }, paddingAll: "20px",
+      contents: [
+        { type: "text", text: `สวัสดีค่ะ คุณ ${name} 🌿`, color: "#ffffff", weight: "bold", size: "lg" },
+        { type: "text", text: "พิมพ์บอกได้เลยว่าอยากจองอะไร", color: "#ffffffcc", size: "sm", margin: "sm" }
+      ]
+    },
+    body: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "16px",
+      contents: [
+        { type: "box", layout: "vertical", paddingAll: "12px", cornerRadius: "12px", backgroundColor: "#f0fdf4", spacing: "xs",
+          contents: [
+            { type: "text", text: "💬 ลองพิมพ์แบบนี้ดู", weight: "bold", size: "sm", color: BRAND },
+            { type: "text", text: `"จองตัดผมพรุ่งนี้บ่ายสองกับพี่โอ๋"`, size: "sm", color: "#333" },
+            { type: "text", text: `"ทำเล็บวันศุกร์สามโมง"`, size: "sm", color: "#333" },
+          ]
+        },
+        { type: "text", text: "หรือกดปุ่มด้านล่าง", size: "xs", color: "#999", align: "center", margin: "sm" },
+        { type: "button", style: "primary", color: BRAND, height: "md", action: { type: "postback", label: "📅 เลือกจองทีละขั้นตอน", data: "action=book" } },
+        { type: "box", layout: "horizontal", spacing: "sm", contents: [
+          { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "📋 คิวของฉัน", data: "action=my_bookings" } },
+          { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "⭐ แต้มของฉัน", data: "action=profile" } }
+        ]}
+      ]
+    }
+  }};
+}
+
 export function confirmBookingFlex(opts: {
   serviceName: string;
   staffName: string;
