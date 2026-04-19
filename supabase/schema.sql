@@ -100,6 +100,19 @@ create table if not exists customers (
 );
 create index if not exists customers_line_idx on customers(line_user_id);
 
+-- ---------------- line_admin_sessions ----------------
+-- Temporary admin auth for operating the shop via LINE chat.
+create table if not exists line_admin_sessions (
+  id           bigserial primary key,
+  shop_id      bigint not null references shops(id) on delete cascade default 1,
+  line_user_id text not null,
+  authed_at    timestamptz not null default now(),
+  expires_at   timestamptz not null,
+  created_at   timestamptz not null default now(),
+  unique (shop_id, line_user_id)
+);
+create index if not exists line_admin_sessions_lookup on line_admin_sessions(shop_id, line_user_id, expires_at desc);
+
 -- ---------------- bookings ----------------
 -- status: pending (created, awaiting confirm) | confirmed | completed | cancelled | no_show
 do $$ begin

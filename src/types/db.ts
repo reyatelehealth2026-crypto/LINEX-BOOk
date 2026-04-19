@@ -69,6 +69,15 @@ export type Customer = {
   created_at: string;
 };
 
+export type LineAdminSession = {
+  id: number;
+  shop_id: number;
+  line_user_id: string;
+  authed_at: string;
+  expires_at: string;
+  created_at: string;
+};
+
 export type BookingStatus =
   | "pending"
   | "confirmed"

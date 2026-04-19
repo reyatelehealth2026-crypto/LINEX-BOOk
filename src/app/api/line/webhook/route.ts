@@ -22,6 +22,11 @@ import {
   adminRevenueMessage,
   adminActionResultMessage,
   smartWelcomeMessage,
+  adminAuthPromptMessage,
+  adminAuthSuccessMessage,
+  adminMenuMessage,
+  adminSetupMenuMessage,
+  adminTextExamplesMessage,
 } from "@/lib/flex";
 import type { BookingWithJoins, Customer } from "@/types/db";
 import { formatDateTH, formatTimeRange } from "@/lib/format";
@@ -31,10 +36,64 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const TZ = process.env.SHOP_TIMEZONE || "Asia/Bangkok";
+const ADMIN_CHAT_SESSION_HOURS = Number(process.env.ADMIN_CHAT_SESSION_HOURS || 12);
 
 function getAdminIds(): Set<string> {
   const raw = process.env.ADMIN_LINE_IDS ?? "";
   return new Set(raw.split(",").map((s) => s.trim()).filter(Boolean));
+}
+
+function extractAdminPassword(text: string): string | null {
+  const m = text.match(/^(?:รหัสแอดมิน|admin password|login)\s+(.+)$/i);
+  return m ? m[1].trim() : null;
+}
+
+function normalizeSqlTime(raw?: string | null): string | null {
+  if (!raw) return null;
+  const m = raw.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const hour = Number(m[1]);
+  const minute = Number(m[2]);
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
+}
+
+function escapeIlike(value: string) {
+  return value.replace(/[%_]/g, "");
+}
+
+async function hasActiveAdminSession(lineUserId: string) {
+  const db = supabaseAdmin();
+  const { data } = await db
+    .from("line_admin_sessions")
+    .select("id")
+    .eq("shop_id", SHOP_ID)
+    .eq("line_user_id", lineUserId)
+    .gt("expires_at", new Date().toISOString())
+    .limit(1)
+    .maybeSingle();
+  return !!data;
+}
+
+async function isAdminAuthorized(lineUserId: string) {
+  return getAdminIds().has(lineUserId) || await hasActiveAdminSession(lineUserId);
+}
+
+async function grantAdminSession(lineUserId: string) {
+  const db = supabaseAdmin();
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + ADMIN_CHAT_SESSION_HOURS * 60 * 60 * 1000);
+  await db.from("line_admin_sessions").upsert({
+    shop_id: SHOP_ID,
+    line_user_id: lineUserId,
+    authed_at: now.toISOString(),
+    expires_at: expiresAt.toISOString(),
+  }, { onConflict: "shop_id,line_user_id" });
+}
+
+async function revokeAdminSession(lineUserId: string) {
+  const db = supabaseAdmin();
+  await db.from("line_admin_sessions").delete().eq("shop_id", SHOP_ID).eq("line_user_id", lineUserId);
 }
 
 export async function POST(req: NextRequest) {
@@ -80,11 +139,74 @@ async function handlePostback(ev: any, customer: Customer) {
   const data = new URLSearchParams(ev.postback?.data ?? "");
   const action = data.get("action");
   const rt = ev.replyToken;
+  const userId: string | undefined = ev.source?.userId;
   const db = supabaseAdmin();
+  const canAdmin = userId ? await isAdminAuthorized(userId) : false;
+
+  if (action?.startsWith("adm_") && !canAdmin) {
+    return replyMessage(rt, [adminAuthPromptMessage()]);
+  }
 
   // ── Menu ──
   if (action === "menu") {
     return replyMessage(rt, [mainMenuMessage(customer.display_name ?? "คุณ")]);
+  }
+
+  if (action === "adm_menu") {
+    return replyMessage(rt, [adminMenuMessage()]);
+  }
+
+  if (action === "adm_setup") {
+    return replyMessage(rt, [adminSetupMenuMessage()]);
+  }
+
+  if (action === "adm_queue_today") {
+    return sendAdminQueue(rt, new Date().toISOString().slice(0, 10));
+  }
+
+  if (action === "adm_revenue") {
+    return sendAdminRevenue(rt);
+  }
+
+  if (action === "adm_logout") {
+    if (userId) await revokeAdminSession(userId);
+    return replyMessage(rt, [textMessage("ออกจากโหมดแอดมินแล้ว 🔒")]);
+  }
+
+  if (action === "adm_help_service") {
+    return replyMessage(rt, [adminTextExamplesMessage("เพิ่มบริการผ่านแชท", [
+      "เพิ่มบริการ ตัดผมชาย 250 บาท 45 นาที",
+      "เพิ่มบริการ ทำสีผม 1200 บาท 120 นาที"
+    ])]);
+  }
+
+  if (action === "adm_help_staff") {
+    return replyMessage(rt, [adminTextExamplesMessage("เพิ่มช่างผ่านแชท", [
+      "เพิ่มช่าง พี่โอ๋",
+      "เพิ่มช่าง พี่มิ้น"
+    ])]);
+  }
+
+  if (action === "adm_help_shop") {
+    return replyMessage(rt, [adminTextExamplesMessage("ตั้งค่าข้อมูลร้าน", [
+      "ตั้งชื่อร้าน Line X Book",
+      "เบอร์ร้าน 099-999-9999",
+      "ที่อยู่ร้าน ลาดพร้าว 101 กรุงเทพ"
+    ])]);
+  }
+
+  if (action === "adm_help_hours") {
+    return replyMessage(rt, [adminTextExamplesMessage("ตั้งเวลาเปิดปิดร้าน", [
+      "ตั้งเวลา จันทร์ 10:00-20:00",
+      "ตั้งเวลา เสาร์ 09:00-21:00"
+    ])]);
+  }
+
+  if (action === "adm_help_staff_hours") {
+    return replyMessage(rt, [adminTextExamplesMessage("ตั้งเวลารายช่าง", [
+      "ตั้งเวลาช่าง พี่โอ๋ จันทร์ 10:00-20:00",
+      "ตั้งเวลาช่าง พี่มิ้น เสาร์ 09:00-18:00"
+    ])]);
   }
 
   // ── Existing quick actions ──
@@ -263,12 +385,28 @@ async function handleMessage(ev: any, customer: Customer) {
   const userId: string = ev.source?.userId;
   const db = supabaseAdmin();
 
+  const suppliedPassword = extractAdminPassword(text);
+  if (suppliedPassword !== null) {
+    const expected = process.env.ADMIN_PASSWORD ?? "";
+    if (!expected) return replyMessage(rt, [textMessage("ยังไม่ได้ตั้ง ADMIN_PASSWORD ในระบบ")]);
+    if (suppliedPassword === expected) {
+      await grantAdminSession(userId);
+      return replyMessage(rt, [adminAuthSuccessMessage(), adminMenuMessage()]);
+    }
+    return replyMessage(rt, [textMessage("รหัสแอดมินไม่ถูกต้อง ลองใหม่อีกครั้ง")]);
+  }
+
   // ── Check if admin ──
-  const isAdmin = getAdminIds().has(userId);
+  const isAdmin = await isAdminAuthorized(userId);
+
+  if (/^(?:ตั้งค่าแอดมิน|เมนูแอดมิน|admin|admin menu|setup)$/i.test(text)) {
+    return replyMessage(rt, [isAdmin ? adminMenuMessage() : adminAuthPromptMessage()]);
+  }
+
   if (isAdmin) {
     const adminCmd = parseAdminCommand(text);
     if (adminCmd) {
-      return handleAdminCommand(rt, adminCmd);
+      return handleAdminCommand(rt, adminCmd, userId);
     }
   }
 
@@ -379,8 +517,17 @@ async function handleAIBooking(
 
 // ───────────────── Admin Command Handler ─────────────────
 
-async function handleAdminCommand(rt: string, cmd: any) {
+async function handleAdminCommand(rt: string, cmd: any, lineUserId?: string) {
   const db = supabaseAdmin();
+
+  if (cmd.action === "setup_menu" || cmd.action === "help") {
+    return replyMessage(rt, [adminMenuMessage(), adminSetupMenuMessage()]);
+  }
+
+  if (cmd.action === "logout") {
+    if (lineUserId) await revokeAdminSession(lineUserId);
+    return replyMessage(rt, [textMessage("ออกจากโหมดแอดมินแล้ว 🔒")]);
+  }
 
   if (cmd.action === "queue_today" || cmd.action === "queue_tomorrow") {
     const date = cmd.action === "queue_today"
@@ -420,6 +567,69 @@ async function handleAdminCommand(rt: string, cmd: any) {
       await db.from("staff_services").insert(svcs.map(s => ({ staff_id: stf.id, service_id: s.id }))).then(() => {});
     }
     return replyMessage(rt, [textMessage(`✅ เพิ่มช่าง "${cmd.args.name}" สำเร็จ`)]);
+  }
+
+  if (cmd.action === "set_shop_name") {
+    const { error } = await db.from("shops").update({ name: cmd.args.name }).eq("id", SHOP_ID);
+    if (error) return replyMessage(rt, [textMessage(`อัปเดตชื่อร้านไม่สำเร็จ: ${error.message}`)]);
+    return replyMessage(rt, [textMessage(`✅ เปลี่ยนชื่อร้านเป็น "${cmd.args.name}" แล้ว`)]);
+  }
+
+  if (cmd.action === "set_shop_phone") {
+    const { error } = await db.from("shops").update({ phone: cmd.args.phone }).eq("id", SHOP_ID);
+    if (error) return replyMessage(rt, [textMessage(`อัปเดตเบอร์ร้านไม่สำเร็จ: ${error.message}`)]);
+    return replyMessage(rt, [textMessage(`✅ บันทึกเบอร์ร้าน ${cmd.args.phone} แล้ว`)]);
+  }
+
+  if (cmd.action === "set_shop_address") {
+    const { error } = await db.from("shops").update({ address: cmd.args.address }).eq("id", SHOP_ID);
+    if (error) return replyMessage(rt, [textMessage(`อัปเดตที่อยู่ร้านไม่สำเร็จ: ${error.message}`)]);
+    return replyMessage(rt, [textMessage(`✅ บันทึกที่อยู่ร้านแล้ว`)]);
+  }
+
+  if (cmd.action === "set_hours") {
+    const openTime = normalizeSqlTime(cmd.args.openTime);
+    const closeTime = normalizeSqlTime(cmd.args.closeTime);
+    if (!openTime || !closeTime) return replyMessage(rt, [textMessage("รูปแบบเวลาไม่ถูกต้อง ใช้เช่น 10:00-20:00")]);
+
+    await db.from("working_hours").delete().eq("shop_id", SHOP_ID).is("staff_id", null).eq("day_of_week", cmd.args.dayOfWeek);
+    const { error } = await db.from("working_hours").insert({
+      shop_id: SHOP_ID,
+      staff_id: null,
+      day_of_week: cmd.args.dayOfWeek,
+      open_time: openTime,
+      close_time: closeTime,
+    });
+    if (error) return replyMessage(rt, [textMessage(`ตั้งเวลาไม่สำเร็จ: ${error.message}`)]);
+    return replyMessage(rt, [textMessage(`✅ ตั้งเวลาร้านวัน${cmd.args.dayLabel} ${cmd.args.openTime}-${cmd.args.closeTime} แล้ว`)]);
+  }
+
+  if (cmd.action === "set_staff_hours") {
+    const openTime = normalizeSqlTime(cmd.args.openTime);
+    const closeTime = normalizeSqlTime(cmd.args.closeTime);
+    if (!openTime || !closeTime) return replyMessage(rt, [textMessage("รูปแบบเวลาไม่ถูกต้อง ใช้เช่น 10:00-20:00")]);
+
+    const { data: staffRow } = await db
+      .from("staff")
+      .select("id, name, nickname")
+      .eq("shop_id", SHOP_ID)
+      .or(`name.ilike.%${escapeIlike(cmd.args.staffName)}%,nickname.ilike.%${escapeIlike(cmd.args.staffName)}%`)
+      .limit(1)
+      .maybeSingle();
+
+    if (!staffRow) return replyMessage(rt, [textMessage(`ไม่พบช่างชื่อ "${cmd.args.staffName}"`)]);
+
+    await db.from("working_hours").delete().eq("shop_id", SHOP_ID).eq("staff_id", staffRow.id).eq("day_of_week", cmd.args.dayOfWeek);
+    const { error } = await db.from("working_hours").insert({
+      shop_id: SHOP_ID,
+      staff_id: staffRow.id,
+      day_of_week: cmd.args.dayOfWeek,
+      open_time: openTime,
+      close_time: closeTime,
+    });
+    if (error) return replyMessage(rt, [textMessage(`ตั้งเวลาช่างไม่สำเร็จ: ${error.message}`)]);
+    const label = staffRow.nickname ?? staffRow.name;
+    return replyMessage(rt, [textMessage(`✅ ตั้งเวลา ${label} วัน${cmd.args.dayLabel} ${cmd.args.openTime}-${cmd.args.closeTime} แล้ว`)]);
   }
 }
 

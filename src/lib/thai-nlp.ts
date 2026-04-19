@@ -21,12 +21,20 @@ export interface AdminCommand {
     | "queue_tomorrow"
     | "queue_date"
     | "revenue"
+    | "setup_menu"
+    | "help"
+    | "logout"
     | "confirm"
     | "complete"
     | "cancel"
     | "noshow"
     | "add_service"
-    | "add_staff";
+    | "add_staff"
+    | "set_shop_name"
+    | "set_shop_phone"
+    | "set_shop_address"
+    | "set_hours"
+    | "set_staff_hours";
   args: Record<string, any>;
 }
 
@@ -119,6 +127,23 @@ function nextDayOfWeek(target: number): string {
   if (diff <= 0) diff += 7;
   d.setDate(d.getDate() + diff);
   return d.toISOString().slice(0, 10);
+}
+
+function parseDayOfWeek(raw: string): number | null {
+  const t = normalizeLoose(raw);
+  for (const [aliases, day] of THAI_DAYS) {
+    if (aliases.some((a) => t === a.toLowerCase() || t.includes(a.toLowerCase()))) return day;
+  }
+
+  if (/sun/.test(t)) return 0;
+  if (/mon/.test(t)) return 1;
+  if (/tue/.test(t)) return 2;
+  if (/wed/.test(t)) return 3;
+  if (/thu/.test(t)) return 4;
+  if (/fri/.test(t)) return 5;
+  if (/sat/.test(t)) return 6;
+
+  return null;
 }
 
 // ───────────────── Time Extraction ─────────────────
@@ -495,6 +520,18 @@ export function parseBookingIntent(
 export function parseAdminCommand(raw: string): AdminCommand | null {
   const t = normalizeLoose(raw);
 
+  if (/^(?:ตั้งค่าแอดมิน|เมนูแอดมิน|admin menu|admin setup|setup)$/i.test(t)) {
+    return { action: "setup_menu", args: {} };
+  }
+
+  if (/^(?:ช่วยแอดมิน|ช่วยเหลือแอดมิน|admin help|help)$/i.test(t)) {
+    return { action: "help", args: {} };
+  }
+
+  if (/^(?:ออกจากโหมดแอดมิน|ออกจากแอดมิน|admin logout|logout)$/i.test(t)) {
+    return { action: "logout", args: {} };
+  }
+
   // "ยืนยัน #5" / "ยืนยัน5" / "confirm 5"
   {
     const m = t.match(/(?:ยืนยัน|confirm)\s*[#]?\s*(\d+)/);
@@ -562,6 +599,55 @@ export function parseAdminCommand(raw: string): AdminCommand | null {
     const m = raw.match(/เพิ่มช่าง\s+(.+)/i);
     if (m) {
       return { action: "add_staff", args: { name: m[1].trim() } };
+    }
+  }
+
+  // "ตั้งชื่อร้าน [name]"
+  {
+    const m = raw.match(/(?:ตั้งชื่อร้าน|ชื่อร้าน)\s+(.+)/i);
+    if (m) {
+      return { action: "set_shop_name", args: { name: m[1].trim() } };
+    }
+  }
+
+  // "เบอร์ร้าน [phone]"
+  {
+    const m = raw.match(/(?:เบอร์ร้าน|โทรร้าน|phone)\s+(.+)/i);
+    if (m) {
+      return { action: "set_shop_phone", args: { phone: m[1].trim() } };
+    }
+  }
+
+  // "ที่อยู่ร้าน [address]"
+  {
+    const m = raw.match(/(?:ที่อยู่ร้าน|address)\s+(.+)/i);
+    if (m) {
+      return { action: "set_shop_address", args: { address: m[1].trim() } };
+    }
+  }
+
+  // "ตั้งเวลา จันทร์ 10:00-20:00"
+  {
+    const m = raw.match(/(?:ตั้งเวลา|เวลาเปิดปิด)\s+(.+?)\s+(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/i);
+    if (m) {
+      const dayOfWeek = parseDayOfWeek(m[1]);
+      if (dayOfWeek !== null) {
+        return { action: "set_hours", args: { dayOfWeek, openTime: m[2], closeTime: m[3], dayLabel: m[1].trim() } };
+      }
+    }
+  }
+
+  // "ตั้งเวลาช่าง พี่โอ๋ จันทร์ 10:00-20:00"
+  {
+    const m = raw.match(/(?:ตั้งเวลาช่าง)\s+(.+?)\s+(.+?)\s+(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/i);
+    if (m) {
+      const dayOfWeek = parseDayOfWeek(m[2]);
+      if (dayOfWeek !== null) {
+        return {
+          action: "set_staff_hours",
+          args: { staffName: m[1].trim(), dayOfWeek, openTime: m[3], closeTime: m[4], dayLabel: m[2].trim() }
+        };
+      }
     }
   }
 

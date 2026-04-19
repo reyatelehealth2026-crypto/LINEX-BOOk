@@ -18,6 +18,11 @@ const LIFF_URL = (path = "") => {
   return `https://liff.line.me/${id}${normalized}`;
 };
 
+const APP_URL = (path = "") => {
+  const base = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
+  return base ? `${base}${path}` : "https://example.com";
+};
+
 export function textMessage(text: string) {
   return { type: "text", text };
 }
@@ -880,6 +885,175 @@ export function adminActionResultMessage(bookingId: number, action: string, cust
       ]
     }
   }};
+}
+
+export function adminAuthPromptMessage() {
+  return {
+    type: "flex",
+    altText: "เข้าสู่โหมดแอดมิน",
+    contents: {
+      type: "bubble",
+      size: "giga",
+      header: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: "#111827",
+        paddingAll: "18px",
+        contents: [
+          { type: "text", text: "ADMIN ACCESS", color: "#9ca3af", size: "xs", weight: "bold" },
+          { type: "text", text: "เข้าสู่โหมดแอดมินผ่านแชท", color: "#ffffff", size: "xl", weight: "bold", margin: "sm" }
+        ]
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        contents: [
+          infoPanel("วิธีเข้าใช้งาน", [
+            "พิมพ์: รหัสแอดมิน <รหัสของคุณ>",
+            "ตัวอย่าง: รหัสแอดมิน 1234",
+            "เมื่อผ่านแล้วจะเปิดเมนูตั้งค่าร้านใน LINE ให้ทันที"
+          ]),
+          {
+            type: "button",
+            style: "secondary",
+            action: { type: "message", label: "พิมพ์คำสั่งล็อกอิน", text: "รหัสแอดมิน " }
+          }
+        ]
+      }
+    }
+  };
+}
+
+export function adminAuthSuccessMessage() {
+  return {
+    type: "flex",
+    altText: "เข้าสู่โหมดแอดมินสำเร็จ",
+    contents: {
+      type: "bubble",
+      size: "giga",
+      header: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: BRAND,
+        paddingAll: "18px",
+        contents: [
+          { type: "text", text: "ADMIN MODE ENABLED", color: "#d1fae5", size: "xs", weight: "bold" },
+          { type: "text", text: "เปิดโหมดแอดมินแล้ว", color: "#ffffff", size: "xl", weight: "bold", margin: "sm" }
+        ]
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        contents: [
+          infoPanel("ตอนนี้คุณทำอะไรได้", [
+            "ดูคิวและยอดประจำวัน",
+            "เพิ่มบริการและเพิ่มช่างจากแชท",
+            "ตั้งชื่อร้าน, เบอร์ร้าน, ที่อยู่ร้าน, เวลาทำการ"
+          ]),
+          {
+            type: "box",
+            layout: "horizontal",
+            spacing: "sm",
+            contents: [
+              { type: "button", style: "primary", color: BRAND, flex: 1, action: { type: "postback", label: "เมนูแอดมิน", data: "action=adm_menu" } },
+              { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "คิววันนี้", data: "action=adm_queue_today" } }
+            ]
+          }
+        ]
+      }
+    }
+  };
+}
+
+export function adminMenuMessage() {
+  return {
+    type: "flex",
+    altText: "เมนูแอดมิน",
+    contents: {
+      type: "bubble",
+      size: "giga",
+      header: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: "#111827",
+        paddingAll: "18px",
+        contents: [
+          { type: "text", text: "LINE ADMIN CONSOLE", color: "#9ca3af", size: "xs", weight: "bold" },
+          { type: "text", text: "เมนูแอดมินผ่าน LINE", color: "#ffffff", size: "xl", weight: "bold", margin: "sm" }
+        ]
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: [
+          { type: "button", style: "primary", color: BRAND, height: "md", action: { type: "postback", label: "⚙️ ตั้งค่าร้าน", data: "action=adm_setup" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "📋 คิววันนี้", data: "action=adm_queue_today" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "💰 ยอดวันนี้", data: "action=adm_revenue" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "uri", label: "🌐 เปิดเว็บหลังบ้าน", uri: APP_URL("/admin") } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🚪 ออกจากโหมดแอดมิน", data: "action=adm_logout" } }
+        ]
+      }
+    }
+  };
+}
+
+export function adminSetupMenuMessage() {
+  return {
+    type: "flex",
+    altText: "ตั้งค่าร้านผ่าน LINE",
+    contents: {
+      type: "bubble",
+      size: "giga",
+      header: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: BRAND,
+        paddingAll: "18px",
+        contents: [
+          { type: "text", text: "SHOP SETUP VIA LINE", color: "#d1fae5", size: "xs", weight: "bold" },
+          { type: "text", text: "ตั้งค่าร้านผ่านแชท", color: "#ffffff", size: "xl", weight: "bold", margin: "sm" }
+        ]
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: [
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🏪 ตั้งชื่อ / เบอร์ / ที่อยู่", data: "action=adm_help_shop" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "✂️ เพิ่มบริการ", data: "action=adm_help_service" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "💇 เพิ่มช่าง", data: "action=adm_help_staff" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🕒 ตั้งเวลาเปิดปิดร้าน", data: "action=adm_help_hours" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🧑‍🔧 ตั้งเวลารายช่าง", data: "action=adm_help_staff_hours" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "uri", label: "🌐 เปิดหน้า Setup บนเว็บ", uri: APP_URL("/admin/setup") } }
+        ]
+      }
+    }
+  };
+}
+
+export function adminTextExamplesMessage(title: string, examples: string[]) {
+  return {
+    type: "flex",
+    altText: title,
+    contents: {
+      type: "bubble",
+      size: "giga",
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        paddingAll: "18px",
+        contents: [
+          { type: "text", text: title, weight: "bold", size: "lg", color: TEXT_MAIN, wrap: true },
+          infoPanel("พิมพ์ตามตัวอย่างนี้ได้เลย", examples),
+          { type: "button", style: "secondary", action: { type: "postback", label: "⬅️ กลับเมนูตั้งค่า", data: "action=adm_setup" } }
+        ]
+      }
+    }
+  };
 }
 
 /** Safe welcome card for LINE reply API. */
