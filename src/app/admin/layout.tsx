@@ -53,6 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link href="/admin/services" className="hover:text-brand-600">บริการ</Link>
               <Link href="/admin/staff" className="hover:text-brand-600">พนักงาน</Link>
               <Link href="/admin/working-hours" className="hover:text-brand-600">เวลาทำการ</Link>
+              <Link href="/admin/customers" className="hover:text-brand-600">ลูกค้า</Link>
             </nav>
           </div>
           <button
