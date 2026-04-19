@@ -7,7 +7,8 @@ const BRAND = "#06c755";
 
 const LIFF_URL = (path = "") => {
   const id = process.env.NEXT_PUBLIC_LIFF_ID ?? "";
-  return `https://liff.line.me/${id}${path}`;
+  const normalized = path.startsWith("/liff/") ? path.slice(5) : path;
+  return `https://liff.line.me/${id}${normalized}`;
 };
 
 export function textMessage(text: string) {

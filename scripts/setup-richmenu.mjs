@@ -26,7 +26,10 @@ const LIFF_ID = process.env.NEXT_PUBLIC_LIFF_ID;
 if (!TOKEN) throw new Error("LINE_CHANNEL_ACCESS_TOKEN not set");
 if (!LIFF_ID) throw new Error("NEXT_PUBLIC_LIFF_ID not set");
 
-const LIFF = (p = "") => `https://liff.line.me/${LIFF_ID}${p}`;
+const LIFF = (p = "") => {
+  const normalized = p.startsWith("/liff/") ? p.slice(5) : p;
+  return `https://liff.line.me/${LIFF_ID}${normalized}`;
+};
 
 const menu = {
   size: { width: 2500, height: 1686 }, // 2 rows x 3 cols

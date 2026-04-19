@@ -235,7 +235,7 @@ async function handleMessage(ev: any, customer: Customer) {
       type: "flex", altText: "บริการทั้งหมด",
       contents: { type: "bubble", body: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "16px", contents: [
         { type: "text", text: "ดูบริการและราคาทั้งหมด", weight: "bold" },
-        { type: "button", style: "primary", color: "#06c755", margin: "md", action: { type: "uri", label: "🔍 ดูบริการ/ราคา", uri: `https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID ?? ""}/liff/services` } }
+        { type: "button", style: "primary", color: "#06c755", margin: "md", action: { type: "uri", label: "🔍 ดูบริการ/ราคา", uri: `https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID ?? ""}/services` } }
       ]}}
     }]);
   }
