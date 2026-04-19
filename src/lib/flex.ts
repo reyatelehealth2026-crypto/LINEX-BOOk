@@ -932,6 +932,48 @@ export function adminAuthPromptMessage() {
   };
 }
 
+export function adminAuthRecoveryMessage(opts?: {
+  title?: string;
+  reason?: string;
+  pendingLabel?: string;
+}) {
+  return {
+    type: "flex",
+    altText: "ยืนยันตัวตนแอดมินอีกครั้ง",
+    contents: {
+      type: "bubble",
+      size: "giga",
+      header: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: "#7c2d12",
+        paddingAll: "18px",
+        contents: [
+          { type: "text", text: "ADMIN SESSION CHECK", color: "#fed7aa", size: "xs", weight: "bold" },
+          { type: "text", text: opts?.title ?? "ต้องยืนยันตัวตนอีกครั้ง", color: "#ffffff", size: "xl", weight: "bold", margin: "sm", wrap: true }
+        ]
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        contents: [
+          infoPanel("เกิดอะไรขึ้น", [
+            opts?.reason ?? "session แอดมินอาจหมดอายุหรือข้อมูลยืนยันตัวตนหลุดระหว่างทาง",
+            ...(opts?.pendingLabel ? [`สิ่งที่คุณกำลังกดอยู่: ${opts.pendingLabel}`] : []),
+            "พิมพ์รหัสแอดมินอีกครั้ง แล้วระบบจะพากลับไปต่อให้อัตโนมัติ"
+          ]),
+          {
+            type: "button",
+            style: "secondary",
+            action: { type: "message", label: "พิมพ์คำสั่งล็อกอิน", text: "รหัสแอดมิน " }
+          }
+        ]
+      }
+    }
+  };
+}
+
 export function adminAuthSuccessMessage() {
   return {
     type: "flex",
@@ -987,36 +1029,32 @@ export function adminMenuMessage() {
         backgroundColor: "#111827",
         paddingAll: "18px",
         contents: [
-          { type: "text", text: "LINE ADMIN CONSOLE", color: "#9ca3af", size: "xs", weight: "bold" },
-          { type: "text", text: "เมนูแอดมินผ่าน LINE", color: "#ffffff", size: "xl", weight: "bold", margin: "sm" }
+          { type: "text", text: "LINE ADMIN HOME", color: "#9ca3af", size: "xs", weight: "bold" },
+          { type: "text", text: "หน้าแรกแอดมินผ่าน LINE", color: "#ffffff", size: "xl", weight: "bold", margin: "sm" },
+          { type: "text", text: "แอดมิน > หน้าแรก", color: "#d1d5db", size: "xs", margin: "sm" }
         ]
       },
       body: {
         type: "box",
         layout: "vertical",
-        spacing: "sm",
+        spacing: "md",
         contents: [
           { type: "text", text: "ทุกปุ่มจะพาคุณเข้า step ถัดไปทันที และระบบจะแสดงสถานะกำลังทำงานก่อนตอบกลับ", size: "xs", color: TEXT_MUTED, wrap: true },
-          {
-            type: "box",
-            layout: "horizontal",
-            spacing: "sm",
-            contents: [
-              { type: "button", style: "primary", color: BRAND, flex: 1, height: "md", action: { type: "message", label: "⚙️ ตั้งค่าร้าน", text: "เปิดเมนูตั้งค่าร้าน" } },
-              { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "message", label: "📊 สถานะร้าน", text: "สถานะร้าน" } }
-            ]
-          },
-          {
-            type: "box",
-            layout: "horizontal",
-            spacing: "sm",
-            contents: [
-              { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "message", label: "📋 คิววันนี้", text: "คิววันนี้" } },
-              { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "message", label: "💰 ยอดวันนี้", text: "ยอดวันนี้" } }
-            ]
-          },
-          { type: "button", style: "secondary", height: "md", action: { type: "uri", label: "🌐 เปิดเว็บหลังบ้าน", uri: APP_URL("/admin") } },
-          { type: "button", style: "secondary", height: "md", action: { type: "message", label: "🚪 ออกจากโหมดแอดมิน", text: "ออกจากโหมดแอดมิน" } }
+          infoPanel("โหมด 1 · ตั้งค่าร้าน", ["ใช้เมื่ออยากไล่ตั้งค่า shop, service, staff, hours ผ่านแชท"]),
+          { type: "box", layout: "horizontal", spacing: "sm", contents: [
+            { type: "button", style: "primary", color: BRAND, flex: 1, height: "md", action: { type: "message", label: "⚙️ ตั้งค่าร้าน", text: "เปิดเมนูตั้งค่าร้าน" } },
+            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "message", label: "📊 สถานะร้าน", text: "สถานะร้าน" } }
+          ] },
+          infoPanel("โหมด 2 · คิวและรายได้", ["ใช้ดูงานวันนี้เร็วๆ โดยไม่ต้องเปิดเว็บหลังบ้าน"]),
+          { type: "box", layout: "horizontal", spacing: "sm", contents: [
+            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "message", label: "📋 คิววันนี้", text: "คิววันนี้" } },
+            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "message", label: "💰 ยอดวันนี้", text: "ยอดวันนี้" } }
+          ] },
+          infoPanel("โหมด 3 · จัดการระบบ", ["ใช้ตอนอยากเปิดเว็บหลังบ้านหรือออกจากโหมดแอดมิน"]),
+          { type: "box", layout: "horizontal", spacing: "sm", contents: [
+            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "uri", label: "🌐 เปิดเว็บหลังบ้าน", uri: APP_URL("/admin") } },
+            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "message", label: "🚪 ออกจากโหมดแอดมิน", text: "ออกจากโหมดแอดมิน" } }
+          ] }
         ]
       }
     }
@@ -1037,7 +1075,8 @@ export function adminSetupMenuMessage() {
         paddingAll: "18px",
         contents: [
           { type: "text", text: "SHOP SETUP VIA LINE", color: "#d1fae5", size: "xs", weight: "bold" },
-          { type: "text", text: "ตั้งค่าร้านผ่านแชท", color: "#ffffff", size: "xl", weight: "bold", margin: "sm" }
+          { type: "text", text: "ตั้งค่าร้านผ่านแชท", color: "#ffffff", size: "xl", weight: "bold", margin: "sm" },
+          { type: "text", text: "แอดมิน > ตั้งค่าร้าน", color: "#ecfdf5", size: "xs", margin: "sm" }
         ]
       },
       body: {
@@ -1080,7 +1119,8 @@ export function adminSetupStatusMessage(opts: {
         contents: [
           { type: "text", text: "SHOP STATUS", color: "#d1fae5", size: "xs", weight: "bold" },
           { type: "text", text: `${opts.readyCount}/${opts.totalCount} พร้อมแล้ว`, color: "#ffffff", size: "xl", weight: "bold", margin: "sm" },
-          { type: "text", text: opts.summary, color: "#ffffffcc", size: "sm", margin: "sm", wrap: true }
+          { type: "text", text: opts.summary, color: "#ffffffcc", size: "sm", margin: "sm", wrap: true },
+          { type: "text", text: "แอดมิน > สถานะร้าน", color: "#d1d5db", size: "xs", margin: "sm" }
         ]
       },
       body: {
@@ -1130,6 +1170,7 @@ export function adminWizardPromptMessage(opts: {
   progressText?: string;
   savedItems?: string[];
   tip?: string;
+  breadcrumb?: string;
 }) {
   return {
     type: "flex",
@@ -1145,6 +1186,7 @@ export function adminWizardPromptMessage(opts: {
         contents: [
           { type: "text", text: opts.stepLabel ?? "SETUP WIZARD", color: "#d1fae5", size: "xs", weight: "bold" },
           ...(opts.progressText ? [{ type: "text", text: opts.progressText, color: "#ecfdf5", size: "xs", margin: "xs" } as any] : []),
+          ...(opts.breadcrumb ? [{ type: "text", text: opts.breadcrumb, color: "#ecfdf5", size: "xs", margin: "xs", wrap: true } as any] : []),
           { type: "text", text: opts.title, color: "#ffffff", size: "xl", weight: "bold", margin: "sm", wrap: true }
         ]
       },
@@ -1197,6 +1239,7 @@ export function adminWizardDayPickerMessage(savedItems: string[] = []) {
         contents: [
           { type: "text", text: "SETUP WIZARD · STEP 6/6", color: "#d1fae5", size: "xs", weight: "bold" },
           { type: "text", text: "● ● ● ● ● ●", color: "#ecfdf5", size: "xs", margin: "xs" },
+          { type: "text", text: "แอดมิน > ตั้งค่าร้าน > Setup Wizard > เวลาทำการ", color: "#ecfdf5", size: "xs", margin: "xs", wrap: true },
           { type: "text", text: "เลือกว่าเวลาทำการนี้ใช้กับวันไหน", color: "#ffffff", size: "xl", weight: "bold", margin: "sm", wrap: true }
         ]
       },
@@ -1226,6 +1269,7 @@ export function adminWizardProgressMessage(opts: {
   totalSteps: number;
   description?: string;
   savedItems?: string[];
+  breadcrumb?: string;
 }) {
   const progress = Array.from({ length: opts.totalSteps }, (_, i) => (i < opts.currentStep ? "●" : "○")).join(" ");
   return {
@@ -1242,6 +1286,7 @@ export function adminWizardProgressMessage(opts: {
         contents: [
           { type: "text", text: `STEP ${opts.currentStep}/${opts.totalSteps}`, size: "xs", weight: "bold", color: BRAND_DARK },
           { type: "text", text: progress, size: "sm", color: BRAND_DARK },
+          ...(opts.breadcrumb ? [{ type: "text", text: opts.breadcrumb, size: "xs", color: TEXT_MUTED, wrap: true } as any] : []),
           { type: "text", text: opts.title, size: "md", weight: "bold", color: TEXT_MAIN, wrap: true },
           ...(opts.description ? [{ type: "text", text: opts.description, size: "xs", color: TEXT_MUTED, wrap: true } as any] : []),
           ...(opts.savedItems?.length ? [{ type: "text", text: `บันทึกแล้ว: ${opts.savedItems.join(" • ")}`, size: "xs", color: TEXT_MUTED, wrap: true } as any] : []),
