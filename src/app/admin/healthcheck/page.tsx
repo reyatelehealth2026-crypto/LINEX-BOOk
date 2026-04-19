@@ -9,6 +9,9 @@ import {
   Wifi,
   WifiOff,
   ChevronLeft,
+  Copy,
+  Check,
+  ArrowRight,
 } from "lucide-react";
 
 type CheckItem = {
@@ -24,7 +27,47 @@ type HealthData = {
   total: number;
   checks: CheckItem[];
   timestamp: string;
+  setupValues: {
+    appUrl: string;
+    liffId: string;
+    webhookUrl: string;
+    liffUrl: string;
+  };
 };
+
+// ─── Actionable hint map ───
+const actionHints: Record<string, string> = {
+  line_token: "ไปที่ LINE Developers Console → Channel → Messaging API → คัดลอก Channel Access Token",
+  line_secret: "ไปที่ LINE Developers Console → Channel → Basic settings → คัดลอก Channel Secret",
+  liff_id: "ไปที่ LINE Developers Console → Channel → LIFF → คัดลอก LIFF ID",
+  line_api: "ตรวจสอบว่า Channel Access Token ถูกต้องและยังไม่หมดอายุ",
+  sb_url: "ไปที่ Supabase → Settings → API → คัดลอก Project URL",
+  sb_anon: "ไปที่ Supabase → Settings → API → คัดลอก anon public key",
+  sb_service: "ไปที่ Supabase → Settings → API → คัดลอก service_role key",
+  sb_connect: "ตรวจสอบว่า Supabase URL และ Key ถูกต้อง และโปรเจกต์ยังไม่ถูกหยุด",
+  shop_data: "เพิ่มข้อมูลร้านผ่านหน้า บริการ และ พนักงาน",
+  admin_pw: "ใส่ ADMIN_PASSWORD ในไฟล์ .env แล้ว Deploy ใหม่",
+};
+
+// ─── Copy button ───
+function CopyBtn({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  if (!text) return null;
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(text).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        });
+      }}
+      className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 transition"
+    >
+      {copied ? <Check size={12} /> : <Copy size={12} />}
+      {copied ? "คัดลอกแล้ว!" : label}
+    </button>
+  );
+}
 
 export default function HealthcheckPage() {
   const { pw } = useAdmin();
@@ -56,31 +99,34 @@ export default function HealthcheckPage() {
     reload();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const sv = health?.setupValues ?? { appUrl: "", liffId: "", webhookUrl: "", liffUrl: "" };
+
   // Group checks by category
   const categories = [
     {
       title: "💬 LINE",
-      icon: "💬",
       ids: ["line_token", "line_secret", "liff_id", "line_api"],
     },
     {
       title: "🗄️ ฐานข้อมูล (Supabase)",
-      icon: "🗄️",
       ids: ["sb_url", "sb_anon", "sb_service", "sb_connect", "shop_data"],
     },
     {
       title: "🔐 ระบบแอดมิน",
-      icon: "🔐",
       ids: ["admin_pw"],
     },
   ];
+
+  // Count issues
+  const failCount = health?.checks.filter((c) => c.status === "fail").length ?? 0;
+  const warnCount = health?.checks.filter((c) => c.status === "warn").length ?? 0;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <a href="/admin/setup" className="text-neutral-400 hover:text-neutral-600">
+          <a href="/admin/setup" className="text-neutral-400 hover:text-neutral-600 transition">
             <ChevronLeft size={20} />
           </a>
           <div>
@@ -111,18 +157,18 @@ export default function HealthcheckPage() {
         <div
           className={`card p-5 ${
             health.allOk
-              ? "border-brand-200 bg-brand-50"
+              ? "border-brand-200 bg-gradient-to-r from-brand-50 to-emerald-50"
               : "border-amber-200 bg-amber-50"
           }`}
         >
           <div className="flex items-center gap-3">
             {health.allOk ? (
-              <div className="w-12 h-12 rounded-full bg-brand-500 text-white flex items-center justify-center">
-                <CheckCircle2 size={24} />
+              <div className="w-14 h-14 rounded-full bg-brand-500 text-white flex items-center justify-center text-2xl">
+                ✅
               </div>
             ) : (
-              <div className="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center">
-                <AlertTriangle size={24} />
+              <div className="w-14 h-14 rounded-full bg-amber-500 text-white flex items-center justify-center text-2xl">
+                ⚠️
               </div>
             )}
             <div>
@@ -131,6 +177,8 @@ export default function HealthcheckPage() {
               </div>
               <div className="text-sm text-neutral-600">
                 {health.okCount}/{health.total} รายการผ่าน
+                {failCount > 0 && <span className="text-red-600 ml-1">• {failCount} ไม่ผ่าน</span>}
+                {warnCount > 0 && <span className="text-amber-600 ml-1">• {warnCount} รอตรวจ</span>}
                 {health.timestamp && (
                   <span className="text-neutral-400 ml-2">
                     — ตรวจล่าสุด{" "}
@@ -143,6 +191,36 @@ export default function HealthcheckPage() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick copy values when all OK */}
+      {health?.allOk && sv && (
+        <div className="card p-4 border-brand-100">
+          <h3 className="font-semibold text-sm mb-3">📋 URL สำคัญของร้าน</h3>
+          <div className="space-y-2">
+            {sv.webhookUrl && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-neutral-500 w-28 shrink-0">Webhook URL:</span>
+                <code className="bg-neutral-100 px-2 py-1 rounded text-xs break-all flex-1">{sv.webhookUrl}</code>
+                <CopyBtn text={sv.webhookUrl} label="คัดลอก" />
+              </div>
+            )}
+            {sv.liffUrl && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-neutral-500 w-28 shrink-0">LIFF URL:</span>
+                <code className="bg-neutral-100 px-2 py-1 rounded text-xs break-all flex-1">{sv.liffUrl}</code>
+                <CopyBtn text={sv.liffUrl} label="คัดลอก" />
+              </div>
+            )}
+            {sv.appUrl && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-neutral-500 w-28 shrink-0">App URL:</span>
+                <code className="bg-neutral-100 px-2 py-1 rounded text-xs break-all flex-1">{sv.appUrl}</code>
+                <CopyBtn text={sv.appUrl} label="คัดลอก" />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -165,6 +243,7 @@ export default function HealthcheckPage() {
             if (items.length === 0) return null;
 
             const catOk = items.every((c) => c.status === "ok");
+            const catFail = items.filter((c) => c.status !== "ok").length;
 
             return (
               <div key={cat.title} className="space-y-2">
@@ -173,7 +252,9 @@ export default function HealthcheckPage() {
                   {catOk ? (
                     <CheckCircle2 size={16} className="text-brand-500" />
                   ) : (
-                    <AlertTriangle size={16} className="text-amber-500" />
+                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                      {catFail} รายการ
+                    </span>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -204,30 +285,55 @@ export default function HealthcheckPage() {
 
       {/* Footer tip */}
       <div className="card p-4 text-sm text-neutral-500">
-        💡 <strong>เคล็ดลับ:</strong> หากมีรายการที่ขึ้น "ยังไม่ได้ตั้งค่า"
-        ให้กลับไปที่หน้า{" "}
-        <a href="/admin/setup" className="text-brand-500 underline">
-          ตั้งค่าร้าน
-        </a>{" "}
-        แล้วทำตามขั้นตอนทีละข้อ
+        <div className="flex items-start gap-2">
+          <span>💡</span>
+          <div>
+            <strong>เคล็ดลับ:</strong> หากมีรายการที่ขึ้น "ยังไม่ได้ตั้งค่า"
+            ให้กลับไปที่หน้า{" "}
+            <a href="/admin/setup" className="text-brand-500 underline">
+              ตั้งค่าร้าน
+            </a>{" "}
+            แล้วทำตามขั้นตอนทีละข้อ — กดปุ่ม <ArrowRight size={12} className="inline" /> เพื่อดูวิธีทำ
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
 function CheckCard({ item }: { item: CheckItem }) {
+  const isIssue = item.status !== "ok";
+  const hint = actionHints[item.id];
   const config = {
-    ok: { border: "border-brand-200", bg: "", icon: <CheckCircle2 size={18} className="text-brand-500" /> },
-    warn: { border: "border-amber-200", bg: "bg-amber-50", icon: <AlertTriangle size={18} className="text-amber-500" /> },
-    fail: { border: "border-red-200", bg: "bg-red-50", icon: <XCircle size={18} className="text-red-500" /> },
+    ok: {
+      border: "border-brand-100",
+      bg: "",
+      icon: <CheckCircle2 size={18} className="text-brand-500" />,
+    },
+    warn: {
+      border: "border-amber-200",
+      bg: "bg-amber-50/50",
+      icon: <AlertTriangle size={18} className="text-amber-500" />,
+    },
+    fail: {
+      border: "border-red-200",
+      bg: "bg-red-50/50",
+      icon: <XCircle size={18} className="text-red-500" />,
+    },
   };
   const c = config[item.status];
   return (
-    <div className={`card p-3 flex items-start gap-3 ${c.border} ${c.bg}`}>
+    <div className={`card p-4 flex items-start gap-3 ${c.border} ${c.bg}`}>
       <div className="mt-0.5 shrink-0">{c.icon}</div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="font-medium text-sm">{item.label}</div>
         <div className="text-xs text-neutral-500 mt-0.5">{item.detail}</div>
+        {isIssue && hint && (
+          <div className="mt-2 pt-2 border-t border-neutral-100 text-xs text-brand-600 flex items-center gap-1">
+            <ArrowRight size={12} />
+            {hint}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAdmin } from "../_ctx";
 import {
   CheckCircle2,
@@ -12,7 +12,13 @@ import {
   Shield,
   Store,
   ChevronRight,
+  ChevronDown,
   ExternalLink,
+  Copy,
+  Check,
+  Globe,
+  Rocket,
+  Sparkles,
 } from "lucide-react";
 
 type CheckItem = {
@@ -28,6 +34,12 @@ type HealthData = {
   total: number;
   checks: CheckItem[];
   timestamp: string;
+  setupValues: {
+    appUrl: string;
+    liffId: string;
+    webhookUrl: string;
+    liffUrl: string;
+  };
 };
 
 // ──────────────────────────────────────────────
@@ -56,11 +68,48 @@ function saveManual(items: ManualItems) {
   } catch {}
 }
 
+// ─── Copy-to-clipboard button ───
+function CopyButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [text]);
+
+  if (!text) return null;
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100 transition"
+      title={`คัดลอก ${label}`}
+    >
+      {copied ? <Check size={12} /> : <Copy size={12} />}
+      {copied ? "คัดลอกแล้ว!" : label}
+    </button>
+  );
+}
+
+// ─── Expanded step detail component ───
+function StepDetail({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mt-3 pl-4 border-l-2 border-brand-200 space-y-2 text-sm text-neutral-600">
+      {children}
+    </div>
+  );
+}
+
+// ─── Main setup page ───
 export default function SetupPage() {
   const { pw } = useAdmin();
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
   const [manual, setManual] = useState<ManualItems>(loadManual);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   async function reload() {
     setLoading(true);
@@ -89,53 +138,155 @@ export default function SetupPage() {
     saveManual(next);
   }
 
+  function toggleExpand(id: string) {
+    setExpanded((prev) => (prev === id ? null : id));
+  }
+
+  const sv = health?.setupValues ?? { appUrl: "", liffId: "", webhookUrl: "", liffUrl: "" };
+
   // Build full setup checklist (auto + manual items)
   const setupSteps = [
     {
       id: "step_sb",
-      title: "1. ตั้งค่า Supabase (ฐานข้อมูล)",
-      desc: "สร้างโปรเจกต์ Supabase แล้วใส่ URL + Key ใน .env",
+      title: "ตั้งค่า Supabase (ฐานข้อมูล)",
+      subtitle: "สร้างที่เก็บข้อมูลออนไลน์สำหรับร้าน",
       icon: Database,
       auto: findCheck(health, "sb_url") && findCheck(health, "sb_anon") && findCheck(health, "sb_service"),
       link: "https://supabase.com",
+      detail: (
+        <>
+          <p>📌 <strong>ทำอะไร:</strong> สร้างฐานข้อมูลฟรีที่ Supabase แล้วนำค่ามาใส่ในไฟล์ <code className="bg-neutral-100 px-1 rounded">.env</code></p>
+          <ol className="list-decimal list-inside space-y-1 mt-2">
+            <li>ไปที่ <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline">supabase.com</a> → สมัครสมาชิก → สร้างโปรเจกต์ใหม่</li>
+            <li>รอสักครู่ให้โปรเจกต์สร้างเสร็จ</li>
+            <li>เข้าเมนู <strong>Settings → API</strong></li>
+            <li>คัดลอก <strong>Project URL</strong> → ใส่ใน <code className="bg-neutral-100 px-1 rounded">NEXT_PUBLIC_SUPABASE_URL</code></li>
+            <li>คัดลอก <strong>anon public</strong> key → ใส่ใน <code className="bg-neutral-100 px-1 rounded">NEXT_PUBLIC_SUPABASE_ANON_KEY</code></li>
+            <li>คัดลอก <strong>service_role</strong> key → ใส่ใน <code className="bg-neutral-100 px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code></li>
+          </ol>
+          <p className="mt-2 text-xs text-neutral-400">💡 ข้อมูลทั้งหมดเก็บใน Supabase — ร้านคุณเป็นเจ้าของข้อมูล 100%</p>
+        </>
+      ),
     },
     {
       id: "step_line",
-      title: "2. ตั้งค่า LINE Official Account",
-      desc: "สร้าง Provider + Channel ใน LINE Developers Console แล้วใส่ Token + Secret",
+      title: "ตั้งค่า LINE Official Account",
+      subtitle: "เชื่อมระบบจองเข้ากับ LINE ของร้าน",
       icon: MessageSquare,
       auto: findCheck(health, "line_token") && findCheck(health, "line_secret"),
       link: "https://developers.line.biz/console/",
+      detail: (
+        <>
+          <p>📌 <strong>ทำอะไร:</strong> สร้าง LINE Bot เพื่อให้ลูกค้าจองคิวผ่าน LINE ได้</p>
+          <ol className="list-decimal list-inside space-y-1 mt-2">
+            <li>ไปที่ <a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline">LINE Developers Console</a></li>
+            <li>สร้าง <strong>Provider</strong> (ชื่อร้านคุณ)</li>
+            <li>สร้าง <strong>Channel</strong> ประเภท <strong>Messaging API</strong></li>
+            <li>เข้าเมนู <strong>Messaging API</strong> tab</li>
+            <li>คัดลอก <strong>Channel access token</strong> → ใส่ใน <code className="bg-neutral-100 px-1 rounded">LINE_CHANNEL_ACCESS_TOKEN</code></li>
+            <li>กลับไป <strong>Basic settings</strong> tab</li>
+            <li>คัดลอก <strong>Channel secret</strong> → ใส่ใน <code className="bg-neutral-100 px-1 rounded">LINE_CHANNEL_SECRET</code></li>
+          </ol>
+          <p className="mt-2 text-xs text-neutral-400">💡 ต้องมี LINE Official Account ก่อน — ถ้ายังไม่มี สมัครฟรีที่ LINE Developers</p>
+        </>
+      ),
     },
     {
       id: "step_liff",
-      title: "3. สร้าง LIFF App",
-      desc: "สร้าง LIFF ใน Channel แล้วใส่ LIFF ID ใน .env",
+      title: "สร้าง LIFF App",
+      subtitle: "หน้าจองคิวที่ลูกค้าเห็นใน LINE",
       icon: Settings,
       auto: findCheck(health, "liff_id"),
       link: "https://developers.line.biz/console/",
+      detail: (
+        <>
+          <p>📌 <strong>ทำอะไร:</strong> สร้างหน้าเว็บสำหรับลูกค้าจองคิว ที่เปิดได้จากใน LINE เลย</p>
+          <ol className="list-decimal list-inside space-y-1 mt-2">
+            <li>เข้า Channel ที่สร้างในขั้นตอนก่อนหน้า</li>
+            <li>เข้าเมนู <strong>LIFF</strong></li>
+            <li>กด <strong>Add</strong> สร้าง LIFF app ใหม่</li>
+            <li>ตั้งชื่อ เช่น &ldquo;ร้านจองคิว&rdquo;</li>
+            <li>ตั้ง <strong>Size</strong> เป็น <strong>Tall</strong></li>
+            <li>ใส่ <strong>Endpoint URL</strong> เป็น URL ร้านคุณ</li>
+            <li>คัดลอก <strong>LIFF ID</strong> → ใส่ใน <code className="bg-neutral-100 px-1 rounded">NEXT_PUBLIC_LIFF_ID</code></li>
+          </ol>
+          {sv.liffUrl && (
+            <div className="mt-3">
+              <p className="text-xs text-neutral-500 mb-1">🔗 URL หน้าจองคิวของร้าน:</p>
+              <CopyButton text={sv.liffUrl} label="คัดลอก LIFF URL" />
+            </div>
+          )}
+        </>
+      ),
     },
     {
       id: "step_webhook",
-      title: "4. ตั้งค่า Webhook ใน LINE Console",
-      desc: "ใส่ URL Webhook ของร้านลงใน LINE Console และเปิด Use Webhook",
-      icon: MessageSquare,
+      title: "ตั้งค่า Webhook ใน LINE Console",
+      subtitle: "ให้ LINE ส่งข้อความลูกค้ามาที่ระบบร้าน",
+      icon: Globe,
       auto: null, // manual
       manualKey: "webhook" as keyof ManualItems,
+      detail: (
+        <>
+          <p>📌 <strong>ทำอะไร:</strong> บอก LINE ว่าให้ส่งข้อความจากลูกค้ามาที่ URL ไหน</p>
+          <ol className="list-decimal list-inside space-y-1 mt-2">
+            <li>เข้า Channel → เมนู <strong>Messaging API</strong></li>
+            <li>หาส่วน <strong>Webhook settings</strong></li>
+            <li>ใส่ Webhook URL ด้านล่างนี้ลงไป</li>
+            <li>กด <strong>Verify</strong> เพื่อทดสอบ (ถ้ามี)</li>
+            <li>เปิด <strong>Use webhook</strong> → <strong>Enabled</strong></li>
+          </ol>
+          {sv.webhookUrl ? (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-neutral-500">📋 Webhook URL ของร้าน — คัดลอกไปใส่ใน LINE Console:</p>
+              <div className="flex items-center gap-2">
+                <code className="bg-neutral-100 px-2 py-1 rounded text-xs break-all flex-1">{sv.webhookUrl}</code>
+                <CopyButton text={sv.webhookUrl} label="คัดลอก" />
+              </div>
+            </div>
+          ) : (
+            <p className="mt-2 text-xs text-amber-600">⚠️ ยังไม่มี APP_URL — ใส่ NEXT_PUBLIC_APP_URL ใน .env ก่อน ถึงจะเห็น Webhook URL</p>
+          )}
+          <p className="mt-2 text-xs text-neutral-400">💡 ถ้ากด Verify แล้วไม่ผ่าน ให้ลอง Deploy แล้วกลับมาตั้ง Webhook ใหม่</p>
+        </>
+      ),
     },
     {
       id: "step_admin",
-      title: "5. ตั้งรหัสผ่านแอดมิน",
-      desc: "ตั้ง ADMIN_PASSWORD ใน .env — ใช้ล็อกอินเข้าหน้านี้",
+      title: "ตั้งรหัสผ่านแอดมิน",
+      subtitle: "รหัสผ่านสำหรับเข้าหน้าจัดการร้านนี้",
       icon: Shield,
       auto: findCheck(health, "admin_pw"),
+      detail: (
+        <>
+          <p>📌 <strong>ทำอะไร:</strong> ตั้งรหัสผ่านสำหรับเข้าหน้าจัดการร้าน (หน้านี้)</p>
+          <ol className="list-decimal list-inside space-y-1 mt-2">
+            <li>เปิดไฟล์ <code className="bg-neutral-100 px-1 rounded">.env</code></li>
+            <li>หาบรรทัด <code className="bg-neutral-100 px-1 rounded">ADMIN_PASSWORD=</code></li>
+            <li>เปลี่ยนเป็นรหัสผ่านที่คุณจำง่าย เช่น <code className="bg-neutral-100 px-1 rounded">ADMIN_PASSWORD=MyShop2024</code></li>
+            <li>บันทึกไฟล์แล้ว Deploy ใหม่</li>
+          </ol>
+          <p className="mt-2 text-xs text-neutral-400">💡 ใช้รหัสผ่านที่ยากเดา แต่จำได้ — นี่คือกุญแจเข้าหน้าจัดการร้าน</p>
+        </>
+      ),
     },
     {
       id: "step_shop",
-      title: "6. เพิ่มข้อมูลร้าน + บริการ + ช่าง",
-      desc: "เพิ่มชื่อร้าน บริการ ราคา และช่างใน Supabase หรือผ่านแชท LINE",
+      title: "เพิ่มข้อมูลร้าน + บริการ + ช่าง",
+      subtitle: "เพิ่มชื่อร้าน รายการบริการ และพนักงาน",
       icon: Store,
       auto: findCheck(health, "shop_data"),
+      detail: (
+        <>
+          <p>📌 <strong>ทำอะไร:</strong> เพิ่มข้อมูลร้านเพื่อให้ลูกค้าเห็นบริการและจองคิวได้</p>
+          <ol className="list-decimal list-inside space-y-1 mt-2">
+            <li>เข้าหน้า <a href="/admin/services" className="text-brand-600 underline">บริการ</a> → เพิ่มรายการบริการ เช่น &ldquo;ตัดผมชาย 30 นาที 200 บาท&rdquo;</li>
+            <li>เข้าหน้า <a href="/admin/staff" className="text-brand-600 underline">พนักงาน</a> → เพิ่มชื่อช่าง</li>
+            <li>เข้าหน้า <a href="/admin/working-hours" className="text-brand-600 underline">เวลาทำการ</a> → ตั้งเวลาเปิด-ปิดร้าน</li>
+          </ol>
+          <p className="mt-2 text-xs text-neutral-400">💡 ลูกค้าจะเห็นเฉพาะบริการและช่างที่เปิดใช้งาน (active)</p>
+        </>
+      ),
     },
   ];
 
@@ -145,6 +296,7 @@ export default function SetupPage() {
     return s.auto?.status === "ok";
   }).length;
   const progressPct = Math.round((doneSteps / totalSteps) * 100);
+  const allDone = doneSteps === totalSteps;
 
   return (
     <div className="space-y-6">
@@ -162,10 +314,11 @@ export default function SetupPage() {
       </div>
 
       {/* Progress bar */}
-      <div className="card p-4">
+      <div className={`card p-5 ${allDone ? "border-brand-300 bg-gradient-to-r from-brand-50 to-emerald-50" : ""}`}>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">
-            ความพร้อมของร้าน
+          <span className="text-sm font-medium flex items-center gap-2">
+            {allDone && <Sparkles size={16} className="text-brand-500" />}
+            {allDone ? "ร้านพร้อมใช้งานแล้ว! 🎉" : "ความพร้อมของร้าน"}
           </span>
           <span className="text-sm text-neutral-500">
             {doneSteps}/{totalSteps} ขั้นตอน
@@ -173,86 +326,143 @@ export default function SetupPage() {
         </div>
         <div className="w-full h-3 bg-neutral-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-brand-500 rounded-full transition-all duration-500"
+            className={`h-full rounded-full transition-all duration-700 ${
+              allDone ? "bg-gradient-to-r from-brand-500 to-emerald-400" : "bg-brand-500"
+            }`}
             style={{ width: `${progressPct}%` }}
           />
         </div>
         <div className="text-right text-xs text-neutral-400 mt-1">{progressPct}%</div>
+        {allDone && (
+          <div className="mt-3 pt-3 border-t border-brand-200 text-sm text-brand-700">
+            🚀 ร้านคุณพร้อมแล้ว! ลองส่ง LIFF URL ให้ตัวเองใน LINE แล้วจองคิวดู
+            {sv.liffUrl && (
+              <div className="mt-2">
+                <CopyButton text={sv.liffUrl} label="คัดลอก LIFF URL" />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Setup Steps */}
       <div className="space-y-3">
-        {setupSteps.map((step) => {
+        {setupSteps.map((step, idx) => {
           const isDone = step.manualKey
             ? manual[step.manualKey]
             : step.auto?.status === "ok";
           const Icon = step.icon;
+          const isOpen = expanded === step.id;
+          const showWarning = !isDone && step.auto && step.auto.status !== "ok" && !step.manualKey;
+
           return (
             <div
               key={step.id}
-              className={`card p-4 flex items-start gap-4 transition ${
-                isDone ? "opacity-70" : ""
+              className={`card overflow-hidden transition-all ${
+                isDone ? "border-brand-100" : showWarning ? "border-amber-200 bg-amber-50/30" : ""
               }`}
             >
-              {/* Check/Status icon */}
-              <button
-                onClick={() => step.manualKey && toggleManual(step.manualKey)}
-                className={`mt-0.5 shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white transition ${
-                  isDone
-                    ? "bg-brand-500"
-                    : "bg-neutral-200 cursor-default"
-                } ${step.manualKey ? "cursor-pointer hover:bg-brand-400" : ""}`}
-                title={step.manualKey ? "กดเพื่อ标记ว่าทำแล้ว" : undefined}
-              >
-                {isDone ? <CheckCircle2 size={18} /> : <span className="text-xs text-neutral-500">{step.manualKey ? " Tap" : ""}</span>}
-              </button>
+              {/* Step header */}
+              <div className="p-4 flex items-start gap-4">
+                {/* Step number / check */}
+                <button
+                  onClick={() => step.manualKey && toggleManual(step.manualKey)}
+                  className={`mt-0.5 shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold transition ${
+                    isDone
+                      ? "bg-brand-500"
+                      : "bg-neutral-200 text-neutral-500"
+                  } ${step.manualKey ? "cursor-pointer hover:bg-brand-400 hover:text-white" : ""}`}
+                  title={step.manualKey ? (isDone ? "กดเพื่อย้อนกลับ" : "กดเพื่อบอกว่าทำแล้ว") : undefined}
+                >
+                  {isDone ? <CheckCircle2 size={18} /> : <span>{idx + 1}</span>}
+                </button>
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <Icon size={16} className="text-neutral-400 shrink-0" />
-                  <h3 className={`font-semibold ${isDone ? "line-through text-neutral-400" : ""}`}>
-                    {step.title}
-                  </h3>
-                </div>
-                <p className="text-sm text-neutral-500 mt-0.5">{step.desc}</p>
-
-                {/* Auto-check status badge */}
-                {step.auto && !step.manualKey && (
-                  <div className="mt-2">
-                    <StatusBadge status={step.auto.status} detail={step.auto.detail} />
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Icon size={16} className="text-neutral-400 shrink-0" />
+                    <h3 className={`font-semibold ${isDone ? "line-through text-neutral-400" : ""}`}>
+                      {step.title}
+                    </h3>
+                    {isDone && (
+                      <span className="text-xs bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">เสร็จแล้ว</span>
+                    )}
+                    {showWarning && (
+                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">ยังไม่ได้ตั้งค่า</span>
+                    )}
                   </div>
-                )}
+                  <p className="text-sm text-neutral-500 mt-0.5">{step.subtitle}</p>
+
+                  {/* Auto-check status badge */}
+                  {step.auto && !step.manualKey && (
+                    <div className="mt-2">
+                      <StatusBadge status={step.auto.status} detail={step.auto.detail} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Right side: expand + external link */}
+                <div className="shrink-0 flex items-center gap-2">
+                  {!isDone && step.link && (
+                    <a
+                      href={step.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brand-500 hover:text-brand-600 transition"
+                      title="เปิดเว็บภายนอก"
+                    >
+                      <ExternalLink size={16} />
+                    </a>
+                  )}
+                  <button
+                    onClick={() => toggleExpand(step.id)}
+                    className="text-neutral-400 hover:text-neutral-600 transition"
+                    title={isOpen ? "ปิดรายละเอียด" : "ดูวิธีทำ"}
+                  >
+                    <ChevronRight size={18} className={`transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                  </button>
+                </div>
               </div>
 
-              {/* External link */}
-              {step.link && !isDone && (
-                <a
-                  href={step.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 text-brand-500 hover:text-brand-600"
-                >
-                  <ExternalLink size={16} />
-                </a>
+              {/* Expanded detail */}
+              {isOpen && (
+                <div className="px-4 pb-4 pt-0 ml-13">
+                  <StepDetail>{step.detail}</StepDetail>
+                </div>
               )}
             </div>
           );
         })}
       </div>
 
-      {/* Quick link to healthcheck */}
-      <div className="card p-4">
+      {/* Quick links row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <a
           href="/admin/healthcheck"
-          className="flex items-center justify-between hover:text-brand-600 transition"
+          className="card p-4 flex items-center justify-between hover:border-brand-200 transition group"
         >
           <div>
             <div className="font-semibold">🩺 ตรวจสอบระบบละเอียด</div>
             <div className="text-sm text-neutral-500">เช็คการเชื่อมต่อทุกอย่างแบบละเอียด</div>
           </div>
-          <ChevronRight size={20} className="text-neutral-400" />
+          <ChevronRight size={20} className="text-neutral-400 group-hover:text-brand-500 transition" />
         </a>
+        <a
+          href="/admin/services"
+          className="card p-4 flex items-center justify-between hover:border-brand-200 transition group"
+        >
+          <div>
+            <div className="font-semibold">💇 จัดการบริการ</div>
+            <div className="text-sm text-neutral-500">เพิ่ม แก้ไข รายการบริการของร้าน</div>
+          </div>
+          <ChevronRight size={20} className="text-neutral-400 group-hover:text-brand-500 transition" />
+        </a>
+      </div>
+
+      {/* Help text */}
+      <div className="card p-4 text-sm text-neutral-500 bg-neutral-50">
+        <p>💡 <strong>ต้องการความช่วยเหลือ?</strong> กดปุ่ม <ChevronRight size={12} className="inline" /> ที่แต่ละขั้นตอนเพื่อดูวิธีทำแบบทีละขั้นตอน</p>
+        <p className="mt-1">📌 ถ้าทำเสร็จแล้วแต่ระบบยังขึ้นว่ายังไม่เสร็จ ลองกดปุ่ม <strong>ตรวจใหม่</strong> ด้านบน</p>
       </div>
     </div>
   );

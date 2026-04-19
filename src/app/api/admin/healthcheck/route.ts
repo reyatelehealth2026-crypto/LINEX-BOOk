@@ -154,6 +154,12 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  // ── Computed setup values (for copy-to-clipboard) ──
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID || "";
+  const webhookUrl = appUrl ? `${appUrl.replace(/\/+$/, "")}/api/line/webhook` : "";
+  const liffUrl = liffId ? `https://liff.line.me/${liffId}` : "";
+
   const okCount = checks.filter((c) => c.status === "ok").length;
   const allOk = checks.every((c) => c.status === "ok");
 
@@ -163,6 +169,12 @@ export async function GET(req: NextRequest) {
     total: checks.length,
     checks,
     timestamp: new Date().toISOString(),
+    setupValues: {
+      appUrl,
+      liffId,
+      webhookUrl,
+      liffUrl,
+    },
   });
 }
 
