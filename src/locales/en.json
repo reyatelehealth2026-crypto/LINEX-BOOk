@@ -1,0 +1,53 @@
+{
+  "common": {
+    "back": "Back",
+    "next": "Next",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "save": "Save",
+    "minutes": "min",
+    "baht": "THB"
+  },
+  "home": {
+    "title": "Book a service",
+    "subtitle": "Book in 3 easy steps",
+    "book_now": "Book now",
+    "my_bookings": "My bookings",
+    "profile": "Profile / Points"
+  },
+  "booking": {
+    "pick_service": "Pick a service",
+    "pick_staff": "Pick a staff",
+    "any_staff": "Any staff",
+    "pick_date": "Pick a date",
+    "pick_time": "Pick a time",
+    "no_slots": "No slots available",
+    "summary": "Booking summary",
+    "note_placeholder": "Optional note",
+    "success": "Booked!",
+    "success_subtitle": "We've sent the details to your LINE."
+  },
+  "profile": {
+    "title": "Profile",
+    "register_title": "Register to earn points",
+    "full_name": "Full name",
+    "phone": "Phone number",
+    "birthday": "Birthday (optional)",
+    "points": "Points",
+    "visit_count": "Visits",
+    "register_submit": "Register",
+    "not_registered": "You have not registered yet"
+  },
+  "my": {
+    "title": "My bookings",
+    "empty": "No bookings yet",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "no_show": "No-show"
+    }
+  }
+}
