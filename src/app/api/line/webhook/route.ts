@@ -47,6 +47,8 @@ const ADMIN_CHAT_SESSION_HOURS = Number(process.env.ADMIN_CHAT_SESSION_HOURS || 
 const ADMIN_SESSION_GRACE_MS = 5 * 60 * 1000;
 type AdminWizardStep = "shop_name" | "shop_phone" | "shop_address" | "service_name" | "service_price" | "service_duration" | "staff_name" | "hours_day" | "hours_time";
 
+const lineEventQueues = ((globalThis as any).__lineEventQueues ??= new Map<string, Promise<unknown>>()) as Map<string, Promise<unknown>>;
+
 const ADMIN_RECOVERY_ACTIONS: Record<string, string> = {
   adm_menu: "หน้าแรกแอดมิน",
   adm_setup: "เมนูตั้งค่าร้าน",
@@ -362,13 +364,35 @@ export async function POST(req: NextRequest) {
 
   for (const e of events) {
     try {
-      await handleEvent(e);
+      await enqueueLineEvent(e);
     } catch (err) {
       console.error("event err:", err);
     }
   }
 
   return NextResponse.json({ ok: true });
+}
+
+async function enqueueLineEvent(ev: any) {
+  const userId: string | undefined = ev.source?.userId;
+  if (!userId) {
+    return handleEvent(ev);
+  }
+
+  const previous = lineEventQueues.get(userId) ?? Promise.resolve();
+  const current = previous
+    .catch(() => {})
+    .then(() => handleEvent(ev));
+
+  lineEventQueues.set(userId, current);
+
+  try {
+    await current;
+  } finally {
+    if (lineEventQueues.get(userId) === current) {
+      lineEventQueues.delete(userId);
+    }
+  }
 }
 
 async function buildAdminSetupStatus() {
