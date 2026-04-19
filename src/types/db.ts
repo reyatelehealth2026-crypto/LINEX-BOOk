@@ -120,3 +120,44 @@ export type WaitlistEntryWithJoins = WaitlistEntry & {
   staff: Pick<Staff, "id" | "name" | "nickname"> | null;
   customer: Pick<Customer, "id" | "display_name" | "full_name" | "phone" | "line_user_id"> | null;
 };
+
+export type Review = {
+  id: number;
+  shop_id: number;
+  booking_id: number;
+  customer_id: number;
+  service_id: number;
+  staff_id: number | null;
+  rating: number; // 1-5
+  comment: string | null;
+  created_at: string;
+};
+
+export type ReviewWithJoins = Review & {
+  service: Pick<Service, "id" | "name" | "name_en"> | null;
+  staff: Pick<Staff, "id" | "name" | "nickname"> | null;
+  customer: Pick<Customer, "id" | "display_name" | "full_name" | "picture_url"> | null;
+};
+
+/** Minimal info for rebook pre-fill from a past completed booking. */
+export type RebookInfo = {
+  booking_id: number;
+  service: Pick<Service, "id" | "name" | "name_en" | "duration_min" | "price">;
+  staff: Pick<Staff, "id" | "name" | "nickname" | "avatar_url"> | null;
+  completed_at: string;
+};
+
+export type TemplateCategory = "reminder" | "promo" | "follow_up" | "custom";
+
+export type MessageTemplate = {
+  id: number;
+  shop_id: number;
+  name: string;
+  category: TemplateCategory;
+  subject: string | null;
+  body: string;
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};

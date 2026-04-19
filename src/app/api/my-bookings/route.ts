@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
   const { data } = await db
     .from("bookings")
-    .select("id, starts_at, ends_at, status, price, note, service:services(name,name_en), staff:staff(nickname,name)")
+    .select("id, starts_at, ends_at, status, price, note, service:services(id,name,name_en), staff:staff(id,nickname,name)")
     .eq("customer_id", customer.id)
     .order("starts_at", { ascending: false })
     .limit(50);

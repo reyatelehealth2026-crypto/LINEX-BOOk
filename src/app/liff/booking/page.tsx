@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useLiff } from "@/components/LiffProvider";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Service, Staff } from "@/types/db";
 import { baht } from "@/lib/utils";
 import { Check, ChevronLeft } from "lucide-react";
@@ -13,6 +13,11 @@ export default function BookingPage() {
   const { t, lang } = useI18n();
   const { profile } = useLiff();
   const router = useRouter();
+  const sp = useSearchParams();
+
+  const presetServiceId = Number(sp.get("service_id") || 0);
+  const presetStaffParam = sp.get("staff_id");
+  const presetStaffId = presetStaffParam ? Number(presetStaffParam) : 0;
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [services, setServices] = useState<Service[]>([]);
@@ -31,8 +36,21 @@ export default function BookingPage() {
     fetch("/api/catalog").then((r) => r.json()).then((d) => {
       setServices(d.services ?? []);
       setStaff(d.staff ?? []);
+
+      const presetService = (d.services ?? []).find((s: Service) => s.id === presetServiceId) ?? null;
+      const presetStaff = (d.staff ?? []).find((m: Staff) => m.id === presetStaffId);
+
+      if (presetService) {
+        setSelService(presetService);
+        setStep(3);
+      }
+      if (presetStaff) {
+        setSelStaff(presetStaff);
+      } else if (presetStaffParam === "0" || presetStaffParam === "null") {
+        setSelStaff(null);
+      }
     });
-  }, []);
+  }, [presetServiceId, presetStaffId, presetStaffParam]);
 
   const days = useMemo(() => {
     const arr: { ymd: string; label: string; dayLabel: string }[] = [];

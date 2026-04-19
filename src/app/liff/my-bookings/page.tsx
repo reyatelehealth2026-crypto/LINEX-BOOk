@@ -4,7 +4,7 @@ import { useLiff } from "@/components/LiffProvider";
 import { useI18n } from "@/lib/i18n";
 import { useRouter, useSearchParams } from "next/navigation";
 import { baht } from "@/lib/utils";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, RotateCcw, Star } from "lucide-react";
 
 type Booking = {
   id: number;
@@ -13,8 +13,8 @@ type Booking = {
   status: string;
   price: number;
   note: string | null;
-  service: { name: string; name_en: string | null } | null;
-  staff: { nickname: string | null; name: string } | null;
+  service: { id: number; name: string; name_en: string | null } | null;
+  staff: { id: number; nickname: string | null; name: string } | null;
 };
 
 export default function MyBookings() {
@@ -52,13 +52,26 @@ export default function MyBookings() {
   function reschedule(b: Booking) {
     const params = new URLSearchParams({
       id: String(b.id),
-      service_id: String(b.service ? (b.service as any).id : ""),
+      service_id: String(b.service?.id ?? ""),
       service_name: lang === "en" && b.service?.name_en ? b.service.name_en : (b.service?.name ?? ""),
-      staff_id: String((b.staff as any)?.id ?? ""),
+      staff_id: String(b.staff?.id ?? ""),
       staff_name: b.staff?.nickname ?? b.staff?.name ?? "",
       current_start: b.starts_at,
     });
     router.push(`/liff/reschedule?${params}`);
+  }
+
+  function rebook(b: Booking) {
+    if (!b.service) return;
+    const params = new URLSearchParams({
+      service_id: String(b.service.id),
+      ...(b.staff?.id ? { staff_id: String(b.staff.id) } : {}),
+    });
+    router.push(`/liff/booking?${params}`);
+  }
+
+  function review(b: Booking) {
+    router.push(`/liff/review?booking_id=${b.id}`);
   }
 
   return (
@@ -109,6 +122,22 @@ export default function MyBookings() {
                     </button>
                     <button onClick={() => cancel(b.id)} className="text-red-600 text-sm inline-flex items-center gap-1">
                       <XCircle size={14} /> {t("common.cancel")}
+                    </button>
+                  </div>
+                )}
+                {b.status === "completed" && (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => rebook(b)}
+                      className="text-brand-600 text-sm inline-flex items-center gap-1"
+                    >
+                      <RotateCcw size={14} /> {lang === "en" ? "Book again" : "จองอีกครั้ง"}
+                    </button>
+                    <button
+                      onClick={() => review(b)}
+                      className="text-amber-600 text-sm inline-flex items-center gap-1"
+                    >
+                      <Star size={14} /> {lang === "en" ? "Review" : "รีวิว"}
                     </button>
                   </div>
                 )}

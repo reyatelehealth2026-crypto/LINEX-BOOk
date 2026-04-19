@@ -102,7 +102,11 @@ create index if not exists customers_line_idx on customers(line_user_id);
 
 -- ---------------- bookings ----------------
 -- status: pending (created, awaiting confirm) | confirmed | completed | cancelled | no_show
-create type booking_status as enum ('pending','confirmed','completed','cancelled','no_show');
+do $$ begin
+  create type booking_status as enum ('pending','confirmed','completed','cancelled','no_show');
+exception
+  when duplicate_object then null;
+end $$;
 
 create table if not exists bookings (
   id           bigserial primary key,
@@ -196,7 +200,11 @@ create policy "public read working_hours" on working_hours for select using (tru
 -- ---------------- waitlist_entries ----------------
 -- Customers can join a waitlist when a slot is full.
 -- When a slot opens (cancel/reschedule), staff or a cron can notify/convert entries.
-create type waitlist_status as enum ('waiting','notified','fulfilled','expired','cancelled');
+do $$ begin
+  create type waitlist_status as enum ('waiting','notified','fulfilled','expired','cancelled');
+exception
+  when duplicate_object then null;
+end $$;
 
 create table if not exists waitlist_entries (
   id           bigserial primary key,
@@ -218,5 +226,76 @@ create index if not exists waitlist_customer_idx on waitlist_entries(customer_id
 drop trigger if exists waitlist_entries_touch on waitlist_entries;
 create trigger waitlist_entries_touch before update on waitlist_entries
   for each row execute function touch_updated_at();
+
+-- ---------------- message_templates ----------------
+-- Reusable message templates for the shop owner to send via LINE.
+-- category: reminder | promo | follow_up | custom
+-- placeholders: use {{var}} syntax for runtime substitution.
+do $$ begin
+  create type template_category as enum ('reminder','promo','follow_up','custom');
+exception
+  when duplicate_object then null;
+end $$;
+
+create table if not exists message_templates (
+  id          bigserial primary key,
+  shop_id     bigint not null references shops(id) on delete cascade default 1,
+  name        text not null,              -- short internal label
+  category    template_category not null default 'custom',
+  subject     text,                       -- optional subject / header line
+  body        text not null,              -- message body (supports {{customer_name}}, {{service_name}}, {{date}}, {{time}}, {{shop_name}})
+  active      boolean not null default true,
+  sort_order  int not null default 0,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists msg_tpl_shop_idx on message_templates(shop_id, active);
+
+-- auto-update updated_at
+DROP TRIGGER IF EXISTS message_templates_touch ON message_templates;
+CREATE TRIGGER message_templates_touch BEFORE UPDATE ON message_templates
+  FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+
+-- RLS
+ALTER TABLE message_templates ENABLE ROW LEVEL SECURITY;
+-- owner-only: managed through admin API (service role)
+
+-- ---------------- seed: example templates ----------------
+INSERT INTO message_templates (shop_id, name, category, subject, body, sort_order) VALUES
+  (1, 'เตือนนัด 1 ชั่วโมง', 'reminder', '⏰ แจ้งเตือนนัด', 'สวัสดีค่ะ {{customer_name}}
+เตือนว่าพรุ่งนี้ {{date}} เวลา {{time}} มีนัด{{service_name}} ที่ร้านนะคะ
+หากต้องการเลื่อนนัด พิมมาได้เลยค่ะ 🙏', 1),
+  (1, 'โปรโมชั่นเดือนนี้', 'promo', '🎉 โปรพิเศษ', 'สวัสดีค่ะ {{customer_name}}
+เดือนนี้มีโปรพิเศษสำหรับลูกค้าที่รัก!
+ทุกบริการลด 10% เมื่อจองล่วงหน้า
+จองเลยที่นี่นะคะ →', 2),
+  (1, 'ขอบคุณหลังใช้บริการ', 'follow_up', 'ขอบคุณที่ใช้บริการ 💛', 'ขอบคุณค่ะ {{customer_name}} ที่มาใช้บริการ{{service_name}} กับเรา
+หวังว่าจะถูกใจนะคะ ขอให้วันนี้เป็นวันที่ดี! ✨', 3)
+ON CONFLICT DO NOTHING;
+
+-- ---------------- reviews ----------------
+-- Customers can leave a rating + optional comment after a completed booking.
+-- One review per booking (enforced by unique constraint).
+create table if not exists reviews (
+  id           bigserial primary key,
+  shop_id      bigint not null references shops(id) on delete cascade default 1,
+  booking_id   bigint not null references bookings(id) on delete cascade,
+  customer_id  bigint not null references customers(id) on delete cascade,
+  service_id   bigint not null references services(id) on delete cascade,
+  staff_id     bigint references staff(id) on delete cascade, -- null if any staff
+  rating       smallint not null check (rating between 1 and 5),
+  comment      text,
+  created_at   timestamptz not null default now(),
+  unique (booking_id)
+);
+create index if not exists reviews_shop_idx on reviews(shop_id, created_at desc);
+create index if not exists reviews_customer_idx on reviews(customer_id, created_at desc);
+create index if not exists reviews_staff_idx on reviews(staff_id) where staff_id is not null;
+create index if not exists reviews_service_idx on reviews(service_id);
+
+alter table reviews enable row level security;
+-- Public can read reviews (for display)
+drop policy if exists "public read reviews" on reviews;
+create policy "public read reviews" on reviews for select using (true);
 
 -- customers & bookings: no anon access (service role only)
