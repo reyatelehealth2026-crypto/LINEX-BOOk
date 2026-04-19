@@ -44,6 +44,7 @@ export const dynamic = "force-dynamic";
 
 const TZ = process.env.SHOP_TIMEZONE || "Asia/Bangkok";
 const ADMIN_CHAT_SESSION_HOURS = Number(process.env.ADMIN_CHAT_SESSION_HOURS || 12);
+const ADMIN_SESSION_GRACE_MS = 5 * 60 * 1000;
 type AdminWizardStep = "shop_name" | "shop_phone" | "shop_address" | "service_name" | "service_price" | "service_duration" | "staff_name" | "hours_day" | "hours_time";
 
 const ADMIN_RECOVERY_ACTIONS: Record<string, string> = {
@@ -91,17 +92,24 @@ async function hasActiveAdminSession(lineUserId: string) {
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("line_admin_sessions")
-    .select("id")
+    .select("id, expires_at")
     .eq("shop_id", SHOP_ID)
     .eq("line_user_id", lineUserId)
-    .gt("expires_at", new Date().toISOString())
+    .order("expires_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) {
     console.error("hasActiveAdminSession error", { lineUserId, error: error.message });
     return false;
   }
-  return !!data;
+  if (!data?.expires_at) return false;
+  const expiresAtMs = new Date(data.expires_at).getTime();
+  const nowMs = Date.now();
+  const active = Number.isFinite(expiresAtMs) && expiresAtMs + ADMIN_SESSION_GRACE_MS > nowMs;
+  if (!active) {
+    console.warn("admin session expired or invalid", { lineUserId, expires_at: data.expires_at, now: new Date(nowMs).toISOString() });
+  }
+  return active;
 }
 
 async function isAdminAuthorized(lineUserId: string) {
