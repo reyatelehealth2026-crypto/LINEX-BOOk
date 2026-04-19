@@ -789,29 +789,66 @@ export function adminActionResultMessage(bookingId: number, action: string, cust
   }};
 }
 
-/** AI-powered welcome with NLP hint. */
+/** AI-powered welcome with NLP hint — full feature overview. */
 export function smartWelcomeMessage(name: string) {
-  return { type: "flex", altText: `สวัสดีค่ะ คุณ ${name}`, contents: { type: "bubble",
-    header: { type: "box", layout: "vertical", background: { type: "linearGradient", angle: "135deg", startColor: "#06c755", endColor: "#049040" }, paddingAll: "20px",
+  return { type: "flex", altText: `ยินดีต้อนรับ คุณ ${name} 💚`, contents: { type: "bubble", size: "kilo",
+    header: { type: "box", layout: "vertical", background: { type: "linearGradient", angle: "135deg", startColor: "#06c755", endColor: "#049040" }, paddingAll: "24px",
       contents: [
-        { type: "text", text: `สวัสดีค่ะ คุณ ${name} 🌿`, color: "#ffffff", weight: "bold", size: "lg" },
-        { type: "text", text: "พิมพ์บอกได้เลยว่าอยากจองอะไร", color: "#ffffffcc", size: "sm", margin: "sm" }
+        { type: "text", text: "💚 LineBook", color: "#ffffff", weight: "bold", size: "xl" },
+        { type: "text", text: `สวัสดีค่ะ คุณ ${name}`, color: "#ffffffdd", size: "md", margin: "sm" },
+        { type: "text", text: "ระบบจองคิวอัตโนมัติ ให้บริการ 24 ชม.", color: "#ffffffaa", size: "xs", margin: "xs" }
       ]
     },
-    body: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "16px",
+    body: { type: "box", layout: "vertical", spacing: "lg", paddingAll: "20px",
       contents: [
-        { type: "box", layout: "vertical", paddingAll: "12px", cornerRadius: "12px", backgroundColor: "#f0fdf4", spacing: "xs",
+        // Feature 1: AI booking
+        { type: "box", layout: "horizontal", spacing: "md", paddingAll: "14px", cornerRadius: "14px", backgroundColor: "#f0fdf4",
           contents: [
-            { type: "text", text: "💬 ลองพิมพ์แบบนี้ดู", weight: "bold", size: "sm", color: BRAND },
-            { type: "text", text: `"จองตัดผมพรุ่งนี้บ่ายสองกับพี่โอ๋"`, size: "sm", color: "#333" },
-            { type: "text", text: `"ทำเล็บวันศุกร์สามโมง"`, size: "sm", color: "#333" },
+            { type: "text", text: "🧠", size: "2xl", gravity: "center", flex: 0 },
+            { type: "box", layout: "vertical", flex: 1, spacing: "xs", contents: [
+              { type: "text", text: "พิมพ์จองได้เลย", weight: "bold", size: "md", color: "#166534" },
+              { type: "text", text: "ลองพิมพ์ว่า \"จองตัดผมพรุ่งนี้บ่ายสอง\"", size: "xs", color: "#4ade80", style: "italic", wrap: true }
+            ]}
           ]
         },
-        { type: "text", text: "หรือกดปุ่มด้านล่าง", size: "xs", color: "#999", align: "center", margin: "sm" },
-        { type: "button", style: "primary", color: BRAND, height: "md", action: { type: "postback", label: "📅 เลือกจองทีละขั้นตอน", data: "action=book" } },
+        // Feature grid
+        { type: "box", layout: "horizontal", spacing: "sm", contents: [
+          { type: "box", layout: "vertical", flex: 1, paddingAll: "12px", cornerRadius: "12px", backgroundColor: "#f8fafc", spacing: "xs",
+            contents: [
+              { type: "text", text: "📅", align: "center", size: "lg" },
+              { type: "text", text: "จองคิว", weight: "bold", size: "sm", align: "center", color: "#333" },
+              { type: "text", text: "เลือกบริการ\n+ เวลา", size: "xs", align: "center", color: "#999" }
+            ]
+          },
+          { type: "box", layout: "vertical", flex: 1, paddingAll: "12px", cornerRadius: "12px", backgroundColor: "#f8fafc", spacing: "xs",
+            contents: [
+              { type: "text", text: "📋", align: "center", size: "lg" },
+              { type: "text", text: "ดูคิว", weight: "bold", size: "sm", align: "center", color: "#333" },
+              { type: "text", text: "เช็คสถานะ\n+ ยกเลิก", size: "xs", align: "center", color: "#999" }
+            ]
+          },
+          { type: "box", layout: "vertical", flex: 1, paddingAll: "12px", cornerRadius: "12px", backgroundColor: "#f8fafc", spacing: "xs",
+            contents: [
+              { type: "text", text: "⭐", align: "center", size: "lg" },
+              { type: "text", text: "แต้มสะสม", weight: "bold", size: "sm", align: "center", color: "#333" },
+              { type: "text", text: "สะสมทุกครั้ง\nแลกส่วนลด", size: "xs", align: "center", color: "#999" }
+            ]
+          }
+        ]},
+        // Divider
+        { type: "separator" },
+        // Quick keyword hint
+        { type: "box", layout: "vertical", paddingAll: "12px", cornerRadius: "12px", backgroundColor: "#fffbeb", spacing: "xs",
+          contents: [
+            { type: "text", text: "💡 พิมพ์คำสั่งเร็ว", weight: "bold", size: "sm", color: "#92400e" },
+            { type: "text", text: "จอง / คิว / แต้ม / ยกเลิก / บริการ", size: "xs", color: "#b45309" }
+          ]
+        },
+        // CTA Buttons
+        { type: "button", style: "primary", color: BRAND, height: "lg", action: { type: "postback", label: "📅 จองคิวเลย", data: "action=book" } },
         { type: "box", layout: "horizontal", spacing: "sm", contents: [
           { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "📋 คิวของฉัน", data: "action=my_bookings" } },
-          { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "⭐ แต้มของฉัน", data: "action=profile" } }
+          { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "⭐ โปรไฟล์ / แต้ม", data: "action=profile" } }
         ]}
       ]
     }
