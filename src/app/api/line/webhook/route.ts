@@ -201,10 +201,17 @@ async function handleMessage(ev: any, customer: Customer) {
     }
   }
 
-  // ── AI Natural Language Booking ──
-  const { data: services } = await db.from("services").select("id, name, name_en").eq("shop_id", SHOP_ID).eq("active", true);
+  const { data: services } = await db.from("services").select("id, name, name_en, duration_min, price").eq("shop_id", SHOP_ID).eq("active", true);
   const { data: staff } = await db.from("staff").select("id, name, nickname").eq("shop_id", SHOP_ID).eq("active", true);
 
+  // ── Direct booking shortcut for simple commands ──
+  if (/^(จอง|จองคิว|book|booking)$/i.test(text.trim())) {
+    const svcList = (services ?? []).map((s: any) => ({ id: s.id, name: s.name, duration_min: s.duration_min, price: s.price }));
+    if (!svcList.length) return replyMessage(rt, [textMessage("ยังไม่มีบริการในระบบ")]);
+    return replyMessage(rt, [serviceCarouselMessage(svcList)]);
+  }
+
+  // ── AI Natural Language Booking ──
   const intent = parseBookingIntent(text, services ?? [], staff ?? []);
   if (intent && intent.confidence !== "low") {
     return handleAIBooking(rt, intent, customer, services ?? [], staff ?? []);
