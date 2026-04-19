@@ -395,6 +395,13 @@ async function buildAdminSetupStatus() {
   return { readyCount, totalCount, missing, summary };
 }
 
+function replyWizardNext(rt: string, nextStep: AdminWizardStep, payload: Record<string, any>, ackText?: string) {
+  const messages: any[] = [];
+  if (ackText) messages.push(textMessage(ackText));
+  messages.push(wizardPromptForStepWithState(nextStep, payload));
+  return replyMessage(rt, messages);
+}
+
 // ───────────────── event router ─────────────────
 
 async function handleEvent(ev: any) {
@@ -487,11 +494,11 @@ async function handlePostback(ev: any, customer: Customer) {
     if (!session?.wizard_step) return replyMessage(rt, [adminSetupMenuMessage()]);
     if (session.wizard_step === "shop_phone") {
       await setAdminWizardState(userId, "shop_address", session.wizard_payload ?? {});
-      return replyMessage(rt, [adminWizardProgressMessage({ title: "ข้ามเบอร์ร้านแล้ว", currentStep: 3, totalSteps: 6, description: "ไปต่อขั้นที่อยู่ร้าน", savedItems: wizardSavedItems(session.wizard_payload ?? {}), breadcrumb: wizardBreadcrumb("shop_address") }), wizardPromptForStepWithState("shop_address", session.wizard_payload ?? {})]);
+      return replyWizardNext(rt, "shop_address", session.wizard_payload ?? {}, "ข้ามเบอร์ร้านแล้ว");
     }
     if (session.wizard_step === "shop_address") {
       await setAdminWizardState(userId, "service_name", session.wizard_payload ?? {});
-      return replyMessage(rt, [adminWizardProgressMessage({ title: "ข้ามที่อยู่ร้านแล้ว", currentStep: 4, totalSteps: 6, description: "ไปต่อขั้นเพิ่มบริการแรก", savedItems: wizardSavedItems(session.wizard_payload ?? {}), breadcrumb: wizardBreadcrumb("service_name") }), wizardPromptForStepWithState("service_name", session.wizard_payload ?? {})]);
+      return replyWizardNext(rt, "service_name", session.wizard_payload ?? {}, "ข้ามที่อยู่ร้านแล้ว");
     }
     return replyMessage(rt, [textMessage("ขั้นตอนนี้ข้ามไม่ได้")]);
   }
@@ -504,7 +511,7 @@ async function handlePostback(ev: any, customer: Customer) {
     const label = decodeURIComponent(data.get("label") ?? "");
     const payload = { ...(session.wizard_payload ?? {}), hoursDayOfWeek: value, hoursDayLabel: label };
     await setAdminWizardState(userId, "hours_time", payload);
-    return replyMessage(rt, [adminWizardProgressMessage({ title: `เลือกวัน${label}แล้ว`, currentStep: 6, totalSteps: 6, description: "เหลือแค่ใส่เวลาเปิดปิดของวันนั้น", savedItems: wizardSavedItems(payload), breadcrumb: wizardBreadcrumb("hours_time") }), wizardPromptForStepWithState("hours_time", payload)]);
+    return replyWizardNext(rt, "hours_time", payload, `เลือกวัน${label}แล้ว`);
   }
 
   if (action === "adm_queue_today") {
@@ -892,27 +899,27 @@ async function handleAdminWizardInput(rt: string, lineUserId: string, text: stri
       await db.from("shops").update({ name: text }).eq("id", SHOP_ID);
       await setAdminWizardState(lineUserId, "shop_phone", { ...payload, shopName: text });
       const nextPayload = { ...payload, shopName: text };
-      return replyMessage(rt, [textMessage(`✅ ตั้งชื่อร้านเป็น "${text}" แล้ว`), adminWizardProgressMessage({ title: "ไปต่อขั้นเบอร์ร้าน", currentStep: 2, totalSteps: 6, description: "ชื่อร้านถูกบันทึกแล้ว", savedItems: wizardSavedItems(nextPayload), breadcrumb: wizardBreadcrumb("shop_phone") }), wizardPromptForStepWithState("shop_phone", nextPayload)]);
+      return replyWizardNext(rt, "shop_phone", nextPayload, `✅ ตั้งชื่อร้านเป็น "${text}" แล้ว`);
     }
 
     case "shop_phone": {
       await db.from("shops").update({ phone: text }).eq("id", SHOP_ID);
       await setAdminWizardState(lineUserId, "shop_address", { ...payload, shopPhone: text });
       const nextPayload = { ...payload, shopPhone: text };
-      return replyMessage(rt, [textMessage(`✅ บันทึกเบอร์ร้าน ${text} แล้ว`), adminWizardProgressMessage({ title: "ไปต่อขั้นที่อยู่ร้าน", currentStep: 3, totalSteps: 6, description: "เบอร์ร้านถูกบันทึกแล้ว", savedItems: wizardSavedItems(nextPayload), breadcrumb: wizardBreadcrumb("shop_address") }), wizardPromptForStepWithState("shop_address", nextPayload)]);
+      return replyWizardNext(rt, "shop_address", nextPayload, `✅ บันทึกเบอร์ร้าน ${text} แล้ว`);
     }
 
     case "shop_address": {
       await db.from("shops").update({ address: text }).eq("id", SHOP_ID);
       await setAdminWizardState(lineUserId, "service_name", { ...payload, shopAddress: text });
       const nextPayload = { ...payload, shopAddress: text };
-      return replyMessage(rt, [textMessage("✅ บันทึกที่อยู่ร้านแล้ว"), adminWizardProgressMessage({ title: "ไปต่อขั้นบริการแรก", currentStep: 4, totalSteps: 6, description: "ข้อมูลร้านพื้นฐานเริ่มครบแล้ว", savedItems: wizardSavedItems(nextPayload), breadcrumb: wizardBreadcrumb("service_name") }), wizardPromptForStepWithState("service_name", nextPayload)]);
+      return replyWizardNext(rt, "service_name", nextPayload, "✅ บันทึกที่อยู่ร้านแล้ว");
     }
 
     case "service_name": {
       await setAdminWizardState(lineUserId, "service_price", { ...payload, serviceName: text });
       const nextPayload = { ...payload, serviceName: text };
-      return replyMessage(rt, [adminWizardProgressMessage({ title: `รับชื่อบริการแล้ว`, currentStep: 4, totalSteps: 6, description: "เหลือราคาและระยะเวลา", savedItems: wizardSavedItems(nextPayload), breadcrumb: wizardBreadcrumb("service_price") }), wizardPromptForStepWithState("service_price", nextPayload)]);
+      return replyWizardNext(rt, "service_price", nextPayload, "รับชื่อบริการแล้ว");
     }
 
     case "service_price": {
@@ -920,7 +927,7 @@ async function handleAdminWizardInput(rt: string, lineUserId: string, text: stri
       if (!Number.isFinite(price) || price <= 0) return replyMessage(rt, [textMessage("กรุณาใส่ราคาด้วยตัวเลข เช่น 250")]);
       await setAdminWizardState(lineUserId, "service_duration", { ...payload, servicePrice: price });
       const nextPayload = { ...payload, servicePrice: price };
-      return replyMessage(rt, [adminWizardProgressMessage({ title: `รับราคาบริการแล้ว`, currentStep: 4, totalSteps: 6, description: "เหลือใส่ระยะเวลาเพื่อสร้างบริการนี้", savedItems: wizardSavedItems(nextPayload), breadcrumb: wizardBreadcrumb("service_duration") }), wizardPromptForStepWithState("service_duration", nextPayload)]);
+      return replyWizardNext(rt, "service_duration", nextPayload, "รับราคาบริการแล้ว");
     }
 
     case "service_duration": {
@@ -956,7 +963,7 @@ async function handleAdminWizardInput(rt: string, lineUserId: string, text: stri
 
       await setAdminWizardState(lineUserId, "staff_name", { ...payload, serviceDuration: duration });
       const nextPayload = { ...payload, serviceDuration: duration };
-      return replyMessage(rt, [textMessage(`✅ เพิ่มบริการ "${serviceName}" แล้ว`), adminWizardProgressMessage({ title: "ไปต่อขั้นช่างคนแรก", currentStep: 5, totalSteps: 6, description: "บริการแรกพร้อมแล้ว", savedItems: wizardSavedItems(nextPayload), breadcrumb: wizardBreadcrumb("staff_name") }), wizardPromptForStepWithState("staff_name", nextPayload)]);
+      return replyWizardNext(rt, "staff_name", nextPayload, `✅ เพิ่มบริการ "${serviceName}" แล้ว`);
     }
 
     case "staff_name": {
@@ -987,11 +994,11 @@ async function handleAdminWizardInput(rt: string, lineUserId: string, text: stri
 
       await setAdminWizardState(lineUserId, "hours_day", { ...payload, staffName: text });
       const nextPayload = { ...payload, staffName: text };
-      return replyMessage(rt, [textMessage(`✅ เพิ่มช่าง "${text}" แล้ว`), adminWizardProgressMessage({ title: "ไปต่อขั้นเลือกวันทำการ", currentStep: 6, totalSteps: 6, description: "เหลือกำหนดเวลาเปิดปิด", savedItems: wizardSavedItems(nextPayload), breadcrumb: wizardBreadcrumb("hours_day") }), wizardPromptForStepWithState("hours_day", nextPayload)]);
+      return replyWizardNext(rt, "hours_day", nextPayload, `✅ เพิ่มช่าง "${text}" แล้ว`);
     }
 
     case "hours_day": {
-      return replyMessage(rt, [adminWizardProgressMessage({ title: "เลือกวันก่อน", currentStep: 6, totalSteps: 6, description: "กดวันจากปุ่มด้านล่างได้เลย", savedItems: wizardSavedItems(payload), breadcrumb: wizardBreadcrumb("hours_day") }), wizardPromptForStepWithState("hours_day", payload)]);
+      return replyWizardNext(rt, "hours_day", payload, "เลือกวันก่อน");
     }
 
     case "hours_time": {
