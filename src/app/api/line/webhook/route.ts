@@ -921,10 +921,12 @@ async function handleAIBooking(
 
 async function handleAdminWizardInput(rt: string, lineUserId: string, text: string, session: LineAdminSession) {
   const db = supabaseAdmin();
-  const payload = (session.wizard_payload ?? {}) as Record<string, any>;
+  const latestSession = await getAdminSession(lineUserId);
+  const effectiveSession = latestSession?.wizard_step ? latestSession : session;
+  const payload = (effectiveSession.wizard_payload ?? {}) as Record<string, any>;
   const flow = String(payload.flow ?? "full_setup");
 
-  switch (session.wizard_step as AdminWizardStep) {
+  switch (effectiveSession.wizard_step as AdminWizardStep) {
     case "shop_name": {
       await db.from("shops").update({ name: text }).eq("id", SHOP_ID);
       await setAdminWizardState(lineUserId, "shop_phone", { ...payload, shopName: text });
