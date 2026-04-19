@@ -5,9 +5,28 @@ import { useLiff } from "@/components/LiffProvider";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Service, Staff } from "@/types/db";
 import { baht } from "@/lib/utils";
-import { Check, ChevronLeft } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  Sparkles,
+  Users,
+  User as UserIcon,
+  Sun,
+  Sunset,
+  Moon,
+  BellRing,
+  Clock,
+  CalendarDays
+} from "lucide-react";
 
-type Slot = { startIso: string; endIso: string; label: string };
+type Bucket = {
+  hour: number;
+  label: string;
+  periodLabel: string;
+  available: boolean;
+  startIso: string | null;
+  endIso: string | null;
+};
 
 export default function BookingPage() {
   const { t, lang } = useI18n();
@@ -25,9 +44,9 @@ export default function BookingPage() {
   const [selService, setSelService] = useState<Service | null>(null);
   const [selStaff, setSelStaff] = useState<Staff | null | undefined>(undefined);
   const [selDate, setSelDate] = useState<string>("");
-  const [slots, setSlots] = useState<Slot[]>([]);
+  const [buckets, setBuckets] = useState<Bucket[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [selSlot, setSelSlot] = useState<Slot | null>(null);
+  const [selSlot, setSelSlot] = useState<Bucket | null>(null);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -74,16 +93,17 @@ export default function BookingPage() {
     const params = new URLSearchParams({
       date,
       service_id: String(selService.id),
+      mode: "hourly",
       ...(selStaff?.id ? { staff_id: String(selStaff.id) } : {})
     });
     const r = await fetch(`/api/bookings/slots?${params}`);
     const d = await r.json();
-    setSlots(d.slots ?? []);
+    setBuckets(d.buckets ?? []);
     setLoadingSlots(false);
   }
 
   async function submit() {
-    if (!profile || !selService || !selSlot) return;
+    if (!profile || !selService || !selSlot || !selSlot.startIso) return;
     setSubmitting(true);
     setErr(null);
     const r = await fetch("/api/bookings", {
@@ -134,118 +154,206 @@ export default function BookingPage() {
     router.replace(`/liff/my-bookings?waitlisted=1`);
   }
 
+  // Group buckets by period (morning/afternoon/evening) for a cleaner day-focused view
+  const grouped = useMemo(() => {
+    const groups: { key: string; label: string; icon: any; items: Bucket[] }[] = [
+      { key: "morning", label: "เช้า", icon: Sun, items: [] },
+      { key: "afternoon", label: "บ่าย", icon: Sunset, items: [] },
+      { key: "evening", label: "เย็น", icon: Moon, items: [] }
+    ];
+    for (const b of buckets) {
+      if (b.hour < 12) groups[0].items.push(b);
+      else if (b.hour < 17) groups[1].items.push(b);
+      else groups[2].items.push(b);
+    }
+    return groups.filter((g) => g.items.length > 0);
+  }, [buckets]);
+
+  const hasAnyAvailable = buckets.some((b) => b.available);
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        {step > 1 && (
-          <button className="btn-ghost !px-2" onClick={() => setStep((s) => (s - 1) as any)}>
-            <ChevronLeft size={18} /> {t("common.back")}
+    <div className="space-y-5 animate-fade-up">
+      {/* Top bar: back + step progress */}
+      <div className="flex items-center gap-3">
+        {step > 1 ? (
+          <button
+            className="shrink-0 w-10 h-10 rounded-2xl bg-white border border-ink-200 flex items-center justify-center text-ink-700 hover:border-ink-300 transition"
+            onClick={() => setStep((s) => (s - 1) as any)}
+            aria-label={t("common.back")}
+          >
+            <ChevronLeft size={18} />
           </button>
+        ) : (
+          <div className="w-10 h-10" />
         )}
         <Stepper step={step} />
       </div>
 
+      {/* Step 1: Service */}
       {step === 1 && (
-        <Section title={t("booking.pick_service")}>
-          <div className="grid gap-2">
-            {services.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => { setSelService(s); setStep(2); }}
-                className={`card p-4 text-left flex items-center justify-between ${selService?.id === s.id ? "ring-2 ring-brand-500" : ""}`}
-              >
-                <div>
-                  <div className="font-semibold">{lang === "en" && s.name_en ? s.name_en : s.name}</div>
-                  <div className="text-xs text-neutral-500">{s.duration_min} {t("common.minutes")}</div>
-                </div>
-                <div className="font-semibold text-brand-600">{baht(s.price)}</div>
-              </button>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {step === 2 && (
-        <Section title={t("booking.pick_staff")}>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => { setSelStaff(null); setStep(3); }}
-              className={`card p-4 text-left ${selStaff === null ? "ring-2 ring-brand-500" : ""}`}
-            >
-              <div className="font-semibold">👥 {t("booking.any_staff")}</div>
-              <div className="text-xs text-neutral-500">ระบบจะจัดให้</div>
-            </button>
-            {staff.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => { setSelStaff(m); setStep(3); }}
-                className={`card p-4 text-left ${selStaff?.id === m.id ? "ring-2 ring-brand-500" : ""}`}
-              >
-                <div className="font-semibold">{m.nickname ? `${m.nickname}` : m.name}</div>
-                <div className="text-xs text-neutral-500">{m.name}</div>
-              </button>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {step === 3 && (
-        <Section title={t("booking.pick_date")}>
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-            {days.map((d) => (
-              <button
-                key={d.ymd}
-                onClick={() => { setSelDate(d.ymd); loadSlots(d.ymd); }}
-                className={`flex-shrink-0 w-16 h-20 rounded-2xl border flex flex-col items-center justify-center ${selDate === d.ymd ? "bg-brand-500 text-white border-brand-500" : "bg-white border-neutral-200"}`}
-              >
-                <div className="text-xs">{d.dayLabel}</div>
-                <div className="text-2xl font-bold">{d.label}</div>
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-4">
-            <div className="text-sm font-semibold mb-2">{t("booking.pick_time")}</div>
-            {loadingSlots ? (
-              <div className="text-center text-neutral-500 py-8">{t("common.loading")}</div>
-            ) : !selDate ? (
-              <div className="text-center text-neutral-400 py-8 text-sm">เลือกวันที่ก่อน</div>
-            ) : slots.length === 0 ? (
-              <div className="text-center text-neutral-500 py-8 space-y-3">
-                <div>{t("booking.no_slots")}</div>
+        <Section eyebrow="01 · เลือกบริการ" title={t("booking.pick_service")} subtitle="แตะบริการที่ต้องการ">
+          <div className="grid gap-2.5">
+            {services.map((s) => {
+              const selected = selService?.id === s.id;
+              return (
                 <button
-                  onClick={() => joinWaitlist()}
-                  className="btn-primary text-sm"
+                  key={s.id}
+                  onClick={() => { setSelService(s); setStep(2); }}
+                  className={`card p-4 text-left flex items-center justify-between transition-all ${selected ? "!border-brand-500 ring-4 ring-brand-500/15 shadow-glow" : "hover:border-ink-300"}`}
                 >
-                  🔔 {lang === "en" ? "Join Waitlist" : "แจ้งเตือนเมื่อมีคิวว่าง"}
+                  <div className="flex items-center gap-3">
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${selected ? "bg-brand-500 text-white" : "bg-brand-50 text-brand-600"}`}>
+                      <Sparkles size={18} />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-ink-900">{lang === "en" && s.name_en ? s.name_en : s.name}</div>
+                      <div className="text-xs text-ink-500 flex items-center gap-1.5 mt-0.5">
+                        <Clock size={12} /> {s.duration_min} {t("common.minutes")}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-ink-900">{baht(s.price)}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Section>
+      )}
+
+      {/* Step 2: Staff */}
+      {step === 2 && (
+        <Section eyebrow="02 · เลือกช่าง" title={t("booking.pick_staff")} subtitle="ถ้าไม่ระบุ ระบบจะจัดให้">
+          <div className="grid grid-cols-2 gap-2.5">
+            <StaffCard
+              selected={selStaff === null}
+              onClick={() => { setSelStaff(null); setStep(3); }}
+              icon={<Users size={20} className="text-brand-600" />}
+              title={t("booking.any_staff")}
+              subtitle="ระบบจะจัดให้"
+            />
+            {staff.map((m) => (
+              <StaffCard
+                key={m.id}
+                selected={selStaff?.id === m.id}
+                onClick={() => { setSelStaff(m); setStep(3); }}
+                avatar={m.avatar_url}
+                icon={<UserIcon size={20} className="text-brand-600" />}
+                title={m.nickname ?? m.name}
+                subtitle={m.nickname ? m.name : undefined}
+              />
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Step 3: Date + hour-bucket time */}
+      {step === 3 && (
+        <Section eyebrow="03 · เลือกวันและช่วงเวลา" title="วันไหนสะดวก?" subtitle="เลือกวัน แล้วเลือกช่วงเวลากลม ๆ">
+          {/* Day strip */}
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+            {days.map((d) => {
+              const selected = selDate === d.ymd;
+              return (
+                <button
+                  key={d.ymd}
+                  onClick={() => { setSelDate(d.ymd); loadSlots(d.ymd); }}
+                  className={`flex-shrink-0 w-16 h-20 rounded-3xl flex flex-col items-center justify-center transition-all active:scale-95 ${selected ? "bg-ink-900 text-white shadow-lift" : "bg-white border border-ink-200 text-ink-700"}`}
+                >
+                  <div className={`text-[11px] font-semibold uppercase tracking-wider ${selected ? "text-brand-300" : "text-ink-400"}`}>{d.dayLabel}</div>
+                  <div className="text-2xl font-extrabold leading-none mt-1">{d.label}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Time buckets by period */}
+          <div className="mt-5">
+            {!selDate ? (
+              <EmptyState icon={<CalendarDays size={24} />} text="เลือกวันที่ด้านบนก่อน" />
+            ) : loadingSlots ? (
+              <div className="grid grid-cols-3 gap-2">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="skeleton h-14" />
+                ))}
+              </div>
+            ) : !hasAnyAvailable ? (
+              <div className="card p-6 text-center space-y-3">
+                <div className="mx-auto w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                  <BellRing size={22} />
+                </div>
+                <div>
+                  <div className="font-semibold text-ink-900">{t("booking.no_slots")}</div>
+                  <div className="text-xs text-ink-500 mt-1">ลองเลือกวันอื่น หรือขอแจ้งเตือนเมื่อมีคิวว่าง</div>
+                </div>
+                <button onClick={() => joinWaitlist()} className="btn-secondary text-sm">
+                  <BellRing size={14} /> {lang === "en" ? "Join Waitlist" : "แจ้งเตือนเมื่อมีคิวว่าง"}
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-2">
-                {slots.map((s) => (
-                  <button
-                    key={s.startIso}
-                    onClick={() => { setSelSlot(s); setStep(4); }}
-                    className={`py-2 rounded-xl text-sm border ${selSlot?.startIso === s.startIso ? "bg-brand-500 text-white border-brand-500" : "bg-white border-neutral-200 hover:border-brand-500"}`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
+              <div className="space-y-4">
+                {grouped.map((g) => {
+                  const Icon = g.icon;
+                  return (
+                    <div key={g.key}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon size={14} className="text-ink-400" />
+                        <div className="section-title !text-ink-500">{g.label}</div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {g.items.map((b) => {
+                          const selected = selSlot?.hour === b.hour;
+                          return (
+                            <button
+                              key={b.hour}
+                              disabled={!b.available}
+                              onClick={() => { setSelSlot(b); setStep(4); }}
+                              className={`relative py-3.5 rounded-2xl text-[15px] font-semibold transition-all active:scale-95 ${
+                                !b.available
+                                  ? "bg-ink-100 text-ink-300 line-through cursor-not-allowed"
+                                  : selected
+                                    ? "bg-brand-500 text-white shadow-glow"
+                                    : "bg-white border border-ink-200 text-ink-800 hover:border-brand-500 hover:text-brand-600"
+                              }`}
+                            >
+                              {b.label}
+                              {!b.available && (
+                                <span className="absolute -top-1.5 -right-1.5 bg-ink-900 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">เต็ม</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
         </Section>
       )}
 
+      {/* Step 4: Summary */}
       {step === 4 && selService && selSlot && (
-        <Section title={t("booking.summary")}>
-          <div className="card p-4 space-y-2">
-            <Row k="บริการ" v={lang === "en" && selService.name_en ? selService.name_en : selService.name} />
-            <Row k="ระยะเวลา" v={`${selService.duration_min} ${t("common.minutes")}`} />
-            <Row k="ราคา" v={baht(selService.price)} />
-            <Row k="ช่าง" v={selStaff ? (selStaff.nickname ?? selStaff.name) : t("booking.any_staff")} />
-            <Row k="วันเวลา" v={`${selDate} ${selSlot.label}`} />
+        <Section eyebrow="04 · ยืนยัน" title={t("booking.summary")} subtitle="ตรวจสอบแล้วกดยืนยัน">
+          <div className="card-dark p-5 relative overflow-hidden">
+            <div className="absolute inset-0 bg-brand-mesh opacity-60 pointer-events-none" />
+            <div className="relative">
+              <div className="eyebrow !text-brand-400">นัดหมาย</div>
+              <div className="text-2xl font-extrabold mt-1">
+                {new Date(selDate).toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "long" })}
+              </div>
+              <div className="text-3xl font-black text-brand-400 mt-1">{selSlot.label}</div>
+              <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 gap-3 text-sm">
+                <SummaryCell k="บริการ" v={lang === "en" && selService.name_en ? selService.name_en : selService.name} />
+                <SummaryCell k="ระยะเวลา" v={`${selService.duration_min} นาที`} />
+                <SummaryCell k="ช่าง" v={selStaff ? (selStaff.nickname ?? selStaff.name) : t("booking.any_staff")} />
+                <SummaryCell k="ราคา" v={baht(selService.price)} />
+              </div>
+            </div>
           </div>
+
           <textarea
             className="input mt-3"
             placeholder={t("booking.note_placeholder")}
@@ -253,9 +361,9 @@ export default function BookingPage() {
             onChange={(e) => setNote(e.target.value)}
             rows={2}
           />
-          {err && <div className="text-red-600 text-sm mt-2">{err}</div>}
-          <button disabled={submitting} onClick={submit} className="btn-primary w-full mt-4">
-            <Check size={18} /> {submitting ? t("common.loading") : t("common.confirm")}
+          {err && <div className="text-accent-rose text-sm mt-2 text-center">{err}</div>}
+          <button disabled={submitting} onClick={submit} className="btn-primary w-full mt-4 text-base py-4">
+            <Check size={20} /> {submitting ? t("common.loading") : t("common.confirm")}
           </button>
         </Section>
       )}
@@ -263,29 +371,90 @@ export default function BookingPage() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  eyebrow,
+  title,
+  subtitle,
+  children
+}: {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div>
-      <h2 className="text-lg font-bold mb-3">{title}</h2>
+    <div className="animate-fade-up">
+      {eyebrow && <div className="eyebrow mb-1">{eyebrow}</div>}
+      <h2 className="h-display text-2xl mb-0.5">{title}</h2>
+      {subtitle && <p className="text-sm text-ink-500 mb-4">{subtitle}</p>}
+      {!subtitle && <div className="mb-4" />}
       {children}
     </div>
   );
 }
 
-function Row({ k, v }: { k: string; v: string }) {
+function StaffCard({
+  selected,
+  onClick,
+  title,
+  subtitle,
+  avatar,
+  icon
+}: {
+  selected: boolean;
+  onClick: () => void;
+  title: string;
+  subtitle?: string;
+  avatar?: string | null;
+  icon: React.ReactNode;
+}) {
   return (
-    <div className="flex justify-between text-sm">
-      <span className="text-neutral-500">{k}</span>
-      <span className="font-medium">{v}</span>
+    <button
+      onClick={onClick}
+      className={`card p-4 text-left transition-all ${selected ? "!border-brand-500 ring-4 ring-brand-500/15 shadow-glow" : "hover:border-ink-300"}`}
+    >
+      <div className="w-12 h-12 rounded-2xl bg-brand-50 flex items-center justify-center overflow-hidden">
+        {avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatar} alt="" className="w-full h-full object-cover" />
+        ) : (
+          icon
+        )}
+      </div>
+      <div className="mt-3 font-semibold text-ink-900">{title}</div>
+      {subtitle && <div className="text-xs text-ink-500 mt-0.5">{subtitle}</div>}
+    </button>
+  );
+}
+
+function SummaryCell({ k, v }: { k: string; v: string }) {
+  return (
+    <div>
+      <div className="text-[11px] uppercase tracking-wider text-white/50 font-semibold">{k}</div>
+      <div className="font-semibold text-white mt-0.5">{v}</div>
+    </div>
+  );
+}
+
+function EmptyState({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <div className="card p-8 text-center flex flex-col items-center gap-3">
+      <div className="w-12 h-12 rounded-2xl bg-ink-100 text-ink-400 flex items-center justify-center">{icon}</div>
+      <div className="text-sm text-ink-500">{text}</div>
     </div>
   );
 }
 
 function Stepper({ step }: { step: number }) {
   return (
-    <div className="flex gap-1 flex-1">
+    <div className="flex gap-1.5 flex-1">
       {[1, 2, 3, 4].map((n) => (
-        <div key={n} className={`h-1 flex-1 rounded-full ${n <= step ? "bg-brand-500" : "bg-neutral-200"}`} />
+        <div
+          key={n}
+          className={`h-1.5 flex-1 rounded-full transition-all ${
+            n < step ? "bg-brand-500" : n === step ? "bg-brand-500 animate-pulse-soft" : "bg-ink-200"
+          }`}
+        />
       ))}
     </div>
   );

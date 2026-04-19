@@ -2,19 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
 import { pushMessage } from "@/lib/line";
 import { textMessage } from "@/lib/flex";
+import { verifyAdmin } from "@/lib/admin-auth";
 import type { BookingStatus } from "@/types/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function checkAuth(req: NextRequest) {
-  const pw = req.headers.get("x-admin-password");
-  return pw && pw === process.env.ADMIN_PASSWORD;
-}
-
 // PATCH — change status / confirm / complete / cancel / no_show
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id: idStr } = await ctx.params;
   const id = Number(idStr);
   const { status } = (await req.json()) as { status: BookingStatus };

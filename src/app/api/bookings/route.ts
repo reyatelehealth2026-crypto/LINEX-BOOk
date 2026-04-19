@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
 import { pushMessage, getProfile } from "@/lib/line";
 import { bookingConfirmedMessage } from "@/lib/flex";
+import { verifyAdmin } from "@/lib/admin-auth";
 import type { BookingWithJoins } from "@/types/db";
 
 export const runtime = "nodejs";
@@ -86,12 +87,13 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  // List bookings — admin use (requires admin password)
-  const sp = req.nextUrl.searchParams;
-  const pw = req.headers.get("x-admin-password") ?? sp.get("pw");
-  if (pw !== process.env.ADMIN_PASSWORD) {
+  // List bookings — admin use. Accepts either x-admin-password (desktop)
+  // or x-line-id-token (LIFF admin area).
+  const identity = await verifyAdmin(req);
+  if (!identity) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const sp = req.nextUrl.searchParams;
   const date = sp.get("date"); // YYYY-MM-DD local shop
   const db = supabaseAdmin();
   let q = db

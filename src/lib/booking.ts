@@ -136,3 +136,83 @@ function isTimeOff(
     return new Date(r.starts_at) < b && new Date(r.ends_at) > a;
   });
 }
+
+/**
+ * Bucket slots to coarse per-hour availability (e.g. 10:00, 11:00, 12:00 ...).
+ * For each hour in the shop's working window, if *any* 15-min slot within that
+ * hour is available for the given service+staff, the hour is marked available
+ * and the first available startIso is returned for booking.
+ *
+ * This matches the product direction: customers don't pick a 15-min slot,
+ * they pick an hour bucket ("10 โมงว่าง / 11 โมงไม่ว่าง").
+ */
+export type HourBucket = {
+  hour: number;          // 0-23
+  label: string;         // "10:00"
+  periodLabel: string;   // "เช้า" | "บ่าย" | "เย็น"
+  available: boolean;
+  startIso: string | null;
+  endIso: string | null;
+};
+
+export async function hourlyAvailability(args: {
+  dateYmd: string;
+  serviceId: number;
+  staffId?: number | null;
+}): Promise<HourBucket[]> {
+  const slots = await availableSlots(args);
+
+  // Compute working-hour window from the slots themselves (if empty, fall back to 9–20).
+  // We also look at the shop's working_hours so we show hours that exist in the schedule
+  // but are fully booked (available=false).
+  const db = supabaseAdmin();
+  const [y, m, d] = args.dateYmd.split("-").map(Number);
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  const { data: hours } = await db
+    .from("working_hours")
+    .select("staff_id, open_time, close_time")
+    .eq("shop_id", SHOP_ID)
+    .eq("day_of_week", dow);
+
+  // Candidate staff filter
+  let allowedStaff: Set<number | null> | null = null;
+  if (args.staffId) {
+    allowedStaff = new Set([args.staffId]);
+  }
+
+  let earliest = 24;
+  let latest = 0;
+  for (const h of hours ?? []) {
+    if (allowedStaff && h.staff_id !== null && !allowedStaff.has(h.staff_id)) continue;
+    const [oh] = h.open_time.split(":").map(Number);
+    const [ch, cm] = h.close_time.split(":").map(Number);
+    earliest = Math.min(earliest, oh);
+    const close = cm > 0 ? ch + 1 : ch;
+    latest = Math.max(latest, close);
+  }
+  if (earliest === 24) { earliest = 9; latest = 20; }
+
+  // Index available slots by hour (local shop TZ)
+  const byHour = new Map<number, { startIso: string; endIso: string }[]>();
+  for (const s of slots) {
+    const zoned = toZonedTime(new Date(s.startIso), TZ);
+    const h = zoned.getHours();
+    if (!byHour.has(h)) byHour.set(h, []);
+    byHour.get(h)!.push({ startIso: s.startIso, endIso: s.endIso });
+  }
+
+  const result: HourBucket[] = [];
+  for (let h = earliest; h < latest; h++) {
+    const list = byHour.get(h) ?? [];
+    const first = list[0];
+    result.push({
+      hour: h,
+      label: `${String(h).padStart(2, "0")}:00`,
+      periodLabel: h < 12 ? "เช้า" : h < 17 ? "บ่าย" : "เย็น",
+      available: list.length > 0,
+      startIso: first?.startIso ?? null,
+      endIso: first?.endIso ?? null
+    });
+  }
+  return result;
+}

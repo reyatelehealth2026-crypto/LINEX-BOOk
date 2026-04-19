@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,11 +13,9 @@ type CheckResult = {
 };
 
 export async function GET(req: NextRequest) {
-  const pw = req.headers.get("x-admin-password");
   const adminPw = process.env.ADMIN_PASSWORD;
-  if (!adminPw || pw !== adminPw) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const checks: CheckResult[] = [];
 

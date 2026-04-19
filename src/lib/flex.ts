@@ -997,16 +997,23 @@ export function adminAuthSuccessMessage() {
         spacing: "md",
         contents: [
           infoPanel("ตอนนี้คุณทำอะไรได้", [
-            "ดูคิวและยอดประจำวัน",
-            "เพิ่มบริการและเพิ่มช่างจากแชท",
-            "ตั้งชื่อร้าน, เบอร์ร้าน, ที่อยู่ร้าน, เวลาทำการ"
+            "เปิดแอดมินในแอป LINE (แนะนำ)",
+            "ดูคิว เพิ่มบริการ เพิ่มช่างจากแชท",
+            "ตั้งชื่อร้าน, เบอร์, ที่อยู่, เวลาทำการ"
           ]),
+          {
+            type: "button",
+            style: "primary",
+            color: BRAND,
+            height: "md",
+            action: { type: "uri", label: "🛠 เปิดแอดมินในแอป LINE", uri: LIFF_URL("/liff/admin") }
+          },
           {
             type: "box",
             layout: "horizontal",
             spacing: "sm",
             contents: [
-              { type: "button", style: "primary", color: BRAND, flex: 1, action: { type: "postback", label: "เมนูแอดมิน", data: "action=adm_menu" } },
+              { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "เมนูแอดมิน", data: "action=adm_menu" } },
               { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "คิววันนี้", data: "action=adm_queue_today" } }
             ]
           }
@@ -1052,8 +1059,8 @@ export function adminMenuMessage() {
           ] },
           infoPanel("โหมด 3 · จัดการระบบ", ["ใช้ตอนอยากเปิดเว็บหลังบ้านหรือออกจากโหมดแอดมิน"]),
           { type: "box", layout: "horizontal", spacing: "sm", contents: [
-            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "uri", label: "🌐 เปิดเว็บหลังบ้าน", uri: APP_URL("/admin") } },
-            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "🚪 ออกจากโหมดแอดมิน", data: "action=adm_logout" } }
+            { type: "button", style: "primary", color: BRAND, flex: 1, height: "md", action: { type: "uri", label: "🛠 เปิดแอดมินใน LINE", uri: LIFF_URL("/liff/admin") } },
+            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "🚪 ออก", data: "action=adm_logout" } }
           ] }
         ]
       }
@@ -1092,7 +1099,7 @@ export function adminSetupMenuMessage() {
           { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "💇 เพิ่มช่าง", data: "action=adm_help_staff" } },
           { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🕒 ตั้งเวลาเปิดปิดร้าน", data: "action=adm_help_hours" } },
           { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🧑‍🔧 ตั้งเวลารายช่าง", data: "action=adm_help_staff_hours" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "uri", label: "🌐 เปิดหน้า Setup บนเว็บ", uri: APP_URL("/admin/setup") } }
+          { type: "button", style: "primary", color: BRAND, height: "md", action: { type: "uri", label: "🛠 เปิดหน้าตั้งค่าใน LINE", uri: LIFF_URL("/liff/admin/setup") } }
         ]
       }
     }
