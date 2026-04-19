@@ -89,7 +89,7 @@ function escapeIlike(value: string) {
 
 async function hasActiveAdminSession(lineUserId: string) {
   const db = supabaseAdmin();
-  const { data } = await db
+  const { data, error } = await db
     .from("line_admin_sessions")
     .select("id")
     .eq("shop_id", SHOP_ID)
@@ -97,6 +97,10 @@ async function hasActiveAdminSession(lineUserId: string) {
     .gt("expires_at", new Date().toISOString())
     .limit(1)
     .maybeSingle();
+  if (error) {
+    console.error("hasActiveAdminSession error", { lineUserId, error: error.message });
+    return false;
+  }
   return !!data;
 }
 
@@ -108,17 +112,24 @@ async function grantAdminSession(lineUserId: string) {
   const db = supabaseAdmin();
   const now = new Date();
   const expiresAt = new Date(now.getTime() + ADMIN_CHAT_SESSION_HOURS * 60 * 60 * 1000);
-  await db.from("line_admin_sessions").upsert({
+  const { error } = await db.from("line_admin_sessions").upsert({
     shop_id: SHOP_ID,
     line_user_id: lineUserId,
     authed_at: now.toISOString(),
     expires_at: expiresAt.toISOString(),
   }, { onConflict: "shop_id,line_user_id" });
+  if (error) {
+    console.error("grantAdminSession error", { lineUserId, error: error.message });
+    throw new Error(`grantAdminSession failed: ${error.message}`);
+  }
 }
 
 async function revokeAdminSession(lineUserId: string) {
   const db = supabaseAdmin();
-  await db.from("line_admin_sessions").delete().eq("shop_id", SHOP_ID).eq("line_user_id", lineUserId);
+  const { error } = await db.from("line_admin_sessions").delete().eq("shop_id", SHOP_ID).eq("line_user_id", lineUserId);
+  if (error) {
+    console.error("revokeAdminSession error", { lineUserId, error: error.message });
+  }
 }
 
 async function touchAdminSession(lineUserId: string) {
@@ -129,12 +140,18 @@ async function touchAdminSession(lineUserId: string) {
 
 async function getAdminSession(lineUserId: string): Promise<LineAdminSession | null> {
   const db = supabaseAdmin();
-  const { data } = await db
+  const { data, error } = await db
     .from("line_admin_sessions")
     .select("*")
     .eq("shop_id", SHOP_ID)
     .eq("line_user_id", lineUserId)
+    .order("expires_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
+  if (error) {
+    console.error("getAdminSession error", { lineUserId, error: error.message });
+    return null;
+  }
   return (data as LineAdminSession | null) ?? null;
 }
 
@@ -142,7 +159,7 @@ async function setAdminWizardState(lineUserId: string, wizardStep: AdminWizardSt
   const db = supabaseAdmin();
   const now = new Date();
   const expiresAt = new Date(now.getTime() + ADMIN_CHAT_SESSION_HOURS * 60 * 60 * 1000);
-  await db.from("line_admin_sessions").upsert({
+  const { error } = await db.from("line_admin_sessions").upsert({
     shop_id: SHOP_ID,
     line_user_id: lineUserId,
     authed_at: now.toISOString(),
@@ -150,11 +167,19 @@ async function setAdminWizardState(lineUserId: string, wizardStep: AdminWizardSt
     wizard_step: wizardStep,
     wizard_payload: wizardPayload,
   }, { onConflict: "shop_id,line_user_id" });
+  if (error) {
+    console.error("setAdminWizardState error", { lineUserId, wizardStep, error: error.message });
+    throw new Error(`setAdminWizardState failed: ${error.message}`);
+  }
 }
 
 async function clearAdminWizardState(lineUserId: string) {
   const db = supabaseAdmin();
-  await db.from("line_admin_sessions").update({ wizard_step: null, wizard_payload: {} }).eq("shop_id", SHOP_ID).eq("line_user_id", lineUserId);
+  const { error } = await db.from("line_admin_sessions").update({ wizard_step: null, wizard_payload: {} }).eq("shop_id", SHOP_ID).eq("line_user_id", lineUserId);
+  if (error) {
+    console.error("clearAdminWizardState error", { lineUserId, error: error.message });
+    throw new Error(`clearAdminWizardState failed: ${error.message}`);
+  }
 }
 
 async function rememberPendingAdminAction(lineUserId: string, action: string, label?: string) {
@@ -167,7 +192,7 @@ async function rememberPendingAdminAction(lineUserId: string, action: string, la
   };
   const expiresAt = session?.expires_at ?? new Date().toISOString();
   const authedAt = session?.authed_at ?? new Date().toISOString();
-  await db.from("line_admin_sessions").upsert({
+  const { error } = await db.from("line_admin_sessions").upsert({
     shop_id: SHOP_ID,
     line_user_id: lineUserId,
     authed_at: authedAt,
@@ -175,6 +200,9 @@ async function rememberPendingAdminAction(lineUserId: string, action: string, la
     wizard_step: session?.wizard_step ?? null,
     wizard_payload: wizardPayload,
   }, { onConflict: "shop_id,line_user_id" });
+  if (error) {
+    console.error("rememberPendingAdminAction error", { lineUserId, action, error: error.message });
+  }
 }
 
 function wizardBreadcrumb(step: AdminWizardStep) {
@@ -684,7 +712,15 @@ async function handleMessage(ev: any, customer: Customer) {
     const expected = process.env.ADMIN_PASSWORD ?? "";
     if (!expected) return replyMessage(rt, [textMessage("ยังไม่ได้ตั้ง ADMIN_PASSWORD ในระบบ")]);
     if (suppliedPassword === expected) {
-      await grantAdminSession(userId);
+      try {
+        await grantAdminSession(userId);
+      } catch (error: any) {
+        return replyMessage(rt, [textMessage(`รหัสผ่านถูกต้อง แต่ระบบบันทึก session แอดมินไม่สำเร็จ: ${error?.message ?? "unknown error"}\nเช็ก schema ล่าสุดของ Supabase โดยเฉพาะตาราง line_admin_sessions ก่อน`)]);
+      }
+      const verified = await isAdminAuthorized(userId);
+      if (!verified) {
+        return replyMessage(rt, [textMessage("รหัสผ่านถูกต้อง แต่ระบบยืนยัน session แอดมินไม่ผ่าน ลองเช็ก schema ล่าสุดของ Supabase และ unique key ของ line_admin_sessions ก่อน")]);
+      }
       const resumed = await maybeResumePendingAdminAction(rt, userId);
       if (resumed) return resumed;
       return replyMessage(rt, [adminAuthSuccessMessage(), adminMenuMessage()]);
