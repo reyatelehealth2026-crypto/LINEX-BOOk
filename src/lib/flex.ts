@@ -915,6 +915,13 @@ export function adminAuthPromptMessage() {
             "เมื่อผ่านแล้วจะเปิดเมนูตั้งค่าร้านใน LINE ให้ทันที"
           ]),
           {
+            type: "text",
+            text: "กดปุ่มด้านล่างเพื่อเติมข้อความเริ่มต้น แล้วค่อยพิมพ์รหัสต่อท้ายได้เลย",
+            size: "xs",
+            color: TEXT_MUTED,
+            wrap: true
+          },
+          {
             type: "button",
             style: "secondary",
             action: { type: "message", label: "พิมพ์คำสั่งล็อกอิน", text: "รหัสแอดมิน " }
@@ -958,7 +965,7 @@ export function adminAuthSuccessMessage() {
             spacing: "sm",
             contents: [
               { type: "button", style: "primary", color: BRAND, flex: 1, action: { type: "postback", label: "เมนูแอดมิน", data: "action=adm_menu" } },
-              { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "คิววันนี้", data: "action=adm_queue_today" } }
+              { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "คิววันนี้", data: "action=adm_queue_today", displayText: "เปิดคิววันนี้" } }
             ]
           }
         ]
@@ -989,11 +996,12 @@ export function adminMenuMessage() {
         layout: "vertical",
         spacing: "sm",
         contents: [
-          { type: "button", style: "primary", color: BRAND, height: "md", action: { type: "postback", label: "⚙️ ตั้งค่าร้าน", data: "action=adm_setup" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "📋 คิววันนี้", data: "action=adm_queue_today" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "💰 ยอดวันนี้", data: "action=adm_revenue" } },
+          { type: "text", text: "ทุกปุ่มจะพาคุณเข้า step ถัดไปทันที และระบบจะแสดงสถานะกำลังทำงานก่อนตอบกลับ", size: "xs", color: TEXT_MUTED, wrap: true },
+          { type: "button", style: "primary", color: BRAND, height: "md", action: { type: "postback", label: "⚙️ ตั้งค่าร้าน", data: "action=adm_setup", displayText: "เปิดเมนูตั้งค่าร้าน" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "📋 คิววันนี้", data: "action=adm_queue_today", displayText: "เปิดคิววันนี้" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "💰 ยอดวันนี้", data: "action=adm_revenue", displayText: "เปิดยอดวันนี้" } },
           { type: "button", style: "secondary", height: "md", action: { type: "uri", label: "🌐 เปิดเว็บหลังบ้าน", uri: APP_URL("/admin") } },
-          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🚪 ออกจากโหมดแอดมิน", data: "action=adm_logout" } }
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🚪 ออกจากโหมดแอดมิน", data: "action=adm_logout", displayText: "ออกจากโหมดแอดมิน" } }
         ]
       }
     }
@@ -1022,12 +1030,13 @@ export function adminSetupMenuMessage() {
         layout: "vertical",
         spacing: "sm",
         contents: [
-          { type: "button", style: "primary", color: BRAND, height: "md", action: { type: "postback", label: "🪄 Setup Wizard", data: "action=adm_wizard_start" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🏪 ตั้งชื่อ / เบอร์ / ที่อยู่", data: "action=adm_help_shop" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "✂️ เพิ่มบริการ", data: "action=adm_help_service" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "💇 เพิ่มช่าง", data: "action=adm_help_staff" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🕒 ตั้งเวลาเปิดปิดร้าน", data: "action=adm_help_hours" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🧑‍🔧 ตั้งเวลารายช่าง", data: "action=adm_help_staff_hours" } },
+          { type: "text", text: "แนะนำให้เริ่มจาก Setup Wizard เพราะมันพาไปทีละขั้นและลดความงงระหว่างตั้งค่า", size: "xs", color: TEXT_MUTED, wrap: true },
+          { type: "button", style: "primary", color: BRAND, height: "md", action: { type: "postback", label: "🪄 Setup Wizard", data: "action=adm_wizard_start", displayText: "เริ่ม Setup Wizard" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🏪 ตั้งชื่อ / เบอร์ / ที่อยู่", data: "action=adm_help_shop", displayText: "ดูตัวอย่างตั้งค่าข้อมูลร้าน" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "✂️ เพิ่มบริการ", data: "action=adm_help_service", displayText: "ดูตัวอย่างเพิ่มบริการ" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "💇 เพิ่มช่าง", data: "action=adm_help_staff", displayText: "ดูตัวอย่างเพิ่มช่าง" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🕒 ตั้งเวลาเปิดปิดร้าน", data: "action=adm_help_hours", displayText: "ดูตัวอย่างตั้งเวลาเปิดปิดร้าน" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🧑‍🔧 ตั้งเวลารายช่าง", data: "action=adm_help_staff_hours", displayText: "ดูตัวอย่างตั้งเวลารายช่าง" } },
           { type: "button", style: "secondary", height: "md", action: { type: "uri", label: "🌐 เปิดหน้า Setup บนเว็บ", uri: APP_URL("/admin/setup") } }
         ]
       }
@@ -1092,8 +1101,8 @@ export function adminWizardPromptMessage(opts: {
             layout: "horizontal",
             spacing: "sm",
             contents: [
-              ...(opts.allowSkip ? [{ type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "ข้าม", data: "action=adm_wizard_skip" } } as any] : []),
-              { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "ยกเลิก", data: "action=adm_wizard_cancel" } }
+              ...(opts.allowSkip ? [{ type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "ข้าม", data: "action=adm_wizard_skip", displayText: "ข้ามขั้นตอนนี้" } } as any] : []),
+              { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "ยกเลิก", data: "action=adm_wizard_cancel", displayText: "ยกเลิก Setup Wizard" } }
             ]
           }
         ]
@@ -1138,9 +1147,9 @@ export function adminWizardDayPickerMessage() {
             type: "button",
             style: "secondary",
             height: "md",
-            action: { type: "postback", label: day.label, data: `action=adm_wizard_day&value=${day.value}&label=${encodeURIComponent(day.label)}` }
+            action: { type: "postback", label: day.label, data: `action=adm_wizard_day&value=${day.value}&label=${encodeURIComponent(day.label)}`, displayText: `เลือกวัน${day.label}` }
           })),
-          { type: "button", style: "secondary", action: { type: "postback", label: "ยกเลิก", data: "action=adm_wizard_cancel" } }
+          { type: "button", style: "secondary", action: { type: "postback", label: "ยกเลิก", data: "action=adm_wizard_cancel", displayText: "ยกเลิก Setup Wizard" } }
         ]
       }
     }
@@ -1175,9 +1184,9 @@ export function adminWizardDoneMessage(summary: string[]) {
             layout: "vertical",
             spacing: "sm",
             contents: [
-              { type: "button", style: "primary", color: BRAND, action: { type: "postback", label: "➕ เพิ่มบริการอีก", data: "action=adm_wizard_more_service" } },
-              { type: "button", style: "secondary", action: { type: "postback", label: "➕ เพิ่มช่างอีก", data: "action=adm_wizard_more_staff" } },
-              { type: "button", style: "secondary", action: { type: "postback", label: "✅ เสร็จแล้ว ไปเมนูแอดมิน", data: "action=adm_menu" } }
+              { type: "button", style: "primary", color: BRAND, action: { type: "postback", label: "➕ เพิ่มบริการอีก", data: "action=adm_wizard_more_service", displayText: "เพิ่มบริการอีก" } },
+              { type: "button", style: "secondary", action: { type: "postback", label: "➕ เพิ่มช่างอีก", data: "action=adm_wizard_more_staff", displayText: "เพิ่มช่างอีก" } },
+              { type: "button", style: "secondary", action: { type: "postback", label: "✅ เสร็จแล้ว ไปเมนูแอดมิน", data: "action=adm_menu", displayText: "กลับเมนูแอดมิน" } }
             ]
           }
         ]
@@ -1197,12 +1206,12 @@ export function adminWizardBatchResultMessage(opts: {
   tertiaryAction?: string;
 }) {
   const buttons: any[] = [
-    { type: "button", style: "primary", color: BRAND, action: { type: "postback", label: opts.primaryLabel, data: opts.primaryAction } },
-    { type: "button", style: "secondary", action: { type: "postback", label: opts.secondaryLabel, data: opts.secondaryAction } },
+    { type: "button", style: "primary", color: BRAND, action: { type: "postback", label: opts.primaryLabel, data: opts.primaryAction, displayText: opts.primaryLabel } },
+    { type: "button", style: "secondary", action: { type: "postback", label: opts.secondaryLabel, data: opts.secondaryAction, displayText: opts.secondaryLabel } },
   ];
 
   if (opts.tertiaryLabel && opts.tertiaryAction) {
-    buttons.push({ type: "button", style: "secondary", action: { type: "postback", label: opts.tertiaryLabel, data: opts.tertiaryAction } });
+    buttons.push({ type: "button", style: "secondary", action: { type: "postback", label: opts.tertiaryLabel, data: opts.tertiaryAction, displayText: opts.tertiaryLabel } });
   }
 
   return {

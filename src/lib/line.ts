@@ -43,6 +43,10 @@ export function pushMessage(to: string, messages: any[]) {
   return lineFetch("/message/push", { to, messages });
 }
 
+export function startLoading(chatId: string, loadingSeconds = 5) {
+  return lineFetch("/chat/loading/start", { chatId, loadingSeconds });
+}
+
 export async function getProfile(userId: string) {
   const res = await fetch(`${API}/profile/${userId}`, {
     headers: { Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}` }

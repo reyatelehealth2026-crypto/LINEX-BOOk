@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySignature, replyMessage, getProfile, pushMessage } from "@/lib/line";
+import { verifySignature, replyMessage, getProfile, pushMessage, startLoading } from "@/lib/line";
 import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
 import { availableSlots } from "@/lib/booking";
 import { parseBookingIntent, parseAdminCommand } from "@/lib/thai-nlp";
@@ -183,10 +183,12 @@ async function handleEvent(ev: any) {
   }
 
   if (ev.type === "postback") {
+    try { await startLoading(userId, 5); } catch {}
     return handlePostback(ev, customer);
   }
 
   if (ev.type === "message" && ev.message?.type === "text") {
+    try { await startLoading(userId, 5); } catch {}
     return handleMessage(ev, customer);
   }
 }
