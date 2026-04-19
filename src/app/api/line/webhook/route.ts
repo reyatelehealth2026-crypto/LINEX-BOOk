@@ -32,6 +32,7 @@ import {
   adminWizardDoneMessage,
   adminWizardBatchResultMessage,
   adminWizardProgressMessage,
+  adminSetupStatusMessage,
 } from "@/lib/flex";
 import type { BookingWithJoins, Customer, LineAdminSession } from "@/types/db";
 import { formatDateTH, formatTimeRange } from "@/lib/format";
@@ -100,6 +101,12 @@ async function grantAdminSession(lineUserId: string) {
 async function revokeAdminSession(lineUserId: string) {
   const db = supabaseAdmin();
   await db.from("line_admin_sessions").delete().eq("shop_id", SHOP_ID).eq("line_user_id", lineUserId);
+}
+
+async function touchAdminSession(lineUserId: string) {
+  const session = await getAdminSession(lineUserId);
+  if (!session) return;
+  await setAdminWizardState(lineUserId, (session.wizard_step as AdminWizardStep | null) ?? null, session.wizard_payload ?? {});
 }
 
 async function getAdminSession(lineUserId: string): Promise<LineAdminSession | null> {
@@ -188,6 +195,36 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
+async function buildAdminSetupStatus() {
+  const db = supabaseAdmin();
+  const [shopRes, servicesRes, staffRes, hoursRes] = await Promise.all([
+    db.from("shops").select("name, phone, address").eq("id", SHOP_ID).maybeSingle(),
+    db.from("services").select("id", { count: "exact", head: true }).eq("shop_id", SHOP_ID),
+    db.from("staff").select("id", { count: "exact", head: true }).eq("shop_id", SHOP_ID),
+    db.from("working_hours").select("id", { count: "exact", head: true }).eq("shop_id", SHOP_ID),
+  ]);
+
+  const checks = [
+    { ok: !!(process.env.LINE_CHANNEL_ACCESS_TOKEN && process.env.LINE_CHANNEL_SECRET), label: "เชื่อม LINE OA" },
+    { ok: !!process.env.NEXT_PUBLIC_LIFF_ID, label: "มี LIFF ID" },
+    { ok: !!process.env.NEXT_PUBLIC_APP_URL, label: "มี APP URL" },
+    { ok: !!shopRes.data?.name && shopRes.data.name !== "My Shop", label: "ตั้งชื่อร้านแล้ว" },
+    { ok: Number(servicesRes.count ?? 0) > 0, label: "มีบริการ" },
+    { ok: Number(staffRes.count ?? 0) > 0, label: "มีช่าง" },
+    { ok: Number(hoursRes.count ?? 0) > 0, label: "มีเวลาทำการ" },
+  ];
+
+  const readyCount = checks.filter((c) => c.ok).length;
+  const totalCount = checks.length;
+  const missing = checks.filter((c) => !c.ok).map((c) => c.label);
+
+  let summary = "ยังต้องตั้งค่าเพิ่มอีกนิดก่อนใช้งานจริง";
+  if (readyCount === totalCount) summary = "ร้านพร้อมใช้งานพื้นฐานแล้ว";
+  else if (readyCount >= totalCount - 2) summary = "ใกล้พร้อมแล้ว เหลือไม่กี่จุด";
+
+  return { readyCount, totalCount, missing, summary };
+}
+
 // ───────────────── event router ─────────────────
 
 async function handleEvent(ev: any) {
@@ -226,6 +263,10 @@ async function handlePostback(ev: any, customer: Customer) {
     return replyMessage(rt, [adminAuthPromptMessage()]);
   }
 
+  if (canAdmin && userId) {
+    await touchAdminSession(userId);
+  }
+
   // ── Menu ──
   if (action === "menu") {
     return replyMessage(rt, [mainMenuMessage(customer.display_name ?? "คุณ")]);
@@ -237,6 +278,11 @@ async function handlePostback(ev: any, customer: Customer) {
 
   if (action === "adm_setup") {
     return replyMessage(rt, [adminSetupMenuMessage()]);
+  }
+
+  if (action === "adm_status") {
+    const status = await buildAdminSetupStatus();
+    return replyMessage(rt, [adminSetupStatusMessage(status)]);
   }
 
   if (action === "adm_wizard_start") {
@@ -534,8 +580,62 @@ async function handleMessage(ev: any, customer: Customer) {
   const isAdmin = await isAdminAuthorized(userId);
   const adminSession = isAdmin ? await getAdminSession(userId) : null;
 
+  if (isAdmin) {
+    await touchAdminSession(userId);
+  }
+
   if (/^(?:ตั้งค่าแอดมิน|เมนูแอดมิน|admin|admin menu|setup)$/i.test(text)) {
     return replyMessage(rt, [isAdmin ? adminMenuMessage() : adminAuthPromptMessage()]);
+  }
+
+  if (isAdmin && /^(?:เปิดเมนูตั้งค่าร้าน|ตั้งค่าร้าน)$/i.test(text)) {
+    return replyMessage(rt, [adminSetupMenuMessage()]);
+  }
+
+  if (isAdmin && /^(?:เริ่ม setup wizard|setup wizard)$/i.test(text)) {
+    await setAdminWizardState(userId, "shop_name", { flow: "full_setup" });
+    return replyMessage(rt, [adminWizardProgressMessage({ title: "เริ่ม Setup Wizard", currentStep: 1, totalSteps: 6, description: "เดี๋ยวผมพาไล่ตั้งค่าร้านทีละขั้น", savedItems: [] }), wizardPromptForStepWithState("shop_name", { flow: "full_setup" })]);
+  }
+
+  if (isAdmin && /^(?:สถานะร้าน|setup status|status)$/i.test(text)) {
+    const status = await buildAdminSetupStatus();
+    return replyMessage(rt, [adminSetupStatusMessage(status)]);
+  }
+
+  if (isAdmin && /^(?:ดูตัวอย่างตั้งค่าข้อมูลร้าน)$/i.test(text)) {
+    return replyMessage(rt, [adminTextExamplesMessage("ตั้งค่าข้อมูลร้าน", [
+      "ตั้งชื่อร้าน Line X Book",
+      "เบอร์ร้าน 099-999-9999",
+      "ที่อยู่ร้าน ลาดพร้าว 101 กรุงเทพ"
+    ])]);
+  }
+
+  if (isAdmin && /^(?:ดูตัวอย่างเพิ่มบริการ)$/i.test(text)) {
+    return replyMessage(rt, [adminTextExamplesMessage("เพิ่มบริการผ่านแชท", [
+      "เพิ่มบริการ ตัดผมชาย 250 บาท 45 นาที",
+      "เพิ่มบริการ ทำสีผม 1200 บาท 120 นาที"
+    ])]);
+  }
+
+  if (isAdmin && /^(?:ดูตัวอย่างเพิ่มช่าง)$/i.test(text)) {
+    return replyMessage(rt, [adminTextExamplesMessage("เพิ่มช่างผ่านแชท", [
+      "เพิ่มช่าง พี่โอ๋",
+      "เพิ่มช่าง พี่มิ้น"
+    ])]);
+  }
+
+  if (isAdmin && /^(?:ดูตัวอย่างตั้งเวลาเปิดปิดร้าน)$/i.test(text)) {
+    return replyMessage(rt, [adminTextExamplesMessage("ตั้งเวลาเปิดปิดร้าน", [
+      "ตั้งเวลา จันทร์ 10:00-20:00",
+      "ตั้งเวลา เสาร์ 09:00-21:00"
+    ])]);
+  }
+
+  if (isAdmin && /^(?:ดูตัวอย่างตั้งเวลารายช่าง)$/i.test(text)) {
+    return replyMessage(rt, [adminTextExamplesMessage("ตั้งเวลารายช่าง", [
+      "ตั้งเวลาช่าง พี่โอ๋ จันทร์ 10:00-20:00",
+      "ตั้งเวลาช่าง พี่มิ้น เสาร์ 09:00-18:00"
+    ])]);
   }
 
   if (isAdmin && adminSession?.wizard_step) {
