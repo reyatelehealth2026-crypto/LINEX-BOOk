@@ -1072,6 +1072,9 @@ export function adminWizardPromptMessage(opts: {
   example?: string;
   stepLabel?: string;
   allowSkip?: boolean;
+  progressText?: string;
+  savedItems?: string[];
+  tip?: string;
 }) {
   return {
     type: "flex",
@@ -1086,6 +1089,7 @@ export function adminWizardPromptMessage(opts: {
         paddingAll: "18px",
         contents: [
           { type: "text", text: opts.stepLabel ?? "SETUP WIZARD", color: "#d1fae5", size: "xs", weight: "bold" },
+          ...(opts.progressText ? [{ type: "text", text: opts.progressText, color: "#ecfdf5", size: "xs", margin: "xs" } as any] : []),
           { type: "text", text: opts.title, color: "#ffffff", size: "xl", weight: "bold", margin: "sm", wrap: true }
         ]
       },
@@ -1095,7 +1099,9 @@ export function adminWizardPromptMessage(opts: {
         spacing: "md",
         contents: [
           { type: "text", text: opts.description, size: "sm", color: TEXT_MUTED, wrap: true },
+          ...(opts.savedItems?.length ? [infoPanel("บันทึกไปแล้ว", opts.savedItems)] : []),
           ...(opts.example ? [infoPanel("ตัวอย่างข้อความที่พิมพ์ได้", [opts.example])] : []),
+          ...(opts.tip ? [{ type: "text", text: opts.tip, size: "xs", color: TEXT_MUTED, wrap: true } as any] : []),
           {
             type: "box",
             layout: "horizontal",
@@ -1111,7 +1117,7 @@ export function adminWizardPromptMessage(opts: {
   };
 }
 
-export function adminWizardDayPickerMessage() {
+export function adminWizardDayPickerMessage(savedItems: string[] = []) {
   const days = [
     { label: "จันทร์", value: 1 },
     { label: "อังคาร", value: 2 },
@@ -1135,6 +1141,7 @@ export function adminWizardDayPickerMessage() {
         paddingAll: "18px",
         contents: [
           { type: "text", text: "SETUP WIZARD · STEP 6/6", color: "#d1fae5", size: "xs", weight: "bold" },
+          { type: "text", text: "● ● ● ● ● ●", color: "#ecfdf5", size: "xs", margin: "xs" },
           { type: "text", text: "เลือกว่าเวลาทำการนี้ใช้กับวันไหน", color: "#ffffff", size: "xl", weight: "bold", margin: "sm", wrap: true }
         ]
       },
@@ -1143,6 +1150,8 @@ export function adminWizardDayPickerMessage() {
         layout: "vertical",
         spacing: "sm",
         contents: [
+          ...(savedItems.length ? [infoPanel("บันทึกไปแล้ว", savedItems)] : []),
+          { type: "text", text: "กดเลือกวัน แล้วผมจะถามเวลาของวันนั้นต่อทันที", size: "xs", color: TEXT_MUTED, wrap: true },
           ...days.map((day) => ({
             type: "button",
             style: "secondary",
@@ -1150,6 +1159,37 @@ export function adminWizardDayPickerMessage() {
             action: { type: "postback", label: day.label, data: `action=adm_wizard_day&value=${day.value}&label=${encodeURIComponent(day.label)}`, displayText: `เลือกวัน${day.label}` }
           })),
           { type: "button", style: "secondary", action: { type: "postback", label: "ยกเลิก", data: "action=adm_wizard_cancel", displayText: "ยกเลิก Setup Wizard" } }
+        ]
+      }
+    }
+  };
+}
+
+export function adminWizardProgressMessage(opts: {
+  title: string;
+  currentStep: number;
+  totalSteps: number;
+  description?: string;
+  savedItems?: string[];
+}) {
+  const progress = Array.from({ length: opts.totalSteps }, (_, i) => (i < opts.currentStep ? "●" : "○")).join(" ");
+  return {
+    type: "flex",
+    altText: opts.title,
+    contents: {
+      type: "bubble",
+      size: "giga",
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        paddingAll: "16px",
+        contents: [
+          { type: "text", text: `STEP ${opts.currentStep}/${opts.totalSteps}`, size: "xs", weight: "bold", color: BRAND_DARK },
+          { type: "text", text: progress, size: "sm", color: BRAND_DARK },
+          { type: "text", text: opts.title, size: "md", weight: "bold", color: TEXT_MAIN, wrap: true },
+          ...(opts.description ? [{ type: "text", text: opts.description, size: "xs", color: TEXT_MUTED, wrap: true } as any] : []),
+          ...(opts.savedItems?.length ? [{ type: "text", text: `บันทึกแล้ว: ${opts.savedItems.join(" • ")}`, size: "xs", color: TEXT_MUTED, wrap: true } as any] : []),
         ]
       }
     }
