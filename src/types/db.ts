@@ -76,6 +76,8 @@ export type LineAdminSession = {
   authed_at: string;
   expires_at: string;
   created_at: string;
+  wizard_step: string | null;
+  wizard_payload: Record<string, any>;
 };
 
 export type BookingStatus =

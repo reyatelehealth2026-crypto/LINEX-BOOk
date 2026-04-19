@@ -111,6 +111,8 @@ create table if not exists line_admin_sessions (
   created_at   timestamptz not null default now(),
   unique (shop_id, line_user_id)
 );
+alter table line_admin_sessions add column if not exists wizard_step text;
+alter table line_admin_sessions add column if not exists wizard_payload jsonb not null default '{}'::jsonb;
 create index if not exists line_admin_sessions_lookup on line_admin_sessions(shop_id, line_user_id, expires_at desc);
 
 -- ---------------- bookings ----------------

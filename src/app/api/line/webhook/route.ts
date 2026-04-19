@@ -27,8 +27,11 @@ import {
   adminMenuMessage,
   adminSetupMenuMessage,
   adminTextExamplesMessage,
+  adminWizardPromptMessage,
+  adminWizardDayPickerMessage,
+  adminWizardDoneMessage,
 } from "@/lib/flex";
-import type { BookingWithJoins, Customer } from "@/types/db";
+import type { BookingWithJoins, Customer, LineAdminSession } from "@/types/db";
 import { formatDateTH, formatTimeRange } from "@/lib/format";
 import { fromZonedTime } from "date-fns-tz";
 
@@ -37,6 +40,7 @@ export const dynamic = "force-dynamic";
 
 const TZ = process.env.SHOP_TIMEZONE || "Asia/Bangkok";
 const ADMIN_CHAT_SESSION_HOURS = Number(process.env.ADMIN_CHAT_SESSION_HOURS || 12);
+type AdminWizardStep = "shop_name" | "shop_phone" | "shop_address" | "service_name" | "service_price" | "service_duration" | "staff_name" | "hours_day" | "hours_time";
 
 function getAdminIds(): Set<string> {
   const raw = process.env.ADMIN_LINE_IDS ?? "";
@@ -94,6 +98,59 @@ async function grantAdminSession(lineUserId: string) {
 async function revokeAdminSession(lineUserId: string) {
   const db = supabaseAdmin();
   await db.from("line_admin_sessions").delete().eq("shop_id", SHOP_ID).eq("line_user_id", lineUserId);
+}
+
+async function getAdminSession(lineUserId: string): Promise<LineAdminSession | null> {
+  const db = supabaseAdmin();
+  const { data } = await db
+    .from("line_admin_sessions")
+    .select("*")
+    .eq("shop_id", SHOP_ID)
+    .eq("line_user_id", lineUserId)
+    .maybeSingle();
+  return (data as LineAdminSession | null) ?? null;
+}
+
+async function setAdminWizardState(lineUserId: string, wizardStep: AdminWizardStep | null, wizardPayload: Record<string, any> = {}) {
+  const db = supabaseAdmin();
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + ADMIN_CHAT_SESSION_HOURS * 60 * 60 * 1000);
+  await db.from("line_admin_sessions").upsert({
+    shop_id: SHOP_ID,
+    line_user_id: lineUserId,
+    authed_at: now.toISOString(),
+    expires_at: expiresAt.toISOString(),
+    wizard_step: wizardStep,
+    wizard_payload: wizardPayload,
+  }, { onConflict: "shop_id,line_user_id" });
+}
+
+async function clearAdminWizardState(lineUserId: string) {
+  const db = supabaseAdmin();
+  await db.from("line_admin_sessions").update({ wizard_step: null, wizard_payload: {} }).eq("shop_id", SHOP_ID).eq("line_user_id", lineUserId);
+}
+
+function wizardPromptForStep(step: AdminWizardStep) {
+  switch (step) {
+    case "shop_name":
+      return adminWizardPromptMessage({ title: "ตั้งชื่อร้าน", description: "พิมพ์ชื่อร้านที่ต้องการให้ลูกค้าเห็น", example: "Line X Book", stepLabel: "SETUP WIZARD · STEP 1/6" });
+    case "shop_phone":
+      return adminWizardPromptMessage({ title: "ใส่เบอร์ร้าน", description: "ใส่เบอร์โทรร้าน หรือกดข้ามถ้ายังไม่พร้อม", example: "099-999-9999", stepLabel: "SETUP WIZARD · STEP 2/6", allowSkip: true });
+    case "shop_address":
+      return adminWizardPromptMessage({ title: "ใส่ที่อยู่ร้าน", description: "ใส่ที่อยู่แบบสั้นๆ ก่อนก็ได้ หรือกดข้าม", example: "ลาดพร้าว 101 กรุงเทพ", stepLabel: "SETUP WIZARD · STEP 3/6", allowSkip: true });
+    case "service_name":
+      return adminWizardPromptMessage({ title: "เพิ่มบริการแรก", description: "พิมพ์ชื่อบริการแรกของร้าน", example: "ตัดผมชาย", stepLabel: "SETUP WIZARD · STEP 4/6" });
+    case "service_price":
+      return adminWizardPromptMessage({ title: "ใส่ราคาบริการ", description: "พิมพ์เป็นตัวเลขอย่างเดียว", example: "250", stepLabel: "SETUP WIZARD · STEP 4/6" });
+    case "service_duration":
+      return adminWizardPromptMessage({ title: "ใส่ระยะเวลา", description: "พิมพ์เป็นจำนวนนาทีของบริการนี้", example: "45", stepLabel: "SETUP WIZARD · STEP 4/6" });
+    case "staff_name":
+      return adminWizardPromptMessage({ title: "เพิ่มช่างคนแรก", description: "พิมพ์ชื่อหรือชื่อเล่นของช่างคนแรก", example: "พี่โอ๋", stepLabel: "SETUP WIZARD · STEP 5/6" });
+    case "hours_day":
+      return adminWizardDayPickerMessage();
+    case "hours_time":
+      return adminWizardPromptMessage({ title: "ใส่เวลาเปิดปิด", description: "พิมพ์ช่วงเวลาในรูปแบบ 10:00-20:00", example: "10:00-20:00", stepLabel: "SETUP WIZARD · STEP 6/6" });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -158,6 +215,45 @@ async function handlePostback(ev: any, customer: Customer) {
 
   if (action === "adm_setup") {
     return replyMessage(rt, [adminSetupMenuMessage()]);
+  }
+
+  if (action === "adm_wizard_start") {
+    if (!userId) return;
+    await grantAdminSession(userId);
+    await setAdminWizardState(userId, "shop_name", {});
+    return replyMessage(rt, [wizardPromptForStep("shop_name")]);
+  }
+
+  if (action === "adm_wizard_cancel") {
+    if (!userId) return;
+    await clearAdminWizardState(userId);
+    return replyMessage(rt, [textMessage("ยกเลิก setup wizard แล้ว"), adminSetupMenuMessage()]);
+  }
+
+  if (action === "adm_wizard_skip") {
+    if (!userId) return;
+    const session = await getAdminSession(userId);
+    if (!session?.wizard_step) return replyMessage(rt, [adminSetupMenuMessage()]);
+    if (session.wizard_step === "shop_phone") {
+      await setAdminWizardState(userId, "shop_address", session.wizard_payload ?? {});
+      return replyMessage(rt, [wizardPromptForStep("shop_address")]);
+    }
+    if (session.wizard_step === "shop_address") {
+      await setAdminWizardState(userId, "service_name", session.wizard_payload ?? {});
+      return replyMessage(rt, [wizardPromptForStep("service_name")]);
+    }
+    return replyMessage(rt, [textMessage("ขั้นตอนนี้ข้ามไม่ได้")]);
+  }
+
+  if (action === "adm_wizard_day") {
+    if (!userId) return;
+    const session = await getAdminSession(userId);
+    if (session?.wizard_step !== "hours_day") return replyMessage(rt, [adminSetupMenuMessage()]);
+    const value = Number(data.get("value"));
+    const label = decodeURIComponent(data.get("label") ?? "");
+    const payload = { ...(session.wizard_payload ?? {}), hoursDayOfWeek: value, hoursDayLabel: label };
+    await setAdminWizardState(userId, "hours_time", payload);
+    return replyMessage(rt, [wizardPromptForStep("hours_time")]);
   }
 
   if (action === "adm_queue_today") {
@@ -398,9 +494,23 @@ async function handleMessage(ev: any, customer: Customer) {
 
   // ── Check if admin ──
   const isAdmin = await isAdminAuthorized(userId);
+  const adminSession = isAdmin ? await getAdminSession(userId) : null;
 
   if (/^(?:ตั้งค่าแอดมิน|เมนูแอดมิน|admin|admin menu|setup)$/i.test(text)) {
     return replyMessage(rt, [isAdmin ? adminMenuMessage() : adminAuthPromptMessage()]);
+  }
+
+  if (isAdmin && adminSession?.wizard_step) {
+    if (/^(?:ยกเลิก|cancel)$/i.test(text)) {
+      await clearAdminWizardState(userId);
+      return replyMessage(rt, [textMessage("ยกเลิก setup wizard แล้ว"), adminSetupMenuMessage()]);
+    }
+    if (/^(?:ข้าม|skip)$/i.test(text) && (adminSession.wizard_step === "shop_phone" || adminSession.wizard_step === "shop_address")) {
+      const nextStep = adminSession.wizard_step === "shop_phone" ? "shop_address" : "service_name";
+      await setAdminWizardState(userId, nextStep, adminSession.wizard_payload ?? {});
+      return replyMessage(rt, [wizardPromptForStep(nextStep)]);
+    }
+    return handleAdminWizardInput(rt, userId, text, adminSession);
   }
 
   if (isAdmin) {
@@ -513,6 +623,110 @@ async function handleAIBooking(
   const { data: allServices } = await db.from("services").select("id, name, duration_min, price").eq("shop_id", SHOP_ID).eq("active", true).order("sort_order");
   if (!allServices?.length) return replyMessage(rt, [textMessage("ยังไม่มีบริการในระบบ")]);
   return replyMessage(rt, [serviceCarouselMessage(allServices)]);
+}
+
+// ───────────────── Admin Setup Wizard ─────────────────
+
+async function handleAdminWizardInput(rt: string, lineUserId: string, text: string, session: LineAdminSession) {
+  const db = supabaseAdmin();
+  const payload = (session.wizard_payload ?? {}) as Record<string, any>;
+
+  switch (session.wizard_step as AdminWizardStep) {
+    case "shop_name": {
+      await db.from("shops").update({ name: text }).eq("id", SHOP_ID);
+      await setAdminWizardState(lineUserId, "shop_phone", { ...payload, shopName: text });
+      return replyMessage(rt, [textMessage(`✅ ตั้งชื่อร้านเป็น "${text}" แล้ว`), wizardPromptForStep("shop_phone")]);
+    }
+
+    case "shop_phone": {
+      await db.from("shops").update({ phone: text }).eq("id", SHOP_ID);
+      await setAdminWizardState(lineUserId, "shop_address", { ...payload, shopPhone: text });
+      return replyMessage(rt, [textMessage(`✅ บันทึกเบอร์ร้าน ${text} แล้ว`), wizardPromptForStep("shop_address")]);
+    }
+
+    case "shop_address": {
+      await db.from("shops").update({ address: text }).eq("id", SHOP_ID);
+      await setAdminWizardState(lineUserId, "service_name", { ...payload, shopAddress: text });
+      return replyMessage(rt, [textMessage("✅ บันทึกที่อยู่ร้านแล้ว"), wizardPromptForStep("service_name")]);
+    }
+
+    case "service_name": {
+      await setAdminWizardState(lineUserId, "service_price", { ...payload, serviceName: text });
+      return replyMessage(rt, [wizardPromptForStep("service_price")]);
+    }
+
+    case "service_price": {
+      const price = Number(text.replace(/[^\d.]/g, ""));
+      if (!Number.isFinite(price) || price <= 0) return replyMessage(rt, [textMessage("กรุณาใส่ราคาด้วยตัวเลข เช่น 250")]);
+      await setAdminWizardState(lineUserId, "service_duration", { ...payload, servicePrice: price });
+      return replyMessage(rt, [wizardPromptForStep("service_duration")]);
+    }
+
+    case "service_duration": {
+      const duration = Number(text.replace(/[^\d]/g, ""));
+      if (!Number.isFinite(duration) || duration <= 0) return replyMessage(rt, [textMessage("กรุณาใส่ระยะเวลาเป็นนาที เช่น 45")]);
+      const serviceName = String(payload.serviceName ?? "").trim();
+      const servicePrice = Number(payload.servicePrice ?? 0);
+      const { error } = await db.from("services").insert({
+        shop_id: SHOP_ID,
+        name: serviceName,
+        price: servicePrice,
+        duration_min: duration,
+      });
+      if (error) return replyMessage(rt, [textMessage(`เพิ่มบริการไม่สำเร็จ: ${error.message}`)]);
+      await setAdminWizardState(lineUserId, "staff_name", { ...payload, serviceDuration: duration });
+      return replyMessage(rt, [textMessage(`✅ เพิ่มบริการ "${serviceName}" แล้ว`), wizardPromptForStep("staff_name")]);
+    }
+
+    case "staff_name": {
+      const { error } = await db.from("staff").insert({ shop_id: SHOP_ID, name: text });
+      if (error) return replyMessage(rt, [textMessage(`เพิ่มช่างไม่สำเร็จ: ${error.message}`)]);
+      const { data: svcs } = await db.from("services").select("id").eq("shop_id", SHOP_ID);
+      const { data: stf } = await db.from("staff").select("id").eq("shop_id", SHOP_ID).order("id", { ascending: false }).limit(1).single();
+      if (stf && svcs?.length) {
+        await db.from("staff_services").insert(svcs.map(s => ({ staff_id: stf.id, service_id: s.id }))).then(() => {});
+      }
+      await setAdminWizardState(lineUserId, "hours_day", { ...payload, staffName: text });
+      return replyMessage(rt, [textMessage(`✅ เพิ่มช่าง "${text}" แล้ว`), wizardPromptForStep("hours_day")]);
+    }
+
+    case "hours_day": {
+      return replyMessage(rt, [wizardPromptForStep("hours_day")]);
+    }
+
+    case "hours_time": {
+      const m = text.match(/(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/);
+      if (!m) return replyMessage(rt, [textMessage("รูปแบบเวลาไม่ถูกต้อง ใช้เช่น 10:00-20:00")]);
+      const openTime = normalizeSqlTime(m[1]);
+      const closeTime = normalizeSqlTime(m[2]);
+      if (!openTime || !closeTime) return replyMessage(rt, [textMessage("รูปแบบเวลาไม่ถูกต้อง ใช้เช่น 10:00-20:00")]);
+
+      await db.from("working_hours").delete().eq("shop_id", SHOP_ID).is("staff_id", null).eq("day_of_week", payload.hoursDayOfWeek);
+      const { error } = await db.from("working_hours").insert({
+        shop_id: SHOP_ID,
+        staff_id: null,
+        day_of_week: payload.hoursDayOfWeek,
+        open_time: openTime,
+        close_time: closeTime,
+      });
+      if (error) return replyMessage(rt, [textMessage(`ตั้งเวลาไม่สำเร็จ: ${error.message}`)]);
+
+      await clearAdminWizardState(lineUserId);
+
+      const summary = [
+        `ชื่อร้าน: ${payload.shopName ?? "-"}`,
+        `บริการแรก: ${payload.serviceName ?? "-"}`,
+        `ช่างคนแรก: ${payload.staffName ?? "-"}`,
+        `เวลาทำการ: ${payload.hoursDayLabel ?? "-"} ${m[1]}-${m[2]}`,
+      ];
+      if (payload.shopPhone) summary.splice(1, 0, `เบอร์ร้าน: ${payload.shopPhone}`);
+      if (payload.shopAddress) summary.splice(payload.shopPhone ? 2 : 1, 0, `ที่อยู่ร้าน: ${payload.shopAddress}`);
+
+      return replyMessage(rt, [adminWizardDoneMessage(summary), adminMenuMessage()]);
+    }
+  }
+
+  return replyMessage(rt, [adminSetupMenuMessage()]);
 }
 
 // ───────────────── Admin Command Handler ─────────────────

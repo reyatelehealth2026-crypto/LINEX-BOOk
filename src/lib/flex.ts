@@ -1022,6 +1022,7 @@ export function adminSetupMenuMessage() {
         layout: "vertical",
         spacing: "sm",
         contents: [
+          { type: "button", style: "primary", color: BRAND, height: "md", action: { type: "postback", label: "🪄 Setup Wizard", data: "action=adm_wizard_start" } },
           { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🏪 ตั้งชื่อ / เบอร์ / ที่อยู่", data: "action=adm_help_shop" } },
           { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "✂️ เพิ่มบริการ", data: "action=adm_help_service" } },
           { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "💇 เพิ่มช่าง", data: "action=adm_help_staff" } },
@@ -1050,6 +1051,134 @@ export function adminTextExamplesMessage(title: string, examples: string[]) {
           { type: "text", text: title, weight: "bold", size: "lg", color: TEXT_MAIN, wrap: true },
           infoPanel("พิมพ์ตามตัวอย่างนี้ได้เลย", examples),
           { type: "button", style: "secondary", action: { type: "postback", label: "⬅️ กลับเมนูตั้งค่า", data: "action=adm_setup" } }
+        ]
+      }
+    }
+  };
+}
+
+export function adminWizardPromptMessage(opts: {
+  title: string;
+  description: string;
+  example?: string;
+  stepLabel?: string;
+  allowSkip?: boolean;
+}) {
+  return {
+    type: "flex",
+    altText: opts.title,
+    contents: {
+      type: "bubble",
+      size: "giga",
+      header: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: BRAND,
+        paddingAll: "18px",
+        contents: [
+          { type: "text", text: opts.stepLabel ?? "SETUP WIZARD", color: "#d1fae5", size: "xs", weight: "bold" },
+          { type: "text", text: opts.title, color: "#ffffff", size: "xl", weight: "bold", margin: "sm", wrap: true }
+        ]
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        contents: [
+          { type: "text", text: opts.description, size: "sm", color: TEXT_MUTED, wrap: true },
+          ...(opts.example ? [infoPanel("ตัวอย่างข้อความที่พิมพ์ได้", [opts.example])] : []),
+          {
+            type: "box",
+            layout: "horizontal",
+            spacing: "sm",
+            contents: [
+              ...(opts.allowSkip ? [{ type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "ข้าม", data: "action=adm_wizard_skip" } } as any] : []),
+              { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "ยกเลิก", data: "action=adm_wizard_cancel" } }
+            ]
+          }
+        ]
+      }
+    }
+  };
+}
+
+export function adminWizardDayPickerMessage() {
+  const days = [
+    { label: "จันทร์", value: 1 },
+    { label: "อังคาร", value: 2 },
+    { label: "พุธ", value: 3 },
+    { label: "พฤหัส", value: 4 },
+    { label: "ศุกร์", value: 5 },
+    { label: "เสาร์", value: 6 },
+    { label: "อาทิตย์", value: 0 },
+  ];
+
+  return {
+    type: "flex",
+    altText: "เลือกวันสำหรับเวลาทำการ",
+    contents: {
+      type: "bubble",
+      size: "giga",
+      header: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: BRAND,
+        paddingAll: "18px",
+        contents: [
+          { type: "text", text: "SETUP WIZARD · STEP 6/6", color: "#d1fae5", size: "xs", weight: "bold" },
+          { type: "text", text: "เลือกว่าเวลาทำการนี้ใช้กับวันไหน", color: "#ffffff", size: "xl", weight: "bold", margin: "sm", wrap: true }
+        ]
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: [
+          ...days.map((day) => ({
+            type: "button",
+            style: "secondary",
+            height: "md",
+            action: { type: "postback", label: day.label, data: `action=adm_wizard_day&value=${day.value}&label=${encodeURIComponent(day.label)}` }
+          })),
+          { type: "button", style: "secondary", action: { type: "postback", label: "ยกเลิก", data: "action=adm_wizard_cancel" } }
+        ]
+      }
+    }
+  };
+}
+
+export function adminWizardDoneMessage(summary: string[]) {
+  return {
+    type: "flex",
+    altText: "ตั้งค่าพื้นฐานร้านเสร็จแล้ว",
+    contents: {
+      type: "bubble",
+      size: "giga",
+      header: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: BRAND,
+        paddingAll: "18px",
+        contents: [
+          { type: "text", text: "SETUP COMPLETE", color: "#d1fae5", size: "xs", weight: "bold" },
+          { type: "text", text: "ตั้งค่าพื้นฐานร้านเสร็จแล้ว", color: "#ffffff", size: "xl", weight: "bold", margin: "sm", wrap: true }
+        ]
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        contents: [
+          infoPanel("สิ่งที่ wizard ทำให้แล้ว", summary),
+          {
+            type: "box",
+            layout: "horizontal",
+            spacing: "sm",
+            contents: [
+              { type: "button", style: "primary", color: BRAND, flex: 1, action: { type: "postback", label: "เมนูแอดมิน", data: "action=adm_menu" } },
+              { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "คิววันนี้", data: "action=adm_queue_today" } }
+            ]
+          }
         ]
       }
     }
