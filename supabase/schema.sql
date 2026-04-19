@@ -193,4 +193,30 @@ create policy "public read staff_services" on staff_services for select using (t
 drop policy if exists "public read working_hours" on working_hours;
 create policy "public read working_hours" on working_hours for select using (true);
 
+-- ---------------- waitlist_entries ----------------
+-- Customers can join a waitlist when a slot is full.
+-- When a slot opens (cancel/reschedule), staff or a cron can notify/convert entries.
+create type waitlist_status as enum ('waiting','notified','fulfilled','expired','cancelled');
+
+create table if not exists waitlist_entries (
+  id           bigserial primary key,
+  shop_id      bigint not null references shops(id) on delete cascade default 1,
+  customer_id  bigint not null references customers(id) on delete cascade,
+  service_id   bigint not null references services(id) on delete cascade,
+  staff_id     bigint references staff(id) on delete cascade, -- null = any staff
+  desired_date date not null,          -- shop-local date
+  desired_time time,                   -- null = any time on that date
+  status       waitlist_status not null default 'waiting',
+  note         text,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+create index if not exists waitlist_shop_date_idx on waitlist_entries(shop_id, desired_date, status);
+create index if not exists waitlist_customer_idx on waitlist_entries(customer_id, status);
+
+-- auto-update updated_at on waitlist
+drop trigger if exists waitlist_entries_touch on waitlist_entries;
+create trigger waitlist_entries_touch before update on waitlist_entries
+  for each row execute function touch_updated_at();
+
 -- customers & bookings: no anon access (service role only)

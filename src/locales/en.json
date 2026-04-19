@@ -49,5 +49,19 @@
       "cancelled": "Cancelled",
       "no_show": "No-show"
     }
+  },
+  "reschedule": {
+    "title": "Reschedule",
+    "current_booking": "Current booking",
+    "confirm_title": "Confirm reschedule",
+    "new_time": "New time",
+    "success": "Rescheduled!"
+  },
+  "waitlist": {
+    "title": "Waitlist",
+    "join": "Notify me when available",
+    "success": "You're on the waitlist!",
+    "already": "You're already on the waitlist",
+    "notified": "A slot opened up!"
   }
 }

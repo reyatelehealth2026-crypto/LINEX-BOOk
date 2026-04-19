@@ -156,44 +156,61 @@ export function myBookingsMessage(bookings: BookingWithJoins[]) {
     };
   }
 
-  const bubbles = bookings.slice(0, 10).map((b) => ({
-    type: "bubble",
-    size: "kilo",
-    header: {
-      type: "box",
-      layout: "vertical",
-      backgroundColor: statusColor(b.status),
-      paddingAll: "12px",
-      contents: [
-        { type: "text", text: statusLabel(b.status), color: "#ffffff", weight: "bold", size: "sm" }
-      ]
-    },
-    body: {
-      type: "box",
-      layout: "vertical",
-      spacing: "sm",
-      contents: [
-        { type: "text", text: b.service?.name ?? "-", weight: "bold", wrap: true },
-        { type: "text", text: formatDateTH(b.starts_at), size: "sm", color: "#555555" },
-        { type: "text", text: formatTimeRange(b.starts_at, b.ends_at), size: "sm", color: "#555555" },
-        { type: "text", text: b.staff?.nickname ? `ช่าง: ${b.staff.nickname}` : "ช่าง: ไม่ระบุ", size: "xs", color: "#888" },
-        (b.status === "pending" || b.status === "confirmed")
-          ? {
-              type: "button",
-              style: "secondary",
-              height: "sm",
-              margin: "md",
-              action: {
-                type: "postback",
-                label: "ยกเลิก",
-                data: `action=cancel_booking&id=${b.id}`,
-                displayText: `ขอยกเลิกคิว #${b.id}`
-              }
-            }
-          : { type: "filler" as const }
-      ]
+  const bubbles = bookings.slice(0, 10).map((b) => {
+    const actionBtns: any[] = [];
+    if (b.status === "pending" || b.status === "confirmed") {
+      actionBtns.push({
+        type: "button",
+        style: "secondary",
+        height: "sm",
+        margin: "sm",
+        action: {
+          type: "postback",
+          label: "🔄 เปลี่ยนเวลา",
+          data: `action=reschedule_booking&id=${b.id}`,
+          displayText: `ขอเปลี่ยนเวลาคิว #${b.id}`
+        }
+      });
+      actionBtns.push({
+        type: "button",
+        style: "secondary",
+        height: "sm",
+        margin: "sm",
+        action: {
+          type: "postback",
+          label: "ยกเลิก",
+          data: `action=cancel_booking&id=${b.id}`,
+          displayText: `ขอยกเลิกคิว #${b.id}`
+        }
+      });
     }
-  }));
+
+    return {
+      type: "bubble",
+      size: "kilo",
+      header: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: statusColor(b.status),
+        paddingAll: "12px",
+        contents: [
+          { type: "text", text: statusLabel(b.status), color: "#ffffff", weight: "bold", size: "sm" }
+        ]
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: [
+          { type: "text", text: b.service?.name ?? "-", weight: "bold", wrap: true },
+          { type: "text", text: formatDateTH(b.starts_at), size: "sm", color: "#555555" },
+          { type: "text", text: formatTimeRange(b.starts_at, b.ends_at), size: "sm", color: "#555555" },
+          { type: "text", text: b.staff?.nickname ? `ช่าง: ${b.staff.nickname}` : "ช่าง: ไม่ระบุ", size: "xs", color: "#888" },
+          ...actionBtns
+        ]
+      }
+    };
+  });
 
   return {
     type: "flex",
@@ -503,11 +520,23 @@ export function timeSlotMessage(
           paddingAll: "20px",
           contents: [
             { type: "text", text: "😢 ไม่มีเวลาว่างในวันนี้", weight: "bold" },
-            { type: "text", text: "ลองเลือกวันอื่นดูนะ", size: "sm", color: "#888" },
+            { type: "text", text: "ลองเลือกวันอื่น หรือกดรอคิวว่าง", size: "sm", color: "#888" },
+            {
+              type: "button",
+              style: "primary",
+              color: "#8b5cf6",
+              margin: "md",
+              action: {
+                type: "postback",
+                label: "🔔 แจ้งเตือนเมื่อมีคิวว่าง",
+                data: `action=join_waitlist&svc=${serviceId}&stf=${staffId ?? 0}&d=${date}`,
+                displayText: "ขอแจ้งเตือนเมื่อมีคิวว่าง"
+              }
+            },
             {
               type: "button",
               style: "secondary",
-              margin: "md",
+              margin: "sm",
               action: {
                 type: "postback",
                 label: "← เลือกวันใหม่",
@@ -680,7 +709,8 @@ export function aiAskTimeMessage(slots: Slot[], serviceId: number, staffId: numb
     },
     body: { type: "box", layout: "vertical", paddingAll: "16px", contents: slots.length === 0 ? [
       { type: "text", text: "😢 ไม่มีเวลาว่างในวันนี้", align: "center", color: "#999" },
-      { type: "button", style: "secondary", margin: "lg", action: { type: "postback", label: "← เลือกวันอื่น", data: `action=book_stf&svc=${serviceId}&id=${staffId ?? 0}` } }
+      { type: "button", style: "primary", color: "#8b5cf6", margin: "md", action: { type: "postback", label: "🔔 แจ้งเตือนเมื่อมีคิวว่าง", data: `action=join_waitlist&svc=${serviceId}&stf=${staffId ?? 0}&d=${date}`, displayText: "ขอแจ้งเตือนเมื่อมีคิวว่าง" } },
+      { type: "button", style: "secondary", margin: "sm", action: { type: "postback", label: "← เลือกวันอื่น", data: `action=book_stf&svc=${serviceId}&id=${staffId ?? 0}` } }
     ] : rows }
   }};
 }

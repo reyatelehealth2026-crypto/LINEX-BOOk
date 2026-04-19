@@ -98,3 +98,25 @@ export type BookingWithJoins = Booking & {
   staff: Pick<Staff, "id" | "name" | "nickname"> | null;
   customer: Pick<Customer, "id" | "display_name" | "full_name" | "phone" | "picture_url" | "line_user_id"> | null;
 };
+
+export type WaitlistStatus = "waiting" | "notified" | "fulfilled" | "expired" | "cancelled";
+
+export type WaitlistEntry = {
+  id: number;
+  shop_id: number;
+  customer_id: number;
+  service_id: number;
+  staff_id: number | null;
+  desired_date: string; // 'YYYY-MM-DD'
+  desired_time: string | null; // 'HH:MM:SS' or null
+  status: WaitlistStatus;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type WaitlistEntryWithJoins = WaitlistEntry & {
+  service: Pick<Service, "id" | "name" | "name_en" | "duration_min"> | null;
+  staff: Pick<Staff, "id" | "name" | "nickname"> | null;
+  customer: Pick<Customer, "id" | "display_name" | "full_name" | "phone" | "line_user_id"> | null;
+};

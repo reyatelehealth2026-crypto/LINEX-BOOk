@@ -102,6 +102,77 @@ async function handlePostback(ev: any, customer: Customer) {
     return replyMessage(rt, [textMessage("ยกเลิกคิวเรียบร้อย ✅"), myBookingsMessage(list)]);
   }
 
+  // ── Reschedule: open LIFF reschedule page with booking info ──
+  if (action === "reschedule_booking") {
+    const id = Number(data.get("id"));
+    if (!id) return replyMessage(rt, [textMessage("ไม่พบข้อมูลคิว")]);
+    const db = supabaseAdmin();
+    const { data: booking } = await db
+      .from("bookings")
+      .select("id, service_id, staff_id, starts_at, service:services(id,name), staff:staff(id,nickname,name)")
+      .eq("id", id)
+      .eq("customer_id", customer.id)
+      .in("status", ["pending", "confirmed"])
+      .maybeSingle();
+    if (!booking) return replyMessage(rt, [textMessage("ไม่พบคิวที่สามารถเปลี่ยนเวลาได้")]);
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID ?? "";
+    const params = new URLSearchParams({
+      id: String(booking.id),
+      service_id: String(booking.service_id),
+      service_name: (booking.service as any)?.name ?? "",
+      staff_id: String(booking.staff_id ?? ""),
+      staff_name: (booking.staff as any)?.nickname ?? (booking.staff as any)?.name ?? "",
+      current_start: booking.starts_at,
+    });
+    return replyMessage(rt, [{
+      type: "flex",
+      altText: "เปลี่ยนเวลาคิว",
+      contents: {
+        type: "bubble",
+        body: {
+          type: "box",
+          layout: "vertical",
+          spacing: "md",
+          paddingAll: "20px",
+          contents: [
+            { type: "text", text: "🔄 เปลี่ยนเวลาคิว", weight: "bold", size: "lg" },
+            { type: "text", text: `คิว #${booking.id} · ${(booking.service as any)?.name ?? "-"}`, size: "sm", color: "#666" },
+            {
+              type: "button",
+              style: "primary",
+              color: "#06c755",
+              margin: "md",
+              action: {
+                type: "uri",
+                label: "📅 เลือกเวลาใหม่",
+                uri: `https://liff.line.me/${liffId}/liff/reschedule?${params}`
+              }
+            }
+          ]
+        }
+      }
+    }]);
+  }
+
+  // ── Join waitlist from chat ──
+  if (action === "join_waitlist") {
+    const serviceId = Number(data.get("svc"));
+    const date = data.get("d") ?? "";
+    const staffIdRaw = Number(data.get("stf"));
+    const staffId = staffIdRaw === 0 ? null : staffIdRaw;
+    if (!serviceId || !date) return replyMessage(rt, [textMessage("ข้อมูลไม่ครบ")]);
+    const db = supabaseAdmin();
+    // Check for duplicate
+    const { data: existing } = await db.from("waitlist_entries").select("id")
+      .eq("customer_id", customer.id).eq("service_id", serviceId).eq("desired_date", date).eq("status", "waiting").maybeSingle();
+    if (existing) return replyMessage(rt, [textMessage("คุณอยู่ในรายการรออยู่แล้วสำหรับวันนี้ 🔔")]);
+    const { error } = await db.from("waitlist_entries").insert({
+      shop_id: SHOP_ID, customer_id: customer.id, service_id: serviceId, staff_id: staffId, desired_date: date, status: "waiting"
+    });
+    if (error) return replyMessage(rt, [textMessage(`เกิดข้อผิดพลาด: ${error.message}`)]);
+    return replyMessage(rt, [textMessage(`🔔 ลงทะเบียนรอคิวว่างสำเร็จ!\nเราจะแจ้งเตือนเมื่อมีคิวว่างในวันที่ ${date}`)]);
+  }
+
   // ── STEP-BY-STEP BOOKING FLOW ──
 
   if (action === "book") {

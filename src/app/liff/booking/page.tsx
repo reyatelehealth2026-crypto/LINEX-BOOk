@@ -88,6 +88,34 @@ export default function BookingPage() {
     router.replace(`/liff/my-bookings?just=${d.booking.id}`);
   }
 
+  async function joinWaitlist() {
+    if (!profile || !selService || !selDate) return;
+    setSubmitting(true);
+    setErr(null);
+    const r = await fetch("/api/waitlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        lineUserId: profile.userId,
+        serviceId: selService.id,
+        staffId: selStaff?.id ?? null,
+        desiredDate: selDate,
+        note: note || undefined,
+      })
+    });
+    const d = await r.json();
+    setSubmitting(false);
+    if (!r.ok) {
+      if (d.error === "already_on_waitlist") {
+        setErr(lang === "en" ? "You are already on the waitlist for this date." : "คุณอยู่ในรายการรออยู่แล้วสำหรับวันนี้");
+      } else {
+        setErr(d.error ?? "เกิดข้อผิดพลาด");
+      }
+      return;
+    }
+    router.replace(`/liff/my-bookings?waitlisted=1`);
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -165,7 +193,15 @@ export default function BookingPage() {
             ) : !selDate ? (
               <div className="text-center text-neutral-400 py-8 text-sm">เลือกวันที่ก่อน</div>
             ) : slots.length === 0 ? (
-              <div className="text-center text-neutral-500 py-8">{t("booking.no_slots")}</div>
+              <div className="text-center text-neutral-500 py-8 space-y-3">
+                <div>{t("booking.no_slots")}</div>
+                <button
+                  onClick={() => joinWaitlist()}
+                  className="btn-primary text-sm"
+                >
+                  🔔 {lang === "en" ? "Join Waitlist" : "แจ้งเตือนเมื่อมีคิวว่าง"}
+                </button>
+              </div>
             ) : (
               <div className="grid grid-cols-4 gap-2">
                 {slots.map((s) => (
