@@ -48,11 +48,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin" className="font-bold text-brand-600">🛠 LineBook Admin</Link>
             <nav className="hidden sm:flex gap-4 text-sm">
               <Link href="/admin" className="hover:text-brand-600">คิววันนี้</Link>
-              <Link href="/admin/working-hours" className="hover:text-brand-600">เวลาทำการ</Link>
-              <Link href="/admin/calendar" className="hover:text-brand-600">ปฏิทิน</Link>
+              <Link href="/admin/setup" className="hover:text-brand-600">ตั้งค่าร้าน</Link>
+              <Link href="/admin/healthcheck" className="hover:text-brand-600">ตรวจสอบระบบ</Link>
               <Link href="/admin/services" className="hover:text-brand-600">บริการ</Link>
               <Link href="/admin/staff" className="hover:text-brand-600">พนักงาน</Link>
-              <Link href="/admin/customers" className="hover:text-brand-600">ลูกค้า</Link>
+              <Link href="/admin/working-hours" className="hover:text-brand-600">เวลาทำการ</Link>
             </nav>
           </div>
           <button
