@@ -360,7 +360,13 @@ export async function POST(req: NextRequest) {
   const body = JSON.parse(raw) as { events?: any[] };
   const events = body.events ?? [];
 
-  await Promise.all(events.map((e) => handleEvent(e).catch((err) => console.error("event err:", err))));
+  for (const e of events) {
+    try {
+      await handleEvent(e);
+    } catch (err) {
+      console.error("event err:", err);
+    }
+  }
 
   return NextResponse.json({ ok: true });
 }
