@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 import { useLiff } from "@/components/LiffProvider";
 import { Calendar, ListChecks, UserCircle2, Sparkles } from "lucide-react";
@@ -7,6 +9,15 @@ import { Calendar, ListChecks, UserCircle2, Sparkles } from "lucide-react";
 export default function LiffHome() {
   const { t } = useI18n();
   const { profile } = useLiff();
+  const router = useRouter();
+  const sp = useSearchParams();
+
+  useEffect(() => {
+    const state = sp.get("liff.state");
+    if (state && state.startsWith("/") && state !== "/") {
+      router.replace(`/liff${state}`);
+    }
+  }, [router, sp]);
 
   return (
     <div className="space-y-6">
