@@ -1006,8 +1006,8 @@ export function adminAuthSuccessMessage() {
             layout: "horizontal",
             spacing: "sm",
             contents: [
-              { type: "button", style: "primary", color: BRAND, flex: 1, action: { type: "message", label: "เมนูแอดมิน", text: "เมนูแอดมิน" } },
-              { type: "button", style: "secondary", flex: 1, action: { type: "message", label: "คิววันนี้", text: "คิววันนี้" } }
+              { type: "button", style: "primary", color: BRAND, flex: 1, action: { type: "postback", label: "เมนูแอดมิน", data: "action=adm_menu" } },
+              { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "คิววันนี้", data: "action=adm_queue_today" } }
             ]
           }
         ]
@@ -1042,18 +1042,18 @@ export function adminMenuMessage() {
           { type: "text", text: "ทุกปุ่มจะพาคุณเข้า step ถัดไปทันที และระบบจะแสดงสถานะกำลังทำงานก่อนตอบกลับ", size: "xs", color: TEXT_MUTED, wrap: true },
           infoPanel("โหมด 1 · ตั้งค่าร้าน", ["ใช้เมื่ออยากไล่ตั้งค่า shop, service, staff, hours ผ่านแชท"]),
           { type: "box", layout: "horizontal", spacing: "sm", contents: [
-            { type: "button", style: "primary", color: BRAND, flex: 1, height: "md", action: { type: "message", label: "⚙️ ตั้งค่าร้าน", text: "เปิดเมนูตั้งค่าร้าน" } },
-            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "message", label: "📊 สถานะร้าน", text: "สถานะร้าน" } }
+            { type: "button", style: "primary", color: BRAND, flex: 1, height: "md", action: { type: "postback", label: "⚙️ ตั้งค่าร้าน", data: "action=adm_setup" } },
+            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "📊 สถานะร้าน", data: "action=adm_status" } }
           ] },
           infoPanel("โหมด 2 · คิวและรายได้", ["ใช้ดูงานวันนี้เร็วๆ โดยไม่ต้องเปิดเว็บหลังบ้าน"]),
           { type: "box", layout: "horizontal", spacing: "sm", contents: [
-            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "message", label: "📋 คิววันนี้", text: "คิววันนี้" } },
-            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "message", label: "💰 ยอดวันนี้", text: "ยอดวันนี้" } }
+            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "📋 คิววันนี้", data: "action=adm_queue_today" } },
+            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "💰 ยอดวันนี้", data: "action=adm_revenue" } }
           ] },
           infoPanel("โหมด 3 · จัดการระบบ", ["ใช้ตอนอยากเปิดเว็บหลังบ้านหรือออกจากโหมดแอดมิน"]),
           { type: "box", layout: "horizontal", spacing: "sm", contents: [
             { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "uri", label: "🌐 เปิดเว็บหลังบ้าน", uri: APP_URL("/admin") } },
-            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "message", label: "🚪 ออกจากโหมดแอดมิน", text: "ออกจากโหมดแอดมิน" } }
+            { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "🚪 ออกจากโหมดแอดมิน", data: "action=adm_logout" } }
           ] }
         ]
       }
@@ -1085,13 +1085,13 @@ export function adminSetupMenuMessage() {
         spacing: "sm",
         contents: [
           { type: "text", text: "แนะนำให้เริ่มจาก Setup Wizard เพราะมันพาไปทีละขั้นและลดความงงระหว่างตั้งค่า", size: "xs", color: TEXT_MUTED, wrap: true },
-          { type: "button", style: "primary", color: BRAND, height: "md", action: { type: "message", label: "🪄 Setup Wizard", text: "เริ่ม Setup Wizard" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "message", label: "📊 สถานะร้านตอนนี้", text: "สถานะร้าน" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "message", label: "🏪 ตั้งชื่อ / เบอร์ / ที่อยู่", text: "ดูตัวอย่างตั้งค่าข้อมูลร้าน" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "message", label: "✂️ เพิ่มบริการ", text: "ดูตัวอย่างเพิ่มบริการ" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "message", label: "💇 เพิ่มช่าง", text: "ดูตัวอย่างเพิ่มช่าง" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "message", label: "🕒 ตั้งเวลาเปิดปิดร้าน", text: "ดูตัวอย่างตั้งเวลาเปิดปิดร้าน" } },
-          { type: "button", style: "secondary", height: "md", action: { type: "message", label: "🧑‍🔧 ตั้งเวลารายช่าง", text: "ดูตัวอย่างตั้งเวลารายช่าง" } },
+          { type: "button", style: "primary", color: BRAND, height: "md", action: { type: "postback", label: "🪄 Setup Wizard", data: "action=adm_wizard_start" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "📊 สถานะร้านตอนนี้", data: "action=adm_status" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🏪 ตั้งชื่อ / เบอร์ / ที่อยู่", data: "action=adm_help_shop" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "✂️ เพิ่มบริการ", data: "action=adm_help_service" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "💇 เพิ่มช่าง", data: "action=adm_help_staff" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🕒 ตั้งเวลาเปิดปิดร้าน", data: "action=adm_help_hours" } },
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🧑‍🔧 ตั้งเวลารายช่าง", data: "action=adm_help_staff_hours" } },
           { type: "button", style: "secondary", height: "md", action: { type: "uri", label: "🌐 เปิดหน้า Setup บนเว็บ", uri: APP_URL("/admin/setup") } }
         ]
       }
@@ -1130,8 +1130,8 @@ export function adminSetupStatusMessage(opts: {
         contents: [
           infoPanel("สิ่งที่ยังควรทำต่อ", opts.missing.length ? opts.missing : ["ตอนนี้พร้อมใช้งานพื้นฐานแล้ว"]),
           { type: "box", layout: "horizontal", spacing: "sm", contents: [
-            { type: "button", style: "primary", color: BRAND, flex: 1, action: { type: "message", label: "🪄 Setup Wizard", text: "เริ่ม Setup Wizard" } },
-            { type: "button", style: "secondary", flex: 1, action: { type: "message", label: "⚙️ เมนูตั้งค่า", text: "เปิดเมนูตั้งค่าร้าน" } }
+            { type: "button", style: "primary", color: BRAND, flex: 1, action: { type: "postback", label: "🪄 Setup Wizard", data: "action=adm_wizard_start" } },
+            { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "⚙️ เมนูตั้งค่า", data: "action=adm_setup" } }
           ] }
         ]
       }
