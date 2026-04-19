@@ -36,7 +36,7 @@ const menu = {
   areas: [
     // Row 1
     { bounds: { x: 0,    y: 0,   width: 833, height: 843 },
-      action: { type: "uri", uri: LIFF("/liff/booking"), label: "จองคิว" } },
+      action: { type: "postback", data: "action=book", displayText: "จองคิว", label: "จองคิว" } },
     { bounds: { x: 833,  y: 0,   width: 834, height: 843 },
       action: { type: "postback", data: "action=my_bookings", displayText: "คิวของฉัน", label: "คิวของฉัน" } },
     { bounds: { x: 1667, y: 0,   width: 833, height: 843 },
