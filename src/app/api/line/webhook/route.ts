@@ -30,6 +30,7 @@ import {
   adminWizardPromptMessage,
   adminWizardDayPickerMessage,
   adminWizardDoneMessage,
+  adminWizardBatchResultMessage,
 } from "@/lib/flex";
 import type { BookingWithJoins, Customer, LineAdminSession } from "@/types/db";
 import { formatDateTH, formatTimeRange } from "@/lib/format";
@@ -220,8 +221,24 @@ async function handlePostback(ev: any, customer: Customer) {
   if (action === "adm_wizard_start") {
     if (!userId) return;
     await grantAdminSession(userId);
-    await setAdminWizardState(userId, "shop_name", {});
+    await setAdminWizardState(userId, "shop_name", { flow: "full_setup" });
     return replyMessage(rt, [wizardPromptForStep("shop_name")]);
+  }
+
+  if (action === "adm_wizard_more_service") {
+    if (!userId) return;
+    const session = await getAdminSession(userId);
+    await grantAdminSession(userId);
+    await setAdminWizardState(userId, "service_name", { ...(session?.wizard_payload ?? {}), flow: "service_batch" });
+    return replyMessage(rt, [wizardPromptForStep("service_name")]);
+  }
+
+  if (action === "adm_wizard_more_staff") {
+    if (!userId) return;
+    const session = await getAdminSession(userId);
+    await grantAdminSession(userId);
+    await setAdminWizardState(userId, "staff_name", { ...(session?.wizard_payload ?? {}), flow: "staff_batch" });
+    return replyMessage(rt, [wizardPromptForStep("staff_name")]);
   }
 
   if (action === "adm_wizard_cancel") {
@@ -630,6 +647,7 @@ async function handleAIBooking(
 async function handleAdminWizardInput(rt: string, lineUserId: string, text: string, session: LineAdminSession) {
   const db = supabaseAdmin();
   const payload = (session.wizard_payload ?? {}) as Record<string, any>;
+  const flow = String(payload.flow ?? "full_setup");
 
   switch (session.wizard_step as AdminWizardStep) {
     case "shop_name": {
@@ -674,6 +692,25 @@ async function handleAdminWizardInput(rt: string, lineUserId: string, text: stri
         duration_min: duration,
       });
       if (error) return replyMessage(rt, [textMessage(`เพิ่มบริการไม่สำเร็จ: ${error.message}`)]);
+
+      if (flow === "service_batch") {
+        await clearAdminWizardState(lineUserId);
+        return replyMessage(rt, [adminWizardBatchResultMessage({
+          title: "เพิ่มบริการเรียบร้อยแล้ว",
+          lines: [
+            `บริการ: ${serviceName}`,
+            `ราคา: ${servicePrice.toLocaleString()} บาท`,
+            `ระยะเวลา: ${duration} นาที`,
+          ],
+          primaryLabel: "➕ เพิ่มบริการอีก",
+          primaryAction: "action=adm_wizard_more_service",
+          secondaryLabel: "➕ ไปเพิ่มช่าง",
+          secondaryAction: "action=adm_wizard_more_staff",
+          tertiaryLabel: "⬅️ กลับเมนูแอดมิน",
+          tertiaryAction: "action=adm_menu",
+        })]);
+      }
+
       await setAdminWizardState(lineUserId, "staff_name", { ...payload, serviceDuration: duration });
       return replyMessage(rt, [textMessage(`✅ เพิ่มบริการ "${serviceName}" แล้ว`), wizardPromptForStep("staff_name")]);
     }
@@ -686,6 +723,24 @@ async function handleAdminWizardInput(rt: string, lineUserId: string, text: stri
       if (stf && svcs?.length) {
         await db.from("staff_services").insert(svcs.map(s => ({ staff_id: stf.id, service_id: s.id }))).then(() => {});
       }
+
+      if (flow === "staff_batch") {
+        await clearAdminWizardState(lineUserId);
+        return replyMessage(rt, [adminWizardBatchResultMessage({
+          title: "เพิ่มช่างเรียบร้อยแล้ว",
+          lines: [
+            `ช่าง: ${text}`,
+            `ผูกกับบริการในร้านอัตโนมัติแล้ว`,
+          ],
+          primaryLabel: "➕ เพิ่มช่างอีก",
+          primaryAction: "action=adm_wizard_more_staff",
+          secondaryLabel: "➕ ไปเพิ่มบริการ",
+          secondaryAction: "action=adm_wizard_more_service",
+          tertiaryLabel: "⬅️ กลับเมนูแอดมิน",
+          tertiaryAction: "action=adm_menu",
+        })]);
+      }
+
       await setAdminWizardState(lineUserId, "hours_day", { ...payload, staffName: text });
       return replyMessage(rt, [textMessage(`✅ เพิ่มช่าง "${text}" แล้ว`), wizardPromptForStep("hours_day")]);
     }

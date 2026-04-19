@@ -1172,13 +1172,54 @@ export function adminWizardDoneMessage(summary: string[]) {
           infoPanel("สิ่งที่ wizard ทำให้แล้ว", summary),
           {
             type: "box",
-            layout: "horizontal",
+            layout: "vertical",
             spacing: "sm",
             contents: [
-              { type: "button", style: "primary", color: BRAND, flex: 1, action: { type: "postback", label: "เมนูแอดมิน", data: "action=adm_menu" } },
-              { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "คิววันนี้", data: "action=adm_queue_today" } }
+              { type: "button", style: "primary", color: BRAND, action: { type: "postback", label: "➕ เพิ่มบริการอีก", data: "action=adm_wizard_more_service" } },
+              { type: "button", style: "secondary", action: { type: "postback", label: "➕ เพิ่มช่างอีก", data: "action=adm_wizard_more_staff" } },
+              { type: "button", style: "secondary", action: { type: "postback", label: "✅ เสร็จแล้ว ไปเมนูแอดมิน", data: "action=adm_menu" } }
             ]
           }
+        ]
+      }
+    }
+  };
+}
+
+export function adminWizardBatchResultMessage(opts: {
+  title: string;
+  lines: string[];
+  primaryLabel: string;
+  primaryAction: string;
+  secondaryLabel: string;
+  secondaryAction: string;
+  tertiaryLabel?: string;
+  tertiaryAction?: string;
+}) {
+  const buttons: any[] = [
+    { type: "button", style: "primary", color: BRAND, action: { type: "postback", label: opts.primaryLabel, data: opts.primaryAction } },
+    { type: "button", style: "secondary", action: { type: "postback", label: opts.secondaryLabel, data: opts.secondaryAction } },
+  ];
+
+  if (opts.tertiaryLabel && opts.tertiaryAction) {
+    buttons.push({ type: "button", style: "secondary", action: { type: "postback", label: opts.tertiaryLabel, data: opts.tertiaryAction } });
+  }
+
+  return {
+    type: "flex",
+    altText: opts.title,
+    contents: {
+      type: "bubble",
+      size: "giga",
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        paddingAll: "18px",
+        contents: [
+          { type: "text", text: opts.title, weight: "bold", size: "lg", color: TEXT_MAIN, wrap: true },
+          infoPanel("สรุป", opts.lines),
+          { type: "box", layout: "vertical", spacing: "sm", contents: buttons }
         ]
       }
     }
