@@ -331,7 +331,8 @@ export function reminderMessage(b: BookingWithJoins) {
           infoRow("บริการ", b.service?.name ?? "-", "✂️"),
           infoRow("วันที่", formatDateTH(b.starts_at), "📅"),
           infoRow("เวลา", formatTimeRange(b.starts_at, b.ends_at), "🕐"),
-          infoRow("ช่าง", b.staff?.nickname ?? b.staff?.name ?? "ไม่ระบุ", "💇")
+          infoRow("ช่าง", b.staff?.nickname ?? b.staff?.name ?? "ไม่ระบุ", "💇"),
+          thankYouCard({ title: "💜 รอพบคุณที่ร้าน", subtitle: "อีกไม่นานเจอกัน" })
         ]
       }
     }
@@ -1550,8 +1551,10 @@ function infoRow(label: string, value: string, emoji: string) {
   };
 }
 
-/** Soft mauve thank-you card: brand touch between details and footer actions. */
-function thankYouCard() {
+/** Soft mauve brand card: typography-only brand touch for completion / see-you moments. */
+function thankYouCard(opts: { title?: string; subtitle?: string } = {}) {
+  const title = opts.title ?? "💜 ขอบคุณที่ไว้วางใจ";
+  const subtitle = opts.subtitle ?? "LIN3 × BOOK";
   return {
     type: "box",
     layout: "vertical",
@@ -1562,8 +1565,8 @@ function thankYouCard() {
     borderWidth: "1px",
     borderColor: "#e9dff0",
     contents: [
-      { type: "text", text: "💜 ขอบคุณที่ไว้วางใจ", color: "#3b2340", size: "sm", weight: "bold", align: "center" },
-      { type: "text", text: "LIN3 × BOOK", color: "#6b4e7a", size: "xs", align: "center", margin: "xs" }
+      { type: "text", text: title, color: "#3b2340", size: "sm", weight: "bold", align: "center" },
+      { type: "text", text: subtitle, color: "#6b4e7a", size: "xs", align: "center", margin: "xs" }
     ]
   };
 }
