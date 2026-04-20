@@ -36,6 +36,7 @@ import {
   adminWizardProgressMessage,
   adminSetupStatusMessage,
 } from "@/lib/flex";
+import { askGLM } from "@/lib/zai";
 import type { BookingWithJoins, Customer, LineAdminSession } from "@/types/db";
 import { formatDateTH, formatTimeRange } from "@/lib/format";
 import { fromZonedTime } from "date-fns-tz";
@@ -861,7 +862,11 @@ async function handleMessage(ev: any, customer: Customer) {
     }]);
   }
 
-  // ── Default: smart welcome ──
+  // ── Default: AI chat reply via Z.AI GLM ──
+  const aiReply = await askGLM(userId, text);
+  if (aiReply) {
+    return replyMessage(rt, [{ type: "text", text: aiReply }]);
+  }
   return replyMessage(rt, [smartWelcomeMessage(customer.display_name ?? "คุณลูกค้า")]);
 }
 
