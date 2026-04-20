@@ -17,10 +17,14 @@
 
 | # | Decision | Choice |
 |---|---|---|
-| 1 | Layout strategy | **A) Hero + Thumbnail rows** (hero 2:1 ด้านบน + 5 thumbnails แทน emoji ทุกแถว) |
-| 2 | Background consistency | **B) Re-render 5 tiles on unified gradient BG** (mauve → rose gold) |
-| 3 | Hosting | Next.js `public/brand/` → served via `${NEXT_PUBLIC_APP_URL}/brand/*.png` |
-| 4 | Phase rollout | Phase 1 = `bookingConfirmedMessage` only → validate → Phase 2 = 3 other templates |
+| 1 | Layout strategy | **Hero banner + Thank-you card** (branded moments เท่านั้น — ไม่แทน row icons) |
+| 2 | Row icons | **คง emoji เดิม** (✂️📅🕐💇) — minimal, scannable, ไม่ดึงความสนใจจากเนื้อหา |
+| 3 | Background consistency | **B) Re-render 5 tiles on unified gradient BG** (mauve → rose gold) — hero ใช้แค่ 1 ตัว, tiles อื่นสำรอง |
+| 4 | Hosting | Next.js `public/brand/` → served via `${NEXT_PUBLIC_APP_URL}/brand/*.png` |
+| 5 | Phase rollout | Phase 1 = `bookingConfirmedMessage` only → validate → Phase 2 = เพิ่ม hero/thank-you ใน flexes อื่น |
+
+**Design principle:** ใช้ภาพ brand เฉพาะ **"moments"** (hero banner, thank-you, celebration) ไม่ใช่ทุก functional icon
+→ ป้องกัน visual clutter และคง scannability ของข้อมูล
 
 ---
 
