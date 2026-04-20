@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createRateLimiter } from "@/lib/rate-limit";
 import { verifySignature, replyMessage, getProfile, pushMessage, startLoading } from "@/lib/line";
 import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
 import { availableSlots } from "@/lib/booking";
@@ -48,6 +49,9 @@ const ADMIN_SESSION_GRACE_MS = 5 * 60 * 1000;
 type AdminWizardStep = "shop_name" | "shop_phone" | "shop_address" | "service_name" | "service_price" | "service_duration" | "staff_name" | "hours_day" | "hours_time";
 
 const lineEventQueues = ((globalThis as any).__lineEventQueues ??= new Map<string, Promise<unknown>>()) as Map<string, Promise<unknown>>;
+
+// 20 events per minute per LINE userId — prevents a single user from exhausting DB resources
+const _userEventLimiter = createRateLimiter(20, 60 * 1000);
 
 const ADMIN_RECOVERY_ACTIONS: Record<string, string> = {
   adm_menu: "หน้าแรกแอดมิน",
@@ -377,6 +381,12 @@ async function enqueueLineEvent(ev: any) {
   const userId: string | undefined = ev.source?.userId;
   if (!userId) {
     return handleEvent(ev);
+  }
+
+  const { allowed } = _userEventLimiter.check(userId);
+  if (!allowed) {
+    console.warn(`[rate-limit] dropped event for userId=${userId} type=${ev.type}`);
+    return;
   }
 
   const previous = lineEventQueues.get(userId) ?? Promise.resolve();

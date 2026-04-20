@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>LineBook Strategic Analysis Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Reset */
+body { margin: 0; padding: 0; font-family: 'Noto Serif Thai', Georgia, serif; font-size: 11pt; line-height: 1.7; color: #333; text-align: justify; text-align-last: left; }
+* { box-sizing: border-box; }
+
+/* Page setup */
+@page { size: A4; margin: 2.5cm 2cm; @top-center { content: string(doctitle); font-family: 'Inter', sans-serif; font-size: 9pt; color: #888; } @bottom-center { content: counter(page); font-family: 'Inter', sans-serif; font-size: 9pt; color: #888; } }
+@page :first { margin: 0; @top-center { content: none; } @bottom-center { content: none; } }
+@page cover { @top-center { content: none; } @bottom-center { content: none; } }
+@page toc { @top-center { content: none; } @bottom-center { content: none; } }
+
+body { string-set: doctitle ""; }
+h1 { string-set: doctitle content(); }
+
+/* Cover - Swiss Style */
+.cover { page: cover; width: 210mm; height: 297mm; margin: 0; position: relative; overflow: hidden; page-break-after: always; background: linear-gradient(135deg, #fafbfc 0%, #f0f2f5 100%); }
+.cover-grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.cover-grid::before { content: ''; position: absolute; top: 3cm; left: 2cm; right: 2cm; bottom: 3cm; border: 1.5px solid #c0c8d0; }
+.cover-grid::after { content: ''; position: absolute; top: 3.4cm; left: 2.4cm; right: 2.4cm; bottom: 3.4cm; border: 0.75px solid #d8dde2; }
+.cover-accent-top { position: absolute; top: 0; left: 0; width: 100%; height: 8mm; background: linear-gradient(90deg, #2b3a4e 0%, #3d5a80 60%, #98c1d9 100%); }
+.cover-accent-bar { position: absolute; top: 3cm; left: 2cm; width: 6cm; height: 4px; background: #2b3a4e; }
+.cover-corner-bl { position: absolute; bottom: 3cm; left: 2cm; width: 2cm; height: 2cm; border-left: 2px solid #2b3a4e; border-bottom: 2px solid #2b3a4e; }
+.cover-corner-br { position: absolute; bottom: 3cm; right: 2cm; width: 2cm; height: 2cm; border-right: 2px solid #2b3a4e; border-bottom: 2px solid #2b3a4e; }
+.cover-dots { position: absolute; top: 6cm; right: 3cm; }
+.cover-dots::before { content: ''; position: absolute; width: 6px; height: 6px; background: #98c1d9; border-radius: 50%; box-shadow: 15px 0 #98c1d9, 30px 0 #98c1d9, 0 15px #98c1d9, 15px 15px #98c1d9, 30px 15px #98c1d9; }
+.cover-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -55%); text-align: center; width: 75%; z-index: 1; }
+.cover-label { font-family: 'Inter', sans-serif; font-size: 10pt; font-weight: 600; color: #3d5a80; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.5cm; }
+.cover-title { font-family: 'Inter', sans-serif; font-size: 32pt; font-weight: 700; color: #1a2634; margin-bottom: 0.6cm; line-height: 1.2; }
+.cover-subtitle { font-family: 'Noto Serif Thai', serif; font-size: 14pt; color: #4a5568; margin-bottom: 2.5cm; line-height: 1.6; }
+.cover-meta { font-family: 'Inter', sans-serif; font-size: 10pt; color: #555; line-height: 2.2; }
+.cover-meta strong { color: #2b3a4e; }
+.cover-footer { position: absolute; bottom: 2cm; left: 0; width: 100%; text-align: center; font-family: 'Inter', sans-serif; font-size: 9pt; color: #8899aa; }
+
+/* TOC */
+.toc-page { page: toc; page-break-after: always; }
+.toc-title { font-family: 'Inter', sans-serif; font-size: 20pt; font-weight: 700; color: #1a2634; margin-bottom: 1.2cm; text-align: center; }
+.toc { list-style: none; padding: 0; margin: 0; }
+.toc li { margin: 0.35cm 0; }
+.toc a { color: #333; text-decoration: none; font-size: 11pt; display: block; }
+.toc a::after { content: leader('.') target-counter(attr(href url), page); font-family: 'Inter', sans-serif; }
+.toc-l1 { font-weight: 600; font-family: 'Inter', sans-serif; font-size: 11.5pt; }
+.toc-l2 { padding-left: 1.2em; font-size: 10.5pt; color: #444; }
+
+/* Headings */
+h1 { font-family: 'Inter', sans-serif; font-size: 20pt; font-weight: 700; color: #1a2634; margin-top: 0; margin-bottom: 0.6cm; padding-bottom: 0.3cm; border-bottom: 2.5px solid #2b3a4e; page-break-after: avoid; }
+h2 { font-family: 'Inter', sans-serif; font-size: 14pt; font-weight: 600; color: #2b3a4e; margin-top: 0.8cm; margin-bottom: 0.4cm; padding-left: 0.5cm; border-left: 3.5px solid #3d5a80; page-break-after: avoid; }
+h3 { font-family: 'Inter', sans-serif; font-size: 12pt; font-weight: 600; color: #3d5a80; margin-top: 0.6cm; margin-bottom: 0.3cm; page-break-after: avoid; }
+
+/* Tables - three-line style */
+table { width: 100%; max-width: 100%; border-collapse: collapse; margin: 0.6cm 0; font-size: 10pt; page-break-inside: auto; }
+thead { display: table-header-group; }
+thead tr { border-top: 2px solid #333; border-bottom: 1.5px solid #333; }
+thead th { font-family: 'Inter', sans-serif; font-weight: 600; color: #1a2634; padding: 0.35cm 0.3cm; text-align: left; background: #f8f9fa; }
+tbody tr { border-bottom: 0.75px solid #ddd; }
+tbody tr:last-child { border-bottom: 2px solid #333; }
+td { padding: 0.3cm 0.3cm; vertical-align: top; }
+tr { page-break-inside: avoid; }
+caption { font-family: 'Inter', sans-serif; font-weight: 600; text-align: left; margin-bottom: 0.3cm; color: #1a2634; }
+caption::before { content: attr(data-label) "  "; font-weight: 700; }
+
+/* Highlight boxes */
+.box-critical { border-left: 4px solid #c0392b; padding: 0.5cm 0.7cm; margin: 0.5cm 0; background: #fdf2f2; }
+.box-high { border-left: 4px solid #e67e22; padding: 0.5cm 0.7cm; margin: 0.5cm 0; background: #fef6ee; }
+.box-medium { border-left: 4px solid #f39c12; padding: 0.5cm 0.7cm; margin: 0.5cm 0; background: #fefbec; }
+.box-low { border-left: 4px solid #27ae60; padding: 0.5cm 0.7cm; margin: 0.5cm 0; background: #f0faf3; }
+.box-info { border-left: 4px solid #2980b9; padding: 0.5cm 0.7cm; margin: 0.5cm 0; background: #eef6fc; }
+.box-title { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 10.5pt; margin-bottom: 0.2cm; color: #1a2634; }
+
+/* Lists */
+ul, ol { margin: 0.3cm 0; padding-left: 1.2em; }
+li { margin: 0.15cm 0; }
+
+/* Code/prevention */
+pre, table, figure, img, svg, blockquote { max-width: 100%; box-sizing: border-box; }
+pre { overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; background: #f5f5f5; padding: 0.4cm; font-size: 9.5pt; border-radius: 0; }
+code { font-family: 'Courier New', monospace; font-size: 9.5pt; background: #f5f5f5; padding: 0.05cm 0.15cm; word-break: break-word; }
+a { color: #2b3a4e; word-break: break-all; }
+
+/* Figures */
+figure { margin: 0.6cm 0; text-align: center; page-break-inside: avoid; }
+figcaption { font-family: 'Inter', sans-serif; font-size: 10pt; color: #555; margin-top: 0.3cm; }
+figcaption::before { content: attr(data-label) "  "; font-weight: 600; color: #1a2634; }
+
+/* Page breaks - use sparingly */
+.page-break { page-break-before: always; }
+
+/* Priority badges */
+.p-badge { display: inline-flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif; font-size: 8.5pt; font-weight: 700; padding: 0.1cm 0.35cm; color: #fff; margin-right: 0.2cm; }
+.p0 { background: #c0392b; }
+.p1 { background: #e67e22; }
+.p2 { background: #f39c12; color: #333; }
+.p3 { background: #27ae60; }
+
+/* Section numbers with data attributes */
+.sec-num { font-family: 'Inter', sans-serif; font-weight: 700; color: #3d5a80; margin-right: 0.3cm; }
+</style>
+</head>
+<body>
+
+<!-- ========== COVER ========== -->
+<div class="cover">
+<div class="cover-accent-top"></div>
+<div class="cover-grid"></div>
+<div class="cover-accent-bar"></div>
+<div class="cover-corner-bl"></div>
+<div class="cover-corner-br"></div>
+<div class="cover-dots"></div>
+<div class="cover-content">
+<div class="cover-label">Strategic Technology Assessment</div>
+<h1 class="cover-title" style="border:none; padding:0; margin-bottom:0.6cm;">LineBook</h1>
+<p class="cover-subtitle">รายงานวิเคราะห์จุดปรับปรุงสำหรับสตาร์ทอัพ<br>และกลยุทธ์เหนือกว่าคู่แข่งในตลาด</p>
+<div class="cover-meta">
+<strong>ประเภท:</strong> LINE-Based Booking System for SME Service Businesses<br>
+<strong>Tech Stack:</strong> Next.js 16, Supabase, LINE LIFF/Messaging API<br>
+<strong>วันที่:</strong> 20 เมษายน 2026
+</div>
+</div>
+<div class="cover-footer">Confidential - Internal Use Only</div>
+</div>
+
+<!-- ========== TOC ========== -->
+<div class="toc-page">
+<div class="toc-title">สารบัญ</div>
+<ul class="toc">
+<li class="toc-l1"><a href="#sec1">1. ภาพรวมโปรเจกต์และสถานะปัจจุบัน</a></li>
+<li class="toc-l2"><a href="#sec1-1">1.1 สถาปัตยกรรมระบบ</a></li>
+<li class="toc-l2"><a href="#sec1-2">1.2 จุดแข็งที่มีอยู่</a></li>
+<li class="toc-l2"><a href="#sec1-3">1.3 ข้อจำกัดปัจจุบัน</a></li>
+<li class="toc-l1"><a href="#sec2">2. จุดที่ต้องแก้ก่อน Launch (P0 - Critical)</a></li>
+<li class="toc-l2"><a href="#sec2-1">2.1 ความปลอดภัย (Security)</a></li>
+<li class="toc-l2"><a href="#sec2-2">2.2 ความเสถียรของระบบ</a></li>
+<li class="toc-l2"><a href="#sec2-3">2.3 Infrastructure</a></li>
+<li class="toc-l1"><a href="#sec3">3. จุดปรับปรุงเพื่อใช้งานจริง (P1 - High)</a></li>
+<li class="toc-l2"><a href="#sec3-1">3.1 UX/UI ฝั่งลูกค้า</a></li>
+<li class="toc-l2"><a href="#sec3-2">3.2 Admin Panel</a></li>
+<li class="toc-l2"><a href="#sec3-3">3.3 CRM & Loyalty</a></li>
+<li class="toc-l2"><a href="#sec3-4">3.4 Developer Experience</a></li>
+<li class="toc-l1"><a href="#sec4">4. ฟีเจอร์เหนือคู่แข่ง (P2 - Differentiation)</a></li>
+<li class="toc-l2"><a href="#sec4-1">4.1 AI-Native Booking</a></li>
+<li class="toc-l2"><a href="#sec4-2">4.2 Queue Intelligence</a></li>
+<li class="toc-l2"><a href="#sec4-3">4.3 Retention Engine</a></li>
+<li class="toc-l1"><a href="#sec5">5. วิเคราะห์คู่แข่งและกลยุทธ์การตลาด</a></li>
+<li class="toc-l2"><a href="#sec5-1">5.1 แนวการแข่งขัน</a></li>
+<li class="toc-l2"><a href="#sec5-2">5.2 กลยุทธ์การตั้งราคา</a></li>
+<li class="toc-l2"><a href="#sec5-3">5.3 ช่องทางการขาย</a></li>
+<li class="toc-l1"><a href="#sec6">6. แผนพัฒนาแนะนำ</a></li>
+<li class="toc-l2"><a href="#sec6-1">6.1 Roadmap 6 เดือน</a></li>
+<li class="toc-l2"><a href="#sec6-2">6.2 ทีมที่ต้องการ</a></li>
+<li class="toc-l1"><a href="#sec7">7. สรุปและข้อแนะนำหลัก</a></li>
+</ul>
+</div>
+
+<!-- ========== SECTION 1 ========== -->
+<h1 id="sec1"><span class="sec-num">1.</span>ภาพรวมโปรเจกต์และสถานะปัจจุบัน</h1>
+
+<p>LineBook เป็นระบบจองคิวผ่าน LINE สำหรับธุรกิจบริการขนาดเล็ก-กลาง เช่น ร้านตัดผม ร้านเสริมสวย ร้านทำเล็บ และคลินิกความงาม ระบบพัฒนาด้วย Next.js 16 App Router ร่วมกับ Supabase (PostgreSQL + Realtime) และใช้ LINE Platform (Messaging API + LIFF v2) เป็นช่องทางหลักในการติดต่อกับลูกค้า</p>
+
+<h2 id="sec1-1">1.1 สถาปัตยกรรมระบบ</h2>
+
+<table>
+<caption data-label="ตาราง 1">สรุปสถาปัตยกรรมเทคโนโลยี</caption>
+<thead>
+<tr><th>ชั้น</th><th>เทคโนโลยี</th><th>บทบาท</th></tr>
+</thead>
+<tbody>
+<tr><td>Frontend (ลูกค้า)</td><td>LINE LIFF v2, Next.js</td><td>จองคิวผ่าน Mini App ในแชท</td></tr>
+<tr><td>Frontend (แอดมิน)</td><td>Next.js, Tailwind CSS</td><td>แผงควบคุมดูคิวแบบ Realtime</td></tr>
+<tr><td>Backend API</td><td>Next.js API Routes</td><td>รับ Webhook, จัดการ Booking, Admin</td></tr>
+<tr><td>Database</td><td>Supabase (PostgreSQL)</td><td>เก็บข้อมูลร้าน, บริการ, คิว, CRM</td></tr>
+<tr><td>Realtime</td><td>Supabase Realtime</td><td>อัปเดตคิวแบบสดบน Admin Panel</td></tr>
+<tr><td>LINE Integration</td><td>Messaging API, Rich Menu</td><td>รับส่งข้อความ, Flex Message</td></tr>
+<tr><td>NLP Engine</td><td>Custom Thai Parser</td><td>แยกประโยคจองภาษาธรรมชาติ</td></tr>
+</tbody>
+</table>
+
+<p>การออกแบบ Schema รองรับ Multi-shop แบบ implicit โดยใส่ shop_id เป็นค่า default ทุกตาราง แต่ logic ปัจจุบันยังทำงานแบบ Single-shop อยู่ ซึ่งเป็นการวางรากฐานที่ดีสำหรับการขยายในอนาคต</p>
+
+<h2 id="sec1-2">1.2 จุดแข็งที่มีอยู่</h2>
+
+<div class="box-info">
+<div class="box-title">สิ่งที่ทำได้ดีแล้ว</div>
+<ul>
+<li><strong>Database Design มีคุณภาพสูง</strong> - ใช้ PostgreSQL exclusion constraint ป้องกัน double-booking ที่ระดับ database layer ซึ่งเป็นการออกแบบที่ถูกต้องและปลอดภัยกว่าการเช็คที่ application layer</li>
+<li><strong>Thai NLP Parser ที่ครอบคลุม</strong> - รองรับการอ่านเวลาภาษาไทยหลายรูปแบบ (เช่น "บ่ายสองครึ่ง", "สองโมงเย็น", "14:30") และวันที่ ("พรุ่งนี้", "วันศุกร์", "20/4") รวมถึง matching บริการและช่างจากชื่อ</li>
+<li><strong>Booking Flow ที่หลากหลาย</strong> - รองรับทั้ง step-by-step (กดเลือกทีละขั้น), NLP (พิมพ์เป็นประโยค), และ quick actions (rich menu)</li>
+<li><strong>Admin Chat Commands</strong> - ระบบตั้งค่าร้านผ่านแชทแบบ Wizard (6 ขั้นตอน) ทำให้เจ้าของร้านที่ไม่เก่งเทคโนโลยีสามารถตั้งค่าได้โดยไม่ต้องเข้าเว็บ</li>
+<li><strong>Waitlist + Reviews Schema</strong> - มีตารางรองรับฟีเจอร์ขั้นสูงไว้ล่วงหน้า แม้ logic ยังไม่สมบูรณ์</li>
+<li><strong>i18n ไทย/อังกฤษ</strong> - รองรับการสลับภาษาใน LIFF ซึ่งสำคัญสำหรับธุรกิจที่มีลูกค้าต่างชาติ</li>
+</ul>
+</div>
+
+<h2 id="sec1-3">1.3 ข้อจำกัดปัจจุบัน</h2>
+
+<table>
+<caption data-label="ตาราง 2">ข้อจำกัดหลักที่พบจากการตรวจสอบโค้ด</caption>
+<thead>
+<tr><th>ด้าน</th><th>ปัญหา</th><th>ระดับความรุนแรง</th></tr>
+</thead>
+<tbody>
+<tr><td>Security</td><td>Admin auth ใช้ shared password + sessionStorage ฝั่ง client ส่งผ่าน header แบบ plain text</td><td>สูง</td></tr>
+<tr><td>Security</td><td>LIFF idToken ยังไม่มีการ verify ที่ server-side</td><td>สูง</td></tr>
+<tr><td>Security</td><td>ไม่มี rate limiting ที่ API routes ทำให้เสี่ยง brute-force และ spam</td><td>สูง</td></tr>
+<tr><td>Reliability</td><td>ไม่มี automated testing (unit/integration/e2e)</td><td>สูง</td></tr>
+<tr><td>Reliability</td><td>Webhook handler มีความซับซ้อนสูง (900+ บรรทัด) ทำให้ดูแลยากและเสี่ยง bug</td><td>ปานกลาง-สูง</td></tr>
+<tr><td>Ops</td><td>Cron reminders ยังไม่มี API route (/api/cron/reminders)</td><td>ปานกลาง</td></tr>
+<tr><td>Ops</td><td>ไม่มี health monitoring หรือ error tracking</td><td>ปานกลาง</td></tr>
+<tr><td>UX</td><td>ไม่มี waitlist notification เมื่อมีคิวว่าง</td><td>ปานกลาง</td></tr>
+<tr><td>UX</td><td>ไม่มีระบบ reschedule ที่สมบูรณ์ (มีหน้า UI แต่ flow ยังไม่ smooth)</td><td>ต่ำ-ปานกลาง</td></tr>
+</tbody>
+</table>
+
+<!-- ========== SECTION 2 ========== -->
+<h1 id="sec2"><span class="sec-num">2.</span>จุดที่ต้องแก้ก่อน Launch (P0 - Critical)</h1>
+
+<p>ก่อนจะนำระบบไปใช้งานจริงกับลูกค้า มีสามด้านหลักที่ต้องแก้ไขโดยด่วน คือ ความปลอดภัย ความเสถียร และโครงสร้างพื้นฐาน หากไม่แก้ไข มีความเสี่ยงสูงที่จะสูญเสียความน่าเชื่อถือและข้อมูลลูกค้า</p>
+
+<h2 id="sec2-1">2.1 ความปลอดภัย (Security)</h2>
+
+<div class="box-critical">
+<div class="box-title"><span class="p-badge p0">P0</span>ปรับปรุง Authentication ระบบแอดมิน</div>
+<p><strong>ปัญหา:</strong> ปัจจุบันใช้ shared password ที่เก็บใน environment variable (ADMIN_PASSWORD) ส่งผ่าน client เป็น header x-admin-password และใช้ sessionStorage ฝั่ง browser ซึ่งไม่ปลอดภัยและไม่สามารถ audit ได้</p>
+<p><strong>แนวทางแก้ไข:</strong></p>
+<ul>
+<li>ใช้ Supabase Auth หรือ NextAuth.js สำหรับ authentication ที่มี session management แบบมาตรฐาน</li>
+<li>ใช้ JWT token ที่ sign ฝั่ง server และเก็บใน httpOnly cookie</li>
+<li>แยก role-based access control (RBAC) ในตาราง line_admin_sessions โดยเพิ่ม role column (owner, admin, staff)</li>
+<li>เพิ่ม audit log ทุกการกระทำสำคัญ (confirm, cancel, complete booking)</li>
+</ul>
+</div>
+
+<div class="box-critical">
+<div class="box-title"><span class="p-badge p0">P0</span>Verify LIFF idToken ที่ Server-Side</div>
+<p><strong>ปัญหา:</strong> lineUserId ที่ได้จาก LIFF ถูกใช้โดยตรงโดยไม่มีการ verify idToken ผ่าน LINE API (https://api.line.me/oauth2/v2.1/verify) ทำให้เสี่ยง impersonation</p>
+<p><strong>แนวทางแก้ไข:</strong></p>
+<ul>
+<li>ส่ง idToken จาก LIFF ไป verify ที่ server ทุกครั้งก่อนใช้ lineUserId</li>
+<li>หรือใช้ LIFF SDK ร่วมกับ server-side validation pattern โดย verify signature ของ idToken ด้วย public key จาก LINE</li>
+<li>ทำเป็น middleware ที่ API routes ทั้งหมดที่ต้องการ identity ของลูกค้า</li>
+</ul>
+</div>
+
+<div class="box-critical">
+<div class="box-title"><span class="p-badge p0">P0</span>Rate Limiting และ DDoS Protection</div>
+<p><strong>ปัญหา:</strong> API routes ไม่มี rate limiting ทำให้เสี่ยงต่อการถูกโจมตีแบบ brute-force (เฉพาะ admin password) และ resource exhaustion</p>
+<p><strong>แนวทางแก้ไข:</strong></p>
+<ul>
+<li>ติดตั้ง @upstash/ratelimit หรือใช้ Vercel Edge Config สำหรับ rate limiting</li>
+<li>จำกัด webhook endpoint ที่ 100 requests/minute ต่อ IP</li>
+<li>จำกัด admin login ที่ 5 ครั้งต่อ 15 นาที ต่อ IP</li>
+<li>ใช้ Vercel WAF หรือ Cloudflare หน้าเว็บหลัก</li>
+</ul>
+</div>
+
+<h2 id="sec2-2">2.2 ความเสถียรของระบบ</h2>
+
+<div class="box-critical">
+<div class="box-title"><span class="p-badge p0">P0</span>สร้าง Automated Test Suite</div>
+<p><strong>ปัญหา:</strong> ไม่มี test ใดๆ เลย ทำให้การแก้ไขโค้ดเสี่ยง regression และไม่สามารถมั่นใจได้ว่าระบบทำงานถูกต้องหลัง deploy</p>
+<p><strong>แนวทางแก้ไข:</strong></p>
+<ul>
+<li><strong>Unit Tests:</strong> ทดสอบ Thai NLP parser (thai-nlp.ts) กับชุด test cases อย่างน้อย 50 ประโยค ครอบคลุมทุก pattern ของเวลาและวันที่</li>
+<li><strong>Unit Tests:</strong> ทดสอบ slot availability calculator (booking.ts) กับกรณีขอบ เช่น ช่องเวลาขอบเขต วันหยุด ช่างลา</li>
+<li><strong>Integration Tests:</strong> ทดสอบ webhook handler กับ mock LINE events (follow, postback, message)</li>
+<li><strong>E2E Tests:</strong> ทดสอบ booking flow ทั้งหมดจากจนถึงยืนยันด้วย Playwright</li>
+<li>ตั้งเป้า code coverage อย่างน้อย 70% สำหรับ core business logic</li>
+</ul>
+</div>
+
+<div class="box-critical">
+<div class="box-title"><span class="p-badge p0">P0</span>Refactor Webhook Handler</div>
+<p><strong>ปัญหา:</strong> route.ts ของ webhook มีความยาวกว่า 1,000 บรรทัด รวมหลาย responsibility (event routing, admin commands, booking flow, setup wizard) ไว้ในไฟล์เดียว ทำให้ maintenance ยากและเสี่ยง side effects</p>
+<p><strong>แนวทางแก้ไข:</strong></p>
+<ul>
+<li>แยกเป็น module ย่อยตาม responsibility:
+<ul>
+<li>handlers/message.handler.ts - จัดการ text messages จากลูกค้า</li>
+<li>handlers/postback.handler.ts - จัดการ postback actions</li>
+<li>handlers/admin.handler.ts - จัดการ admin commands และ wizard</li>
+<li>handlers/booking.handler.ts - จัดการ booking creation และ confirmation</li>
+</ul>
+</li>
+<li>ใช้ strategy pattern สำหรับ event routing</li>
+<li>เพิ่ม structured logging (Pino หรือ Winston) ทุก event</li>
+</ul>
+</div>
+
+<div class="box-high">
+<div class="box-title"><span class="p-badge p1">P1</span>Error Monitoring และ Alerting</div>
+<p><strong>แนวทางแก้ไข:</strong> ติดตั้ง Sentry หรือ LogRocket สำหรับ catch uncaught exceptions บน production สร้าง alert ผ่าน LINE หรือ Slack เมื่อ webhook fail เกิน 5% ต่อ 10 นาที</p>
+</div>
+
+<h2 id="sec2-3">2.3 Infrastructure</h2>
+
+<div class="box-high">
+<div class="box-title"><span class="p-badge p1">P1</span>Cron Reminders API Route</div>
+<p><strong>ปัญหา:</strong> scripts/send-reminders.mjs เป็น standalone script ที่ต้องรันผ่าน cron แต่ไม่มี API route สำหรับ Vercel Cron</p>
+<p><strong>แนวทางแก้ไข:</strong></p>
+<ul>
+<li>สร้าง /api/cron/reminders route ที่ reuse logic เดียวกับ send-reminders.mjs</li>
+<li>ตั้งค่า vercel.json ให้รันทุก 10-15 นาที</li>
+<li>เพิ่ม cron secret ป้องกันการเรียก endpoint โดยตรง</li>
+</ul>
+</div>
+
+<div class="box-high">
+<div class="box-title"><span class="p-badge p1">P1</span>Database Backup Strategy</div>
+<p><strong>แนวทางแก้ไข:</strong> เปิดใช้งาน Point-in-Time Recovery (PITR) บน Supabase Pro ($25/month) ซึ่งจัดการ backup อัตโนมัติทุกวัน และสามารถ restore ย้อนเวลาได้ 7 วัน สำคัญมากสำหรับระบบจองคิวที่ข้อมูลการนัดหมายมีมูลค่าทางธุรกิจสูง</p>
+</div>
+
+<!-- ========== SECTION 3 ========== -->
+<h1 id="sec3"><span class="sec-num">3.</span>จุดปรับปรุงเพื่อใช้งานจริง (P1 - High Priority)</h1>
+
+<p>หลังจากแก้ไขปัญหา P0 แล้ว ส่วนนี้เป็นฟีเจอร์และการปรับปรุงที่จะทำให้ระบบใช้งานได้จริงในธุรกิจประจำวัน และสร้างความประทับใจให้ทั้งเจ้าของร้านและลูกค้า</p>
+
+<h2 id="sec3-1">3.1 UX/UI ฝั่งลูกค้า</h2>
+
+<div class="box-high">
+<div class="box-title"><span class="p-badge p1">P1</span>Multi-Stage Reminders</div>
+<p>ปัจจุบันมี reminded_at ในตาราง bookings แต่ระบบยังไม่รองรับการแจ้งเตือนหลายระดับ ควรเพิ่ม:</p>
+<ul>
+<li>24 ชั่วโมงก่อนนัด - ให้ลูกค้ายืนยันว่าจะมา</li>
+<li>2 ชั่วโมงก่อนนัด - แจ้งเตือนล่าสุดพร้อมเวลาและสถานที่</li>
+<li>30 นาทีหลังเลยเวลา (สำหรับแอดมิน) - แจ้งเตือน no-show risk</li>
+</ul>
+</div>
+
+<div class="box-high">
+<div class="box-title"><span class="p-badge p1">P1</span>Waitlist Auto-Notification</div>
+<p>ตาราง waitlist_entries มีอยู่แล้ว แต่ไม่มี mechanism ที่จะแจ้งเตือนลูกค้าเมื่อมีคิวว่าง ควร:</p>
+<ul>
+<li>สร้าง trigger function ใน PostgreSQL ที่ทำงานเมื่อ booking ถูก cancel</li>
+<li>ตรวจสอบ waitlist ที่ตรงกับวัน บริการ และช่าง แล้วส่ง push notification</li>
+<li>ให้ลูกค้ากดยืนยันเพื่อจองคิวว่างภายในเวลาจำกัด (เช่น 15 นาที)</li>
+</ul>
+</div>
+
+<div class="box-high">
+<div class="box-title"><span class="p-badge p1">P1</span>Reschedule Flow ที่สมบูรณ์</div>
+<p>มีหน้า /liff/reschedule แต่ควรปรับปรุงให้:</p>
+<ul>
+<li>แสดงช่องเวลาว่างที่เหลือเฉพาะวันเดียวกันก่อน แล้วขยายไปวันอื่นได้</li>
+<li>ถ้าเปลี่ยนเวลาเป็นเวลาเดิมของคนอื่น ต้อง trigger waitlist notification อัตโนมัติ</li>
+<li>ส่งข้อความยืนยันการเปลี่ยนเวลาให้ทั้งลูกค้าและแอดมิน</li>
+</ul>
+</div>
+
+<h2 id="sec3-2">3.2 Admin Panel</h2>
+
+<div class="box-high">
+<div class="box-title"><span class="p-badge p1">P1</span>Today Board ที่ครบถ้วน</div>
+<p>ปัจจุบัน admin dashboard แสดงคิว realtime ได้ แต่ควรเพิ่ม:</p>
+<ul>
+<li>Timeline view แบบ Gantt แสดงช่องเวลาของแต่ละช่าง</li>
+<li>Filters: ตามช่าง, ตามสถานะ, ตามบริการ</li>
+<li>Color-coded status: เขียว (confirmed), เหลือง (pending), แดง (late/noshow risk), เทา (completed)</li>
+<li>ยอดรายได้สะสมของวันนี้แบบ realtime</li>
+</ul>
+</div>
+
+<div class="box-high">
+<div class="box-title"><span class="p-badge p1">P1</span>Customer Profile Timeline</div>
+<p>หน้า /admin/customers/[id] มีอยู่แล้วแต่ควรเพิ่ม:</p>
+<ul>
+<li>ประวัติการใช้บริการทั้งหมด (visit history)</li>
+<li>บริการที่ชอบใช้บ่อย (preferred services)</li>
+<li>ช่างที่ชอบ (favorite staff)</li>
+<li>หมายเหตุพิเศษ (customer notes ที่แอดมินสามารถเพิ่มได้)</li>
+<li>แต้มสะสมและประวัติการได้รับ/ใช้แต้ม</li>
+</ul>
+</div>
+
+<h2 id="sec3-3">3.3 CRM &amp; Loyalty</h2>
+
+<div class="box-high">
+<div class="box-title"><span class="p-badge p1">P1</span>Points Engine ที่ยืดหยุ่น</div>
+<p>ปัจจุบันใช้ points_per_baht แบบคงที่ ควรปรับเป็นระบบ rule-based:</p>
+<ul>
+<li>แต้มพื้นฐาน: 1 บาท = 1 แต้ม (ปรับได้ต่อร้าน)</li>
+<li>Bonus: จองช่วง off-peak ได้แต้มเพิ่ม</li>
+<li>Bonus: วันเกิดรับแต้ม 2 เท่า</li>
+<li>Bonus: จองครบ N ครั้ง รับแต้มพิเศษ</li>
+<li>Redemption: ใช้แต้มเป็นส่วนลด หรือแลกบริการฟรี</li>
+</ul>
+</div>
+
+<div class="box-medium">
+<div class="box-title"><span class="p-badge p2">P2</span>Tier System</div>
+<p>สร้างระดับสมาชิกเพื่อเพิ่ม retention:</p>
+<table style="margin:0.3cm 0;">
+<thead><tr><th>Tier</th><th>เงื่อนไข</th><th>สิทธิประโยชน์</th></tr></thead>
+<tbody>
+<tr><td>Silver</td><td>สมัครสมาชิก</td><td>แต้มสะสม x1, แจ้งเตือนนัด</td></tr>
+<tr><td>Gold</td><td>ใช้บริการ 5 ครั้ง หรือยอด 2,000 บาท</td><td>แต้ม x1.5, จองล่วงหน้าได้ 14 วัน</td></tr>
+<tr><td>VIP</td><td>ใช้บริการ 20 ครั้ง หรือยอด 10,000 บาท</td><td>แต้ม x2, จองได้ก่อน, โปรพิเศษก่อนใคร</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="sec3-4">3.4 Developer Experience</h2>
+
+<div class="box-high">
+<div class="box-title"><span class="p-badge p1">P1</span>Healthcheck Dashboard</div>
+<p>หน้า /admin/healthcheck มีอยู่แล้ว แต่ควรขยายให้ครอบคลุม:</p>
+<ul>
+<li>LINE Connection Status (Webhook, LIFF, Messaging API)</li>
+<li>Supabase Connection และ RLS status</li>
+<li>Cron job last-run timestamp</li>
+<li>Recent error log (5 รายการล่าสุด)</li>
+<li>Test buttons: ส่ง test push, test reply, test LIFF</li>
+</ul>
+</div>
+
+<div class="box-high">
+<div class="box-title"><span class="p-badge p1">P1</span>Environment Configuration UI</div>
+<p>ปัจจุบันต้องแก้ .env และ redeploy เมื่อต้องการเปลี่ยนค่า ควร:</p>
+<ul>
+<li>ย้ายการตั้งค่าที่เปลี่ยนบ่อย (เวลาทำการ, จำนวนแต้ม, reminder timing) ไปเก็บในตาราง shop_settings</li>
+<li>สร้าง admin UI สำหรับแก้ไขค่าเหล่านี้โดยไม่ต้อง redeploy</li>
+<li>แค่ LINE credentials และ LIFF ID ที่ยังคงเก็บใน environment</li>
+</ul>
+</div>
+
+<!-- ========== SECTION 4 ========== -->
+<h1 id="sec4"><span class="sec-num">4.</span>ฟีเจอร์เหนือคู่แข่ง (P2 - Differentiation)</h1>
+
+<p>ส่วนนี้เป็นฟีเจอร์ที่จะทำให้ LineBook แตกต่างจากคู่แข่งในตลาดอย่างชัดเจน สร้าง moat ที่ยากจะเลียนแบบ และเพิ่ม perceived value สำหรับการขาย</p>
+
+<h2 id="sec4-1">4.1 AI-Native Booking</h2>
+
+<div class="box-medium">
+<div class="box-title"><span class="p-badge p2">P2</span>Conversational AI ที่เข้าใจบริบท</div>
+<p>NLP ปัจจุบันทำ pattern matching ซึ่งดีแล้วสำหรับ MVP แต่เพื่อเหนือกว่า ควรเพิ่ม:</p>
+<ul>
+<li><strong>Context Memory:</strong> จำบริการล่าสุด ช่างล่าสุด และเวลาที่ชอบของลูกค้า เพื่อเสนอ "จองแบบเดิมอีกครั้ง" ด้วย one tap</li>
+<li><strong>Fuzzy Matching:</strong> รองรับการพิมพ์ผิดเล็กน้อย เช่น "ตัดผมชาย" vs "ตัดผมช้าย" หรือชื่อเล่นช่างที่เรียกผิด</li>
+<li><strong>Smart Suggestions:</strong> เมื่อเวลาที่ลูกค้าต้องการเต็ม ระบบเสนอ 3 ตัวเลือกทดแทนโดยอัตโนมัติ (เวลาใกล้เคียง, ช่างอื่นที่ทำได้, วันใกล้เคียง)</li>
+<li><strong>Service Recommendations:</strong> "ลูกค้าที่ตัดผม มักสระ+ไดร์ต่อ" - ใช้ simple association rule จากประวัติการจอง</li>
+</ul>
+</div>
+
+<div class="box-medium">
+<div class="box-title"><span class="p-badge p2">P2</span>Voice-to-Booking (LINE Voice Message)</div>
+<p>รองรับการส่งข้อความเสียงใน LINE โดยใช้ Whisper API หรือ Google Speech-to-Text แปลงเป็นข้อความแล้วส่งเข้า NLP parser ปัจจุบัน ซึ่งจะทำให้กลุ่มผู้ใช้ที่ไม่ถนัดพิมพ์ (เช่น กลุ่มอายุ 40+) สามารถจองได้ง่ายขึ้นมาก</p>
+</div>
+
+<h2 id="sec4-2">4.2 Queue Intelligence</h2>
+
+<div class="box-medium">
+<div class="box-title"><span class="p-badge p2">P2</span>Queue Position &amp; ETA</div>
+<p>ฟีเจอร์ที่ลูกค้าจะถามบ่อยที่สุดคือ "ถึงคิวฉันยัง" ควรสร้าง:</p>
+<ul>
+<li>Real-time queue position: ลูกค้ากดดู "คิวของฉัน" แล้วเห็นว่ามีกี่คิวก่อนหน้า</li>
+<li>ETA calculation: ประมาณการเวลาจากความยาวบริการของคิวก่อนหน้า + buffer time</li>
+<li>Push notification เมื่อใกล้ถึงคิว (เช่น อีก 2 คิว)</li>
+</ul>
+</div>
+
+<div class="box-medium">
+<div class="box-title"><span class="p-badge p2">P2</span>Smart Scheduling for Shops</div>
+<p>ช่วยเจ้าของร้านจัดคิวให้ดีขึ้น:</p>
+<ul>
+<li><strong>Auto-fill gaps:</strong> เมื่อมี cancellation ระบบเสนอลูกค้าใน waitlist ที่เหมาะสมที่สุด (เช่น บริการใกล้เคียง, ชอบช่างคนนี้อยู่แล้ว)</li>
+<li><strong>Load balancing:</strong> แนะนำการกระจายคิวระหว่างช่างให้เท่าๆ กัน</li>
+<li><strong>Peak hour prediction:</strong> วิเคราะห์จากประวัติว่าช่วงไหนคนเยอะ แล้วแนะนำให้เพิ่มช่างหรือเปิดช่องเวลาเพิ่ม</li>
+</ul>
+</div>
+
+<h2 id="sec4-3">4.3 Retention Engine</h2>
+
+<div class="box-medium">
+<div class="box-title"><span class="p-badge p2">P2</span>Automated Re-engagement</div>
+<p>ลูกค้าที่เคยมาแล้วหายไปคือกลุ่มที่มีมูลค่าสูงที่สุด ควรสร้าง:</p>
+<ul>
+<li><strong>Lapsed customer detection:</strong> หลังจากไม่มีการจอง 30 วัน ส่งข้อความพร้อมโปรโมชันพิเศษ</li>
+<li><strong>Next-booking suggestion:</strong> หลังจากใช้บริการ ระบบคำนวณช่วงเวลาที่ควรกลับมา เช่น "ตัดผมควรกลับมาอีกทีประมาณ 3-4 สัปดาห์"</li>
+<li><strong>Birthday campaign:</strong> ส่งของขวัญวันเกิด (แต้มพิเศษ หรือส่วนลด) อัตโนมัติ</li>
+</ul>
+</div>
+
+<div class="box-medium">
+<div class="box-title"><span class="p-badge p2">P2</span>Review &amp; Social Proof</div>
+<p>ตาราง reviews มีอยู่แล้ว แต่ควรเพิ่ม:</p>
+<ul>
+<li>ส่งข้อความขอรีวิวหลังใช้บริการ 24 ชั่วโมง</li>
+<li>แสดงคะแนนเฉลี่ยและจำนวนรีวิวของแต่ละช่าง (สร้างแรงจูงใจให้ช่างให้บริการดี)</li>
+<li>Gallery รูป before/after ที่ลูกค้ายินยอมให้โพสต์</li>
+</ul>
+</div>
+
+<div class="box-low">
+<div class="box-title"><span class="p-badge p3">P3</span>Deposit / Prepayment</div>
+<p>รองรับการจ่ายมัดจำผ่าน LINE Pay หรือ PromptPay QR ลดปัญหา no-show ซึ่งเป็นปัญหาหลักของร้านบริการ เริ่มจาก:</p>
+<ul>
+<li>ตั้งค่าเปอร์เซ็นต์มัดจำต่อบริการได้ (เช่น บริการแพง มัดจำ 30%)</li>
+<li>คืนเงินอัตโนมัติเมื่อยกเลิกก่อน 24 ชั่วโมง</li>
+<li>เก็บค่าปรับน้อยหรือไม่คืนเมื่อ no-show</li>
+</ul>
+</div>
+
+<!-- ========== SECTION 5 ========== -->
+<h1 id="sec5"><span class="sec-num">5.</span>วิเคราะห์คู่แข่งและกลยุทธ์การตลาด</h1>
+
+<h2 id="sec5-1">5.1 แนวการแข่งขัน</h2>
+
+<table>
+<caption data-label="ตาราง 3">วิเคราะห์คู่แข่งในตลาดระบบจองคิวไทย</caption>
+<thead>
+<tr><th>คู่แข่ง</th><th>ราคา</th><th>จุดแข็ง</th><th>จุดอ่อน</th><th>โอกาสของ LineBook</th></tr>
+</thead>
+<tbody>
+<tr><td>FoxConnect</td><td>฿500-2,000/เดือน</td><td>ติดตั้งง่าย, มี ecosystem ครบ</td><td>มีค่ารายเดือน, ผูก platform</td><td>ไม่มีรายเดือน, ลูกค้าเป็นเจ้าของข้อมูล</td></tr>
+<tr><td>QueQ</td><td>ค่าใช้จ่ายตามการใช้งาน</td><td>แบรนด์ดัง, ใช้ในรพ.</td><td>ซับซ้อน, ไม่เหมาะร้านเล็ก</td><td>ง่ายกว่า, ไม่ต้อง training</td></tr>
+<tr><td>Agency จ้างทำ</td><td>฿15,000-80,000+</td><td>ปรับแต่งได้เต็มที่</td><td>แพง, ต้องพึ่ง dev ตลอด</td><td>แก้เองได้, ไม่ต้องพึ่งใคร</td></tr>
+<tr><td>จองผ่านแชต/โทร</td><td>ฟรี (แต่เสียเวลา)</td><td>ไม่มีต้นทุนเทคโนโลยี</td><td>จองทับ, ลืมนัด, ไม่มีข้อมูล</td><td>แก้ปัญหาทั้งหมดในราคาจ่ายครั้งเดียว</td></tr>
+</tbody>
+</table>
+
+<p>ตลาดระบบจองคิวสำหรับร้านเล็ก-กลางในไทยยังกระจัดกระจาย ผู้เล่นรายใหญ่เน้นโรงพยาบาลหรือธุรกิจขนาดใหญ่ ส่วนร้านตัดผม/เสริมสวยส่วนใหญ่ยังใช้วิธีดั้งเดิม นี่คือโอกาสที่ LineBook สามารถเข้าไปเติมเต็มได้</p>
+
+<h2 id="sec5-2">5.2 กลยุทธ์การตั้งราคา</h2>
+
+<div class="box-info">
+<div class="box-title">โมเดลราคาแบบ One-Time Fee (ไม่มีรายเดือน)</div>
+<p>จุดขายหลักที่แข่งขันได้คือ "จ่ายครั้งเดียว ไม่มีรายเดือน" ซึ่งต่างจาก FoxConnect และคู่แข่งอื่นๆ อย่างชัดเจน กลยุทธ์ราคาที่แนะนำ:</p>
+<table style="margin:0.3cm 0;">
+<thead><tr><th>แพ็กเกจ</th><th>ราคา</th><th>รวมอะไรบ้าง</th></tr></thead>
+<tbody>
+<tr><td>Starter</td><td>฿4,900 - ฿9,900</td><td>ติดตั้ง, seed ข้อมูล, สอนใช้ 1 ชั่วโมง</td></tr>
+<tr><td>Growth</td><td>฿12,900 - ฿19,900</td><td>ปรับแต่ง branding, template ข้อความ, สอนใช้เต็มรูปแบบ</td></tr>
+<tr><td>Professional</td><td>฿25,900 - ฿49,900</td><td>Multi-shop, dashboard รายงาน, ระบบ CRM เต็มรูปแบบ</td></tr>
+</tbody>
+</table>
+<p><strong>Revenue stream เสริม:</strong></p>
+<ul>
+<li>ค่าดูแลรายปี: ฿1,900-3,900/ปี (อัปเดต, backup, support)</li>
+<li>ค่าปรับแต่งเพิ่มเติม: ฿500-1,500/ครั้ง</li>
+<li>LINE Messaging API cost: ลูกค้ารับผิดชอบเอง (ตามการใช้งานจริง)</li>
+</ul>
+</div>
+
+<h2 id="sec5-3">5.3 ช่องทางการขาย</h2>
+
+<table>
+<caption data-label="ตาราง 4">ช่องทางการขายแนะนำ</caption>
+<thead>
+<tr><th>ช่องทาง</th><th>กลยุทธ์</th><th>ต้นทุน</th><th>ผลตอบแทน</th></tr>
+</thead>
+<tbody>
+<tr><td>LINE Official Account ของตัวเอง</td><td>สร้างบัญชี LineBook เป็นตัวอย่าง ให้ร้านทดลองจองจริง</td><td>ต่ำ</td><td>สูง (demo ที่น่าเชื่อถือ)</td></tr>
+<tr><td>Facebook Groups (ช่างตัดผม, ร้านเสริมสวย)</td><td>โพสต์เนื้อหาให้ความรู้ + โปรโมชันจำกัดเวลา</td><td>ต่ำ</td><td>ปานกลาง</td></tr>
+<tr><td>TikTok (วิดีโอสั้น)</td><td>ถ่ายคลิป "ก่อน-หลัง" ใช้ระบบจอง แสดงความง่าย</td><td>ต่ำ</td><td>สูง (viral potential)</td></tr>
+<tr><td>Partnership กับร้านอุปกรณ์เสริมสวย</td><td>ร้านขายอุปกรณ์แนะนำลูกค้า ได้ค่าคอมมิชชัน</td><td>ปานกลาง</td><td>สูง (เชื่อถือได้)</td></tr>
+<tr><td>SEO / Blog</td><td>เขียนบทความ "วิธีลดลูกค้าไม่มาตามนัด" "ระบบจองคิวร้านตัดผม"</td><td>ต่ำ</td><td>สูงในระยะยาว</td></tr>
+</tbody>
+</table>
+
+<div class="box-info">
+<div class="box-title">กลยุทธ์การขายที่เน้น "ลองก่อนซื้อ"</div>
+<p>เจ้าของร้านมักลังเลกับเทคโนโลยีใหม่ กลยุทธ์ที่ได้ผลคือ:</p>
+<ol>
+<li><strong>Free Trial 14 วัน:</strong> ติดตั้งให้ใช้ฟรี 2 สัปดาห์ ไม่ต้องจ่ายก่อน</li>
+<li><strong>Live Demo:</strong> ให้ร้านสแกน QR แล้วจองผ่าน LINE ตัวเองในทันที</li>
+<li><strong>Case Study:</strong> หาร้าน 3-5 ร้านใช้ฟรีเดือนแรก แล้วเก็บข้อมูลผลลัพธ์ (ลด no-show เท่าไร, ลูกค้าจองเพิ่มกี่%) มาเป็นสื่อขาย</li>
+<li><strong>Referral Program:</strong> ร้านที่แนะนำเพื่อน ได้ส่วนลด 20% หรือฟรีอัปเดต 3 เดือน</li>
+</ol>
+</div>
+
+<!-- ========== SECTION 6 ========== -->
+<h1 id="sec6"><span class="sec-num">6.</span>แผนพัฒนาแนะนำ</h1>
+
+<h2 id="sec6-1">6.1 Roadmap 6 เดือน</h2>
+
+<table>
+<caption data-label="ตาราง 5">แผนพัฒนา 6 เดือนแบ่งเป็น 3 เฟส</caption>
+<thead>
+<tr><th>เฟส</th><th>ระยะเวลา</th><th>เป้าหมาย</th><th>งานหลัก</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Phase 1: Stabilize</strong></td>
+<td>เดือน 1-2</td>
+<td>พร้อมขายจริง</td>
+<td>
+- Refactor webhook เป็น modular<br>
+- เพิ่ม unit tests (NLP, booking)<br>
+- ปรับปรุง security (auth, rate limit)<br>
+- สร้าง /api/cron/reminders<br>
+- Healthcheck dashboard สมบูรณ์<br>
+- Error monitoring (Sentry)
+</td>
+</tr>
+<tr>
+<td><strong>Phase 2: Scale</strong></td>
+<td>เดือน 3-4</td>
+<td>ร้านใช้ได้จริงโดยไม่ต้องพึ่ง dev</td>
+<td>
+- Admin UI จัดการบริการ/ช่าง/เวลา<br>
+- Waitlist auto-notification<br>
+- Multi-stage reminders<br>
+- Customer profile timeline<br>
+- Environment config UI<br>
+- Review collection flow
+</td>
+</tr>
+<tr>
+<td><strong>Phase 3: Differentiate</strong></td>
+<td>เดือน 5-6</td>
+<td>เหนือกว่าคู่แข่งชัดเจน</td>
+<td>
+- AI quick rebook<br>
+- Queue position &amp; ETA<br>
+- Lapsed customer campaign<br>
+- Tier system (Silver/Gold/VIP)<br>
+- Before/after gallery<br>
+- Deposit support (LINE Pay)
+</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="sec6-2">6.2 ทีมที่ต้องการ</h2>
+
+<table>
+<caption data-label="ตาราง 6">โครงสร้างทีมแนะนำสำหรับสตาร์ทอัพระยะแรก</caption>
+<thead>
+<tr><th>ตำแหน่ง</th><th>จำนวน</th><th>บทบาท</th><th>Full-time / Part-time</th></tr>
+</thead>
+<tbody>
+<tr><td>Tech Lead / Full-stack Dev</td><td>1</td><td>พัฒนาระบบหลัก, code review, architecture</td><td>Full-time</td></tr>
+<tr><td>Frontend Developer</td><td>1</td><td>พัฒนา LIFF, Admin UI, responsive design</td><td>Full-time</td></tr>
+<tr><td>Sales / Business Dev</td><td>1</td><td>หาลูกค้ารายแรก, demo, ปิดการขาย</td><td>Full-time</td></tr>
+<tr><td>Customer Success</td><td>1</td><td>ติดตั้งระบบ, สอนใช้, support ลูกค้า</td><td>Part-time หรือ outsource</td></tr>
+<tr><td>UX/UI Designer</td><td>1 (share)</td><td>ออกแบบ LIFF และ admin interface</td><td>Part-time / Freelance</td></tr>
+</tbody>
+</table>
+
+<!-- ========== SECTION 7 ========== -->
+<h1 id="sec7"><span class="sec-num">7.</span>สรุปและข้อแนะนำหลัก</h1>
+
+<p>LineBook เป็นโปรเจกต์ที่มีรากฐานที่ดี โดยเฉพาะ database design, Thai NLP parser, และ booking flow ที่หลากหลาย แต่ยังอยู่ในสถานะ MVP ที่ต้องการการปรับปรุงหลายด้านก่อนนำไปใช้งานจริง</p>
+
+<h2>ข้อแนะนำสำคัญ 5 ประการ</h2>
+
+<div class="box-critical">
+<div class="box-title">1. อย่าขายจนกว่า Security จะพร้อม</div>
+<p>Authentication แบบ shared password และการไม่ verify LIFF idToken เป็นช่องโหว่ที่อาจทำลายความน่าเชื่อถือของธุรกิจได้ทันที ควรแก้ไขก่อนเปิดให้ลูกค้าใช้งานจริง</p>
+</div>
+
+<div class="box-critical">
+<div class="box-title">2. สร้าง Test Suite ก่อนเพิ่มฟีเจอร์ใหม่</div>
+<p>การไม่มี test ทำให้ทุกการแก้ไขโค้ดเสี่ยง regression ควรลงทุนเวลา 2-3 สัปดาห์สร้าง test ให้ครอบคลุม core business logic ก่อน</p>
+</div>
+
+<div class="box-high">
+<div class="box-title">3. โฟกัส "ใช้ง่าย" มากกว่า "ฟีเจอร์เยอะ"</div>
+<p>จุดขายที่แท้จริงไม่ใช่ AI หรือ CRM ที่ซับซ้อน แต่คือ "ตั้งค่าได้เองใน 15 นาที" และ "ลูกค้าจองได้ใน 30 วินาที" ควรทำให้ onboarding flow สมบูรณ์ก่อน</p>
+</div>
+
+<div class="box-high">
+<div class="box-title">4. หาลูกค้ารายแรก 10 ร้าน ให้ใช้ฟรี</div>
+<p>ข้อมูลจากร้านจริงจะบอกว่าควรพัฒนาอะไรต่อมากกว่าการคาดเดา เป้าหมาย 10 ร้านใน 2 เดือนแรก เก็บ feedback แล้ว iterate</p>
+</div>
+
+<div class="box-info">
+<div class="box-title">5. สร้าง Moat ด้วย Ecosystem ไม่ใช่แค่ Feature</div>
+<p>ฟีเจอร์ใดๆ ก็ถูกคัดลอกได้ แต่สิ่งที่คัดลอกยากคือ: (1) ชุดข้อมูลลูกค้าที่สะสม (2) ความสัมพันธ์กับร้านค้า (3) Brand ที่เป็นที่รู้จักในกลุ่มธุรกิจบริการ ลงทุนใน community และ content marketing ตั้งแต่เนิ่นๆ</p>
+</div>
+
+<p style="margin-top:1cm; text-align:center; color:#888; font-size:10pt;">--- จบรายงาน ---</p>
+
+</body>
+</html>

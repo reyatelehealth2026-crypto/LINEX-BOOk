@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LineBook — Development Roadmap to Market</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@400;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; font-size: 13.5px; line-height: 1.6; color: #1a1f2e; background: #f2f4f9; }
+
+.page { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+/* ── Hero ── */
+.hero {
+  background: linear-gradient(135deg, #0f1923 0%, #1a2e42 50%, #24426a 100%);
+  color: #fff; border-radius: 16px; padding: 2.5rem 2.5rem 2rem;
+  margin-bottom: 2.5rem; position: relative; overflow: hidden;
+}
+.hero::after {
+  content: ''; position: absolute; right: -60px; top: -60px;
+  width: 260px; height: 260px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(152,193,217,.15) 0%, transparent 70%);
+}
+.hero-label { font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: #7aadcc; margin-bottom: .5rem; }
+.hero-title { font-size: 2.1rem; font-weight: 800; line-height: 1.15; }
+.hero-title em { color: #98c1d9; font-style: normal; }
+.hero-sub { font-family: 'Noto Serif Thai', serif; font-size: 14px; color: #b0c8da; margin-top: .75rem; max-width: 560px; line-height: 1.75; }
+.hero-meta { margin-top: 1.5rem; display: flex; gap: 2rem; flex-wrap: wrap; }
+.hero-stat .val { font-size: 1.5rem; font-weight: 800; color: #fff; }
+.hero-stat .lbl { font-size: 11px; color: #7aadcc; text-transform: uppercase; letter-spacing: 1px; }
+
+/* ── Phase timeline ── */
+.timeline { position: relative; padding-left: 28px; }
+.timeline::before {
+  content: ''; position: absolute; left: 10px; top: 0; bottom: 0;
+  width: 2px; background: linear-gradient(to bottom, #2b3a4e 0%, #3d5a80 40%, #7ab3cc 70%, #c8dde8 100%);
+}
+
+.phase { position: relative; margin-bottom: 2.5rem; }
+.phase-dot {
+  position: absolute; left: -23px; top: 18px;
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2.5px solid white;
+  box-shadow: 0 0 0 3px currentColor;
+}
+.phase-p0 .phase-dot { background: #16a34a; color: #16a34a; }
+.phase-p1 .phase-dot { background: #dc2626; color: #dc2626; }
+.phase-p2 .phase-dot { background: #d97706; color: #d97706; }
+.phase-p3 .phase-dot { background: #2563eb; color: #2563eb; }
+.phase-p4 .phase-dot { background: #7c3aed; color: #7c3aed; }
+
+.phase-header {
+  display: flex; align-items: flex-start; gap: 1rem;
+  background: white; border-radius: 12px 12px 0 0;
+  padding: 1rem 1.25rem; border: 1px solid #e2e8f0; border-bottom: none;
+}
+.phase-badge {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 8px;
+  font-size: 18px; flex-shrink: 0; margin-top: 1px;
+}
+.phase-p0 .phase-badge { background: #dcfce7; }
+.phase-p1 .phase-badge { background: #fee2e2; }
+.phase-p2 .phase-badge { background: #fef3c7; }
+.phase-p3 .phase-badge { background: #dbeafe; }
+.phase-p4 .phase-badge { background: #ede9fe; }
+.phase-title { font-size: 16px; font-weight: 700; color: #0f1923; }
+.phase-period { font-size: 11.5px; color: #64748b; margin-top: 2px; }
+.phase-goal {
+  margin-top: 4px; font-family: 'Noto Serif Thai', serif;
+  font-size: 13px; color: #334155;
+}
+
+.phase-body {
+  background: white; border-radius: 0 0 12px 12px;
+  border: 1px solid #e2e8f0; overflow: hidden;
+}
+
+/* Sprint inside phase */
+.sprint { border-bottom: 1px solid #f1f5f9; }
+.sprint:last-child { border-bottom: none; }
+.sprint-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: .6rem 1.25rem; background: #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
+}
+.sprint-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #475569; }
+.sprint-weeks { font-size: 11px; color: #94a3b8; margin-left: auto; }
+
+.task-list { display: flex; flex-direction: column; }
+.task {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: .7rem 1.25rem; border-bottom: 1px solid #f8fafc;
+}
+.task:last-child { border-bottom: none; }
+
+.task-status {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}
+.status-done  { background: #16a34a; color: white; }
+.status-todo  { background: #e2e8f0; color: #94a3b8; border: 2px solid #cbd5e1; }
+.status-high  { background: #dc2626; color: white; }
+.status-med   { background: #d97706; color: white; }
+
+.task-main { flex: 1; min-width: 0; }
+.task-name { font-size: 13px; font-weight: 600; color: #1e293b; }
+.task-desc { font-size: 12px; color: #64748b; margin-top: 2px; line-height: 1.5; }
+.task-file {
+  display: inline-block; margin-top: 3px;
+  font-family: 'Courier New', monospace; font-size: 10.5px;
+  background: #f1f5f9; color: #475569; padding: 1px 6px; border-radius: 4px;
+}
+.task-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.tag {
+  font-size: 10.5px; font-weight: 600; padding: 1px 7px;
+  border-radius: 20px; white-space: nowrap;
+}
+.tag-new     { background: #dcfce7; color: #15803d; }
+.tag-schema  { background: #dbeafe; color: #1d4ed8; }
+.tag-uionly  { background: #f3e8ff; color: #7e22ce; }
+.tag-hard    { background: #fee2e2; color: #b91c1c; }
+
+.effort {
+  flex-shrink: 0; font-size: 11px; font-weight: 600;
+  padding: 2px 9px; border-radius: 20px; align-self: flex-start; margin-top: 2px;
+}
+.e-xs { background: #dcfce7; color: #15803d; }
+.e-s  { background: #dbeafe; color: #1d4ed8; }
+.e-m  { background: #fef9c3; color: #a16207; }
+.e-l  { background: #fee2e2; color: #b91c1c; }
+
+/* KPI Bar */
+.kpi-bar {
+  display: flex; gap: .75rem; flex-wrap: wrap;
+  padding: .9rem 1.25rem; background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+}
+.kpi {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: #334155;
+}
+.kpi-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.kpi-dot-green  { background: #16a34a; }
+.kpi-dot-yellow { background: #d97706; }
+.kpi-dot-blue   { background: #2563eb; }
+.kpi-dot-purple { background: #7c3aed; }
+
+/* Summary table */
+.summary-card {
+  background: white; border-radius: 12px; border: 1px solid #e2e8f0;
+  overflow: hidden; margin-bottom: 2rem;
+}
+.summary-card table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.summary-card th {
+  background: #1a2e42; color: white; padding: .6rem 1rem;
+  text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .5px;
+}
+.summary-card td { padding: .6rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.summary-card tr:last-child td { border-bottom: none; }
+.summary-card tr:hover td { background: #f8fafc; }
+.phase-pill {
+  display: inline-block; padding: 2px 9px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+}
+.pill-0 { background: #dcfce7; color: #15803d; }
+.pill-1 { background: #fee2e2; color: #b91c1c; }
+.pill-2 { background: #fef3c7; color: #92400e; }
+.pill-3 { background: #dbeafe; color: #1d4ed8; }
+.pill-4 { background: #ede9fe; color: #6b21a8; }
+
+/* Section titles */
+.section-title {
+  font-size: 13px; font-weight: 700; color: #475569;
+  text-transform: uppercase; letter-spacing: 1px;
+  margin: 2.5rem 0 1rem; padding-bottom: .5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+@media print {
+  body { background: white; }
+  .page { padding: 0; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="hero-label">Development Roadmap · LineBook</div>
+  <h1 class="hero-title">พัฒนาสู่ตลาด<br><em>จาก MVP สู่ Product ที่ขายได้จริง</em></h1>
+  <p class="hero-sub">Roadmap แบ่งเป็น 4 Phase ระยะ 6 เดือน อ้างอิงจาก codebase จริง พร้อม effort estimate และ success metrics ทุก sprint</p>
+  <div class="hero-meta">
+    <div class="hero-stat"><div class="val">4</div><div class="lbl">Phases</div></div>
+    <div class="hero-stat"><div class="val">~6 mo.</div><div class="lbl">Timeline</div></div>
+    <div class="hero-stat"><div class="val">32</div><div class="lbl">Tasks</div></div>
+    <div class="hero-stat"><div class="val">7 ✅</div><div class="lbl">Done already</div></div>
+  </div>
+</div>
+
+<!-- ── QUICK OVERVIEW TABLE ── -->
+<div class="section-title">ภาพรวม Roadmap</div>
+<div class="summary-card" style="margin-bottom:2.5rem;">
+  <table>
+    <thead>
+      <tr>
+        <th>Phase</th><th>ระยะเวลา</th><th>เป้าหมาย</th><th>นิยาม "สำเร็จ"</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="phase-pill pill-0">Phase 0</span></td>
+        <td>เสร็จแล้ว</td>
+        <td>Foundation & Security</td>
+        <td>Rate limit, idToken verify, Healthcheck, NLP, Realtime ✅</td>
+      </tr>
+      <tr>
+        <td><span class="phase-pill pill-1">Phase 1</span></td>
+        <td>สัปดาห์ 1–6</td>
+        <td>Launch-Ready Prototype</td>
+        <td>Demo ได้ครบ 90 วิ · Cron ทำงานบน Vercel · ร้านนำร่อง 3 ร้าน</td>
+      </tr>
+      <tr>
+        <td><span class="phase-pill pill-2">Phase 2</span></td>
+        <td>เดือน 2–3</td>
+        <td>Product-Market Fit</td>
+        <td>10 ร้าน · No-show &lt;15% · ลูกค้า Churn &lt;20% ใน 60 วัน</td>
+      </tr>
+      <tr>
+        <td><span class="phase-pill pill-3">Phase 3</span></td>
+        <td>เดือน 4–5</td>
+        <td>Differentiate &amp; Retain</td>
+        <td>30 ร้าน · Tier loyalty · Lapsed re-engagement · NPS &gt;7</td>
+      </tr>
+      <tr>
+        <td><span class="phase-pill pill-4">Phase 4</span></td>
+        <td>เดือน 6+</td>
+        <td>Scale &amp; Platform</td>
+        <td>Multi-shop · Agency tools · 100+ ร้าน</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── TIMELINE ── -->
+<div class="section-title">รายละเอียด Sprint by Sprint</div>
+<div class="timeline">
+
+  <!-- ══════════ PHASE 0 ══════════ -->
+  <div class="phase phase-p0">
+    <div class="phase-dot"></div>
+    <div class="phase-header">
+      <div class="phase-badge">✅</div>
+      <div>
+        <div class="phase-title">Phase 0 — Foundation (เสร็จแล้ว)</div>
+        <div class="phase-period">ก่อนเริ่ม Roadmap นี้</div>
+        <div class="phase-goal">สิ่งที่โปรเจกต์มีอยู่แล้วและเป็นข้อได้เปรียบจริง</div>
+      </div>
+    </div>
+    <div class="phase-body">
+      <div class="sprint">
+        <div class="task-list">
+          <div class="task">
+            <div class="task-status status-done">✓</div>
+            <div class="task-main">
+              <div class="task-name">Rate Limiting (admin password + per-user webhook)</div>
+              <div class="task-desc">5 attempts/15min per IP · 20 events/min per LINE userId</div>
+              <span class="task-file">src/lib/rate-limit.ts</span>
+              <div class="task-tags"><span class="tag tag-new">เพิ่งเพิ่ม</span></div>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-status status-done">✓</div>
+            <div class="task-main">
+              <div class="task-name">LINE idToken Server-Side Verification</div>
+              <div class="task-desc">Verify ผ่าน api.line.me ทุกครั้ง ก่อนใช้ lineUserId</div>
+              <span class="task-file">src/lib/admin-auth.ts · verifyLineIdToken()</span>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-status status-done">✓</div>
+            <div class="task-main">
+              <div class="task-name">Thai NLP Parser (23KB — ครอบคลุม)</div>
+              <div class="task-desc">"พรุ่งนี้บ่ายสองครึ่งตัดผม" / "วันศุกร์ 14:30" / ชื่อช่างจาก alias</div>
+              <span class="task-file">src/lib/thai-nlp.ts</span>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-status status-done">✓</div>
+            <div class="task-main">
+              <div class="task-name">PostgreSQL Exclusion Constraint (No Double-Booking)</div>
+              <div class="task-desc">ป้องกันระดับ DB — tstzrange overlap excluded per staff</div>
+              <span class="task-file">supabase/schema.sql · bookings_no_overlap</span>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-status status-done">✓</div>
+            <div class="task-main">
+              <div class="task-name">Realtime Admin Queue Dashboard</div>
+              <div class="task-desc">Supabase Realtime subscription อัปเดตโดยไม่ต้อง refresh</div>
+              <span class="task-file">src/app/admin/page.tsx · sb.channel("bookings-admin")</span>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-status status-done">✓</div>
+            <div class="task-main">
+              <div class="task-name">Admin Setup Wizard via LINE Chat (9 Steps)</div>
+              <div class="task-desc">ตั้งค่าร้านผ่าน LINE chat ไม่ต้องเข้าเว็บ — shop_name → hours_time</div>
+              <span class="task-file">webhook/route.ts · AdminWizardStep type</span>
+            </div>
+          </div>
+          <div class="task">
+            <div class="task-status status-done">✓</div>
+            <div class="task-main">
+              <div class="task-name">Healthcheck Dashboard พร้อม Actionable Hints</div>
+              <div class="task-desc">ตรวจ LINE token, Supabase, admin config — บอกวิธีแก้เป็นข้อๆ</div>
+              <span class="task-file">src/app/admin/healthcheck/page.tsx</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ PHASE 1 ══════════ -->
+  <div class="phase phase-p1">
+    <div class="phase-dot"></div>
+    <div class="phase-header">
+      <div class="phase-badge">🚀</div>
+      <div>
+        <div class="phase-title">Phase 1 — Launch-Ready Prototype</div>
+        <div class="phase-period">สัปดาห์ 1–6 (ประมาณ 6 สัปดาห์)</div>
+        <div class="phase-goal">ผ่านเกณฑ์: Demo ได้สมบูรณ์ ระบบ Cron ทำงานบน Vercel · หา Pilot 3 ร้านแรก</div>
+      </div>
+    </div>
+    <div class="phase-body">
+
+      <!-- Sprint 1.1 -->
+      <div class="sprint">
+        <div class="sprint-header">
+          <span class="sprint-title">Sprint 1.1 — Cron &amp; Reminders</span>
+          <span class="sprint-weeks">สัปดาห์ 1–2</span>
+        </div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-status status-high">!</div>
+            <div class="task-main">
+              <div class="task-name">สร้าง <code>/api/cron/reminders</code> Route</div>
+              <div class="task-desc">Port logic จาก send-reminders.mjs ให้เป็น Next.js API route รองรับ Vercel Cron · ป้องกันด้วย CRON_SECRET header</div>
+              <span class="task-file">scripts/send-reminders.mjs → src/app/api/cron/reminders/route.ts</span>
+              <div class="task-tags"><span class="tag tag-hard">Critical — ไม่งั้น Reminder ไม่รัน</span></div>
+            </div>
+            <span class="effort e-xs">~2 ชม.</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-high">!</div>
+            <div class="task-main">
+              <div class="task-name">สร้าง <code>vercel.json</code> + Cron Schedule</div>
+              <div class="task-desc">กำหนด crons: reminders ทุก 10 นาที · เพิ่ม CRON_SECRET ใน env</div>
+              <span class="task-file">vercel.json (ไฟล์ใหม่ — ปัจจุบันไม่มี)</span>
+              <div class="task-tags"><span class="tag tag-hard">Critical</span></div>
+            </div>
+            <span class="effort e-xs">~30 นาที</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-high">!</div>
+            <div class="task-main">
+              <div class="task-name">เพิ่ม Reminder 24 ชั่วโมงก่อนนัด</div>
+              <div class="task-desc">ปัจจุบันมีแค่ window 50–70 นาที ต้องเพิ่ม column <code>reminded_24h_at</code> ใน bookings และ logic แยกใน cron</div>
+              <span class="task-file">supabase/schema.sql (add column) · api/cron/reminders/route.ts</span>
+              <div class="task-tags"><span class="tag tag-schema">Schema change</span></div>
+            </div>
+            <span class="effort e-s">~3 ชม.</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">เพิ่ม Review Request Push (24h หลังบริการเสร็จ)</div>
+              <div class="task-desc">เมื่อ booking เปลี่ยน status เป็น completed ให้ cron ส่ง push ขอรีวิวในวันถัดไป — LIFF <code>/liff/review</code> มีอยู่แล้ว</div>
+              <span class="task-file">src/app/liff/review/ (UI มีแล้ว) · cron/reminders</span>
+              <div class="task-tags"><span class="tag tag-schema">เพิ่ม reviewed_requested_at</span></div>
+            </div>
+            <span class="effort e-s">~3 ชม.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sprint 1.2 -->
+      <div class="sprint">
+        <div class="sprint-header">
+          <span class="sprint-title">Sprint 1.2 — Admin Dashboard Polish</span>
+          <span class="sprint-weeks">สัปดาห์ 3–4</span>
+        </div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">Revenue Summary Card บน Dashboard</div>
+              <div class="task-desc">แสดงยอดรายได้วันนี้ (SUM price WHERE status=completed) real-time · เพิ่มเป็น KPI card ด้านบน booking list</div>
+              <span class="task-file">src/app/admin/page.tsx · src/app/api/admin/dashboard/route.ts</span>
+              <div class="task-tags"><span class="tag tag-uionly">UI เท่านั้น</span></div>
+            </div>
+            <span class="effort e-s">~4 ชม.</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">Filter Booking List ตามช่างและสถานะ</div>
+              <div class="task-desc">เพิ่ม dropdown filter: ช่าง | สถานะ (confirmed/pending/completed) บน admin dashboard</div>
+              <span class="task-file">src/app/admin/page.tsx</span>
+              <div class="task-tags"><span class="tag tag-uionly">UI เท่านั้น</span></div>
+            </div>
+            <span class="effort e-s">~3 ชม.</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">Customer Notes บน Admin Profile</div>
+              <div class="task-desc">เพิ่มช่อง notes ที่แอดมินเขียนเองใน customer profile (เช่น "แพ้สีรุ่น X") ลงตาราง customers</div>
+              <span class="task-file">src/app/admin/customers/ · customers.notes column</span>
+              <div class="task-tags"><span class="tag tag-schema">Schema: add notes column</span></div>
+            </div>
+            <span class="effort e-s">~4 ชม.</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">เพิ่ม Cron Last-Run ใน Healthcheck</div>
+              <div class="task-desc">แสดงเวลา cron รันล่าสุดบนหน้า healthcheck เพื่อยืนยันว่า Reminder ทำงานอยู่</div>
+              <span class="task-file">src/app/admin/healthcheck/page.tsx · api/admin/healthcheck/route.ts</span>
+            </div>
+            <span class="effort e-xs">~2 ชม.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sprint 1.3 -->
+      <div class="sprint">
+        <div class="sprint-header">
+          <span class="sprint-title">Sprint 1.3 — Demo Readiness</span>
+          <span class="sprint-weeks">สัปดาห์ 5–6</span>
+        </div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">Demo Seed Script</div>
+              <div class="task-desc">Script ใส่ข้อมูลสมมติ: ร้านตัดผมดีโม + บริการ 4 อย่าง + ช่าง 2 คน + คิวตัวอย่าง 5 รายการ สำหรับ pitch ทันที</div>
+              <span class="task-file">scripts/seed-demo.mjs (ไฟล์ใหม่)</span>
+            </div>
+            <span class="effort e-xs">~2 ชม.</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">ทดสอบ Admin Wizard ครบ 9 Steps + เขียน Test Cases</div>
+              <div class="task-desc">Wizard ยาว 1,353 บรรทัดใน webhook route ควรทดสอบแต่ละ step ด้วยมือก่อน Demo และเขียน test cases ไว้ป้องกัน regression</div>
+              <span class="task-file">webhook/route.ts · AdminWizardStep</span>
+            </div>
+            <span class="effort e-s">~1 วัน</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">Error Monitoring — Sentry Integration</div>
+              <div class="task-desc">ติดตั้ง @sentry/nextjs จับ unhandled exceptions บน production และ alert เมื่อ webhook error rate &gt;5%</div>
+              <span class="task-file">next.config.js · sentry.client/server.config.ts</span>
+            </div>
+            <span class="effort e-s">~3 ชม.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 1 KPIs -->
+      <div class="kpi-bar">
+        <strong style="font-size:11.5px; color:#475569;">KPI Phase 1:</strong>
+        <span class="kpi"><span class="kpi-dot kpi-dot-green"></span>Demo flow ครบ 90 วินาที ไม่มีข้อผิดพลาด</span>
+        <span class="kpi"><span class="kpi-dot kpi-dot-green"></span>Cron reminder รันอัตโนมัติบน Vercel</span>
+        <span class="kpi"><span class="kpi-dot kpi-dot-yellow"></span>Pilot shops 3 ร้านแรกใช้งานจริง</span>
+        <span class="kpi"><span class="kpi-dot kpi-dot-yellow"></span>ไม่มี critical bug ใน 2 สัปดาห์แรก</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ PHASE 2 ══════════ -->
+  <div class="phase phase-p2">
+    <div class="phase-dot"></div>
+    <div class="phase-header">
+      <div class="phase-badge">⚙️</div>
+      <div>
+        <div class="phase-title">Phase 2 — Product-Market Fit</div>
+        <div class="phase-period">เดือน 2–3 (ประมาณ 8 สัปดาห์)</div>
+        <div class="phase-goal">ผ่านเกณฑ์: 10 ร้านใช้อยู่ · ลูกค้าไม่ไป-show &lt;15% · ร้านไม่ต้องโทรหา dev</div>
+      </div>
+    </div>
+    <div class="phase-body">
+
+      <!-- Sprint 2.1 -->
+      <div class="sprint">
+        <div class="sprint-header">
+          <span class="sprint-title">Sprint 2.1 — Reliability &amp; Maintainability</span>
+          <span class="sprint-weeks">สัปดาห์ 7–10</span>
+        </div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-status status-high">!</div>
+            <div class="task-main">
+              <div class="task-name">Refactor Webhook Handler (1,353 บรรทัด → modules)</div>
+              <div class="task-desc">แตกออกเป็น: <code>message.handler.ts</code> · <code>postback.handler.ts</code> · <code>admin.handler.ts</code> · <code>booking.handler.ts</code> · <code>wizard.handler.ts</code></div>
+              <span class="task-file">src/app/api/line/webhook/route.ts → handlers/*.ts</span>
+              <div class="task-tags"><span class="tag tag-hard">ระวัง regression</span></div>
+            </div>
+            <span class="effort e-l">~3 วัน</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">Unit Tests — Thai NLP Parser (50+ test cases)</div>
+              <div class="task-desc">ทดสอบ pattern ของเวลา/วันที่ทุก variant, service matching, staff alias — ป้องกัน regression เมื่อขยาย NLP</div>
+              <span class="task-file">src/lib/thai-nlp.ts → __tests__/thai-nlp.test.ts</span>
+            </div>
+            <span class="effort e-m">~1.5 วัน</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">Unit Tests — Slot Availability Calculator</div>
+              <div class="task-desc">ทดสอบ edge cases: ช่วงเวลาขอบเขต, วันหยุด, ช่างลา, booking ที่เกือบทับกัน</div>
+              <span class="task-file">src/lib/booking.ts → __tests__/booking.test.ts</span>
+            </div>
+            <span class="effort e-m">~1 วัน</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sprint 2.2 -->
+      <div class="sprint">
+        <div class="sprint-header">
+          <span class="sprint-title">Sprint 2.2 — Customer Experience</span>
+          <span class="sprint-weeks">สัปดาห์ 9–12</span>
+        </div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">Waitlist Auto-Notification</div>
+              <div class="task-desc">เมื่อ booking ถูก cancel → trigger ตรวจ waitlist_entries ที่ match วัน+บริการ+ช่าง → ส่ง push ให้จองภายใน 15 นาที</div>
+              <span class="task-file">supabase/schema.sql · waitlist_entries (มีแล้ว) · webhook cancel handler</span>
+              <div class="task-tags"><span class="tag tag-schema">Schema พร้อมแล้ว</span></div>
+            </div>
+            <span class="effort e-m">~1.5 วัน</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">Reschedule Flow ให้สมบูรณ์</div>
+              <div class="task-desc">LIFF <code>/liff/reschedule</code> มี UI แล้ว ต้องเพิ่ม: แสดงเฉพาะ slot ว่างวันเดิมก่อน · confirm flow · notify ทั้งลูกค้าและแอดมิน</div>
+              <span class="task-file">src/app/liff/reschedule/</span>
+              <div class="task-tags"><span class="tag tag-uionly">ส่วนใหญ่เป็น UI + logic</span></div>
+            </div>
+            <span class="effort e-m">~1 วัน</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">Multi-Stage Reminders (24h / 2h / noshow alert)</div>
+              <div class="task-desc">ต่อจาก Sprint 1.1 — เพิ่ม 2h reminder · แจ้งแอดมินเมื่อลูกค้าเลยเวลา 30 นาที (no-show risk)</div>
+              <span class="task-file">api/cron/reminders/route.ts · bookings.reminded_2h_at</span>
+              <div class="task-tags"><span class="tag tag-schema">Schema: add reminded_2h_at</span></div>
+            </div>
+            <span class="effort e-s">~4 ชม.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sprint 2.3 -->
+      <div class="sprint">
+        <div class="sprint-header">
+          <span class="sprint-title">Sprint 2.3 — Shop Self-Service</span>
+          <span class="sprint-weeks">สัปดาห์ 11–14</span>
+        </div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">Shop Settings UI (ไม่ต้อง Redeploy)</div>
+              <div class="task-desc">ย้ายค่าที่เปลี่ยนบ่อย (reminder timing, points_per_baht, working hours) จาก .env ไปเก็บใน <code>shop_settings</code> table</div>
+              <span class="task-file">shops table (add settings jsonb) · src/app/admin/setup/</span>
+            </div>
+            <span class="effort e-m">~1.5 วัน</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-med">~</div>
+            <div class="task-main">
+              <div class="task-name">Staff Performance Dashboard</div>
+              <div class="task-desc">แสดงยอด booking ต่อช่าง · คะแนน review เฉลี่ยต่อช่าง · สร้าง incentive ให้ช่างทำงานดี</div>
+              <span class="task-file">src/app/admin/staff/ · api/admin/staff/</span>
+            </div>
+            <span class="effort e-s">~4 ชม.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-bar">
+        <strong style="font-size:11.5px; color:#475569;">KPI Phase 2:</strong>
+        <span class="kpi"><span class="kpi-dot kpi-dot-green"></span>10 shops onboarded</span>
+        <span class="kpi"><span class="kpi-dot kpi-dot-yellow"></span>No-show rate &lt;15%</span>
+        <span class="kpi"><span class="kpi-dot kpi-dot-blue"></span>Support tickets &lt;2 ต่อร้านต่อเดือน</span>
+        <span class="kpi"><span class="kpi-dot kpi-dot-purple"></span>Core test coverage &gt;60%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ PHASE 3 ══════════ -->
+  <div class="phase phase-p3">
+    <div class="phase-dot"></div>
+    <div class="phase-header">
+      <div class="phase-badge">🎯</div>
+      <div>
+        <div class="phase-title">Phase 3 — Differentiate &amp; Retain</div>
+        <div class="phase-period">เดือน 4–5 (ประมาณ 8 สัปดาห์)</div>
+        <div class="phase-goal">ผ่านเกณฑ์: 30 ร้าน · ฟีเจอร์ที่คู่แข่งไม่มี · ลูกค้ากลับมาซ้ำ &gt;60%</div>
+      </div>
+    </div>
+    <div class="phase-body">
+      <div class="sprint">
+        <div class="sprint-header">
+          <span class="sprint-title">Sprint 3.1 — AI &amp; Intelligence</span>
+          <span class="sprint-weeks">สัปดาห์ 15–18</span>
+        </div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-status status-todo">○</div>
+            <div class="task-main">
+              <div class="task-name">Quick Rebook — Context Memory</div>
+              <div class="task-desc">จำบริการ/ช่าง/เวลาที่ใช้ล่าสุด เสนอ "จองแบบเดิมอีกครั้ง?" ด้วย 1 tap ลด friction สูงสุด</div>
+              <span class="task-file">customers table (last_booking_context) · webhook message handler</span>
+            </div>
+            <span class="effort e-m">~1 วัน</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-todo">○</div>
+            <div class="task-main">
+              <div class="task-name">Queue Position &amp; ETA</div>
+              <div class="task-desc">ลูกค้าพิมพ์ "คิวฉันถึงยัง" → ระบบตอบว่ามีกี่คิวก่อน + ประมาณเวลารอจาก duration ของคิวก่อน</div>
+              <span class="task-file">webhook/message.handler.ts (คำสั่งใหม่)</span>
+            </div>
+            <span class="effort e-s">~4 ชม.</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-todo">○</div>
+            <div class="task-main">
+              <div class="task-name">Lapsed Customer Re-engagement Campaign</div>
+              <div class="task-desc">Cron ตรวจลูกค้าที่ไม่มา 30 วัน → ส่ง push พร้อมโปรพิเศษ "กลับมาหาเราสิ" อัตโนมัติ</div>
+              <span class="task-file">api/cron/reminders/route.ts (เพิ่ม lapsed check)</span>
+            </div>
+            <span class="effort e-s">~3 ชม.</span>
+          </div>
+        </div>
+      </div>
+      <div class="sprint">
+        <div class="sprint-header">
+          <span class="sprint-title">Sprint 3.2 — Loyalty System</span>
+          <span class="sprint-weeks">สัปดาห์ 17–22</span>
+        </div>
+        <div class="task-list">
+          <div class="task">
+            <div class="task-status status-todo">○</div>
+            <div class="task-main">
+              <div class="task-name">Tier System (Silver / Gold / VIP)</div>
+              <div class="task-desc">Silver: สมัครแล้ว · Gold: 5 visits หรือ ฿2,000 · VIP: 20 visits หรือ ฿10,000 — แต้ม multiplier x1/x1.5/x2</div>
+              <span class="task-file">customers.tier column (new) · booking points logic</span>
+              <div class="task-tags"><span class="tag tag-schema">Schema: add tier enum</span></div>
+            </div>
+            <span class="effort e-m">~1.5 วัน</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-todo">○</div>
+            <div class="task-main">
+              <div class="task-name">Birthday Campaign (อัตโนมัติ)</div>
+              <div class="task-desc">Cron ตรวจ customers.birthday ทุกวัน → ส่ง push ของขวัญวันเกิด (แต้ม 2x หรือส่วนลด)</div>
+              <span class="task-file">customers.birthday (มีแล้ว) · api/cron/reminders/route.ts</span>
+              <div class="task-tags"><span class="tag tag-schema">Schema พร้อมแล้ว</span></div>
+            </div>
+            <span class="effort e-s">~3 ชม.</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-todo">○</div>
+            <div class="task-main">
+              <div class="task-name">Review Display บน LIFF + Staff Scorecard</div>
+              <div class="task-desc">แสดง avg rating + จำนวน review ของช่างแต่ละคน บน booking flow (social proof)</div>
+              <span class="task-file">src/app/liff/booking/ · reviews table (มีแล้วใน schema)</span>
+            </div>
+            <span class="effort e-s">~4 ชม.</span>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-bar">
+        <strong style="font-size:11.5px; color:#475569;">KPI Phase 3:</strong>
+        <span class="kpi"><span class="kpi-dot kpi-dot-green"></span>30 shops onboarded</span>
+        <span class="kpi"><span class="kpi-dot kpi-dot-yellow"></span>Customer 60-day retention &gt;60%</span>
+        <span class="kpi"><span class="kpi-dot kpi-dot-blue"></span>NPS &gt; 7</span>
+        <span class="kpi"><span class="kpi-dot kpi-dot-purple"></span>Referral ≥20% ของ new shops</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ PHASE 4 ══════════ -->
+  <div class="phase phase-p4">
+    <div class="phase-dot"></div>
+    <div class="phase-header">
+      <div class="phase-badge">🏢</div>
+      <div>
+        <div class="phase-title">Phase 4 — Scale &amp; Platform</div>
+        <div class="phase-period">เดือน 6+ (Long-term)</div>
+        <div class="phase-goal">ผ่านเกณฑ์: 100+ ร้าน · Multi-shop · Agency/Reseller model</div>
+      </div>
+    </div>
+    <div class="phase-body">
+      <div class="sprint">
+        <div class="task-list">
+          <div class="task">
+            <div class="task-status status-todo">○</div>
+            <div class="task-main">
+              <div class="task-name">Multi-Shop Mode</div>
+              <div class="task-desc">Schema รองรับ multi-shop แล้ว (shop_id ทุกตาราง) ต้องเพิ่ม: login/session per shop, admin UI เลือก shop, webhook routing ตาม LINE OA</div>
+              <span class="task-file">supabase/schema.sql (พร้อมแล้ว) · supabase.ts SHOP_ID logic</span>
+              <div class="task-tags"><span class="tag tag-schema">Architecture change</span></div>
+            </div>
+            <span class="effort e-l">~1–2 สัปดาห์</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-todo">○</div>
+            <div class="task-main">
+              <div class="task-name">Agency / Reseller Dashboard</div>
+              <div class="task-desc">หน้า dashboard สำหรับ reseller ดูสถานะร้านทุกร้านที่ดูแล, billing status, quick-setup flow สำหรับร้านใหม่</div>
+            </div>
+            <span class="effort e-l">~2 สัปดาห์</span>
+          </div>
+          <div class="task">
+            <div class="task-status status-todo">○</div>
+            <div class="task-main">
+              <div class="task-name">Deposit / Prepayment via PromptPay QR</div>
+              <div class="task-desc">ลด no-show ด้วยการเก็บมัดจำ — integrate กับ payment gateway ที่รองรับ PromptPay</div>
+            </div>
+            <span class="effort e-l">~1–2 สัปดาห์</span>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-bar">
+        <strong style="font-size:11.5px; color:#475569;">KPI Phase 4:</strong>
+        <span class="kpi"><span class="kpi-dot kpi-dot-green"></span>100+ active shops</span>
+        <span class="kpi"><span class="kpi-dot kpi-dot-yellow"></span>MRR from maintenance ≥฿50,000</span>
+        <span class="kpi"><span class="kpi-dot kpi-dot-blue"></span>Agency partners ≥3</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /timeline -->
+
+<!-- ── FOOTER ── -->
+<div style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid #dde3ef; text-align:center; color:#94a3b8; font-size:12px; line-height:2;">
+  LineBook Development Roadmap · v1.0 · 20 เมษายน 2569<br>
+  อ้างอิงจาก codebase จริง: <code>webhook/route.ts</code> · <code>supabase/schema.sql</code> · <code>send-reminders.mjs</code> · <code>admin-auth.ts</code>
+</div>
+
+</div>
+</body>
+</html>

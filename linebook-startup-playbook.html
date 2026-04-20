@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LineBook — Startup Prototype Playbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@400;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #1a1f2e;
+  background: #f4f6fb;
+}
+a { color: inherit; text-decoration: none; }
+
+/* Layout */
+.page { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+/* Hero */
+.hero {
+  background: linear-gradient(135deg, #1a2634 0%, #2b3a4e 50%, #3d5a80 100%);
+  color: white;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: rgba(152, 193, 217, 0.12);
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -30px; left: 60px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: rgba(152, 193, 217, 0.08);
+}
+.hero-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #98c1d9;
+  margin-bottom: 0.5rem;
+}
+.hero-title {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 0.75rem;
+}
+.hero-title span { color: #98c1d9; }
+.hero-sub {
+  font-family: 'Noto Serif Thai', serif;
+  font-size: 15px;
+  color: #c8d8e8;
+  max-width: 580px;
+  line-height: 1.7;
+}
+.hero-date {
+  margin-top: 1.5rem;
+  font-size: 12px;
+  color: #7a9bb5;
+}
+
+/* Section headers */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1rem;
+  margin-top: 2.5rem;
+}
+.section-label .num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #2b3a4e;
+  color: white;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.section-label h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a2634;
+}
+
+/* Cards */
+.card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e8f0;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.card-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f0f2f8;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.card-body { padding: 1.25rem; }
+
+/* Checklist */
+.checklist { display: flex; flex-direction: column; gap: 0.6rem; }
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+.check-item.done { background: #f0faf5; border-color: #b8e8d0; }
+.check-item.todo { background: #fff8f0; border-color: #fde4c0; }
+.check-item.critical { background: #fff2f2; border-color: #f9c8c8; }
+.check-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+  font-weight: 700;
+  margin-top: 1px;
+}
+.done .check-icon { background: #16a34a; color: white; }
+.todo .check-icon { background: #f59e0b; color: white; }
+.critical .check-icon { background: #dc2626; color: white; }
+.check-content { flex: 1; min-width: 0; }
+.check-title { font-weight: 600; font-size: 13.5px; color: #1a1f2e; }
+.check-detail { font-size: 12px; color: #64748b; margin-top: 2px; }
+.check-file {
+  display: inline-block;
+  margin-top: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.check-effort {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+.effort-xs { background: #dcfce7; color: #15803d; }
+.effort-s  { background: #dbeafe; color: #1d4ed8; }
+.effort-m  { background: #fef9c3; color: #a16207; }
+.effort-l  { background: #fee2e2; color: #b91c1c; }
+
+/* Moat cards */
+.moat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+.moat-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e8f0;
+  padding: 1.25rem;
+  border-top: 4px solid;
+}
+.moat-card:nth-child(1) { border-top-color: #2b3a4e; }
+.moat-card:nth-child(2) { border-top-color: #3d5a80; }
+.moat-card:nth-child(3) { border-top-color: #0f766e; }
+.moat-card:nth-child(4) { border-top-color: #7c3aed; }
+.moat-card:nth-child(5) { border-top-color: #db2777; }
+.moat-icon { font-size: 24px; margin-bottom: 0.5rem; }
+.moat-title { font-size: 14px; font-weight: 700; color: #1a2634; margin-bottom: 0.35rem; }
+.moat-desc { font-size: 12.5px; color: #64748b; line-height: 1.6; }
+.moat-vs {
+  margin-top: 0.6rem;
+  font-size: 11px;
+  color: #dc2626;
+  font-weight: 500;
+}
+.moat-vs span { color: #16a34a; }
+
+/* Demo script */
+.demo-step {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px dashed #e5e8f0;
+}
+.demo-step:last-child { border-bottom: none; }
+.demo-num {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #2b3a4e, #3d5a80);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.demo-time { font-size: 11px; font-weight: 600; color: #94a3b8; margin-bottom: 3px; }
+.demo-action { font-size: 13.5px; font-weight: 600; color: #1a2634; margin-bottom: 3px; }
+.demo-says {
+  font-style: italic;
+  font-size: 12.5px;
+  color: #3d5a80;
+  background: #eef4fb;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+.demo-why { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+/* Pitch box */
+.pitch-box {
+  background: linear-gradient(135deg, #2b3a4e 0%, #3d5a80 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+}
+.pitch-box .th { font-family: 'Noto Serif Thai', serif; font-size: 18px; font-weight: 700; line-height: 1.5; }
+.pitch-box .en { font-size: 12px; color: #98c1d9; margin-top: 0.5rem; }
+
+/* Matrix */
+.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.matrix-quadrant {
+  border-radius: 10px;
+  padding: 1rem;
+  border: 1px solid;
+}
+.matrix-q1 { background: #f0faf5; border-color: #a7f3d0; }
+.matrix-q2 { background: #eff6ff; border-color: #bfdbfe; }
+.matrix-q3 { background: #fff8f0; border-color: #fed7aa; }
+.matrix-q4 { background: #f8fafc; border-color: #e2e8f0; }
+.matrix-title { font-size: 12px; font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.matrix-q1 .matrix-title { color: #059669; }
+.matrix-q2 .matrix-title { color: #2563eb; }
+.matrix-q3 .matrix-title { color: #d97706; }
+.matrix-q4 .matrix-title { color: #94a3b8; }
+.matrix-items { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.matrix-items li { font-size: 12.5px; color: #374151; padding-left: 0.75rem; position: relative; }
+.matrix-items li::before { content: '·'; position: absolute; left: 0; color: #94a3b8; }
+
+/* Warning notice */
+.notice {
+  display: flex;
+  gap: 10px;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 12.5px;
+  margin-top: 0.5rem;
+}
+.notice-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+.notice-warn { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+
+/* Tag */
+.tag {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 20px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.tag-new { background: #dcfce7; color: #15803d; }
+.tag-done { background: #dbeafe; color: #1e40af; }
+
+@media print {
+  body { background: white; }
+  .page { padding: 1rem; }
+  .hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="hero-label">Startup Prototype Playbook</div>
+  <h1 class="hero-title">LineBook<br><span>ทำ Prototype ให้ขายได้จริง</span></h1>
+  <p class="hero-sub">
+    จุดที่ต้องปรับให้พร้อม Demo · ข้อได้เปรียบที่คู่แข่งทำไม่ได้ · กลยุทธ์เข้าหาร้านค้า 10 รายแรก
+  </p>
+  <div class="hero-date">อัปเดต: 20 เมษายน 2569 — อ้างอิงจากการตรวจ Codebase จริง</div>
+</div>
+
+<!-- ===== SECTION 1: PITCH ===== -->
+<div class="section-label">
+  <div class="num">0</div>
+  <h2>Elevator Pitch (30 วินาที)</h2>
+</div>
+<div class="pitch-box">
+  <div class="th">"ลูกค้าจองคิวผ่าน LINE ได้ใน 30 วินาที ไม่ต้องโหลดแอป<br>เจ้าของร้านดูคิว Real-time ผ่านมือถือ — จ่ายครั้งเดียว ไม่มีรายเดือน"</div>
+  <div class="en">Customer books in 30 sec via LINE · Owner sees live queue · One-time fee, no monthly lock-in</div>
+</div>
+<div class="notice notice-info" style="margin-top:0.75rem;">
+  <span>💡</span>
+  <div><strong>Key insight:</strong> คู่แข่งทุกเจ้า (FoxConnect, QueQ, Agency จ้างทำ) ต้องให้ลูกค้า "ออกจาก LINE" เพื่อจอง — LineBook ไม่ต้อง</div>
+</div>
+
+<!-- ===== SECTION 2: CHECKLIST ===== -->
+<div class="section-label">
+  <div class="num">1</div>
+  <h2>Prototype-Ready Checklist — ก่อน Demo ครั้งแรก</h2>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span style="font-size:18px;">🔴</span>
+    <span style="font-weight:700;">ต้องทำก่อน (ถ้าขาดจะพัง Demo ทันที)</span>
+  </div>
+  <div class="card-body">
+    <div class="checklist">
+
+      <div class="check-item critical">
+        <div class="check-icon">!</div>
+        <div class="check-content">
+          <div class="check-title">สร้าง <code>/api/cron/reminders</code> + <code>vercel.json</code></div>
+          <div class="check-detail">ปัจจุบัน <code>scripts/send-reminders.mjs</code> รันเป็น CLI script ธรรมดา — ไม่มีทางรันอัตโนมัติบน Vercel ได้ถ้าไม่มี API route + cron config</div>
+          <span class="check-file">scripts/send-reminders.mjs → src/app/api/cron/reminders/route.ts</span>
+        </div>
+        <span class="check-effort effort-xs">~2 ชม.</span>
+      </div>
+
+      <div class="check-item critical">
+        <div class="check-icon">!</div>
+        <div class="check-content">
+          <div class="check-title">เพิ่ม Reminder 24 ชั่วโมงก่อนนัด</div>
+          <div class="check-detail">ปัจจุบันมีแค่ reminder 1 ชั่วโมง (window 50–70 นาที) — ร้านค้าจะถามว่า "มีแจ้งเตือนวันก่อนไหม" ซึ่งเป็น feature ที่ลูกค้าคาดหวัง</div>
+          <span class="check-file">scripts/send-reminders.mjs · windowStart/windowEnd</span>
+        </div>
+        <span class="check-effort effort-s">~3 ชม.</span>
+      </div>
+
+      <div class="check-item critical">
+        <div class="check-icon">!</div>
+        <div class="check-content">
+          <div class="check-title">ทดสอบ Admin Chat Wizard ครบทุก step ก่อน Demo</div>
+          <div class="check-detail">Wizard 9 steps (<code>shop_name → hours_time</code>) อยู่ใน webhook 1,353 บรรทัด — ถ้า step ใด step หนึ่งพัง Demo จะเสีย ควรทดสอบจริงก่อน</div>
+          <span class="check-file">src/app/api/line/webhook/route.ts · AdminWizardStep</span>
+        </div>
+        <span class="check-effort effort-xs">~1 ชม.</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span style="font-size:18px;">🟡</span>
+    <span style="font-weight:700;">ควรทำก่อน (สร้างความประทับใจ)</span>
+  </div>
+  <div class="card-body">
+    <div class="checklist">
+
+      <div class="check-item todo">
+        <div class="check-icon">~</div>
+        <div class="check-content">
+          <div class="check-title">ปรับ Admin Dashboard ให้แสดงรายได้วันนี้แบบ Real-time <span class="tag tag-done">UI มีแล้ว</span></div>
+          <div class="check-detail">หน้า <code>/admin</code> มี Supabase Realtime แล้ว แต่ยังไม่แสดง "ยอดวันนี้" ที่เด่นชัด — เพิ่ม revenue summary card จะ wow เจ้าของร้านมาก</div>
+          <span class="check-file">src/app/admin/page.tsx</span>
+        </div>
+        <span class="check-effort effort-s">~4 ชม.</span>
+      </div>
+
+      <div class="check-item todo">
+        <div class="check-icon">~</div>
+        <div class="check-content">
+          <div class="check-title">สร้าง Demo Seed Data Script</div>
+          <div class="check-detail">ควรมี script สำหรับใส่ข้อมูลตัวอย่าง (ร้านสมมติ + บริการ 3 อย่าง + ช่าง 2 คน + คิว 5 รายการ) เพื่อ Demo ได้ทันทีโดยไม่ต้องตั้งค่าจริง</div>
+          <span class="check-file">scripts/ (ไฟล์ใหม่: seed-demo.mjs)</span>
+        </div>
+        <span class="check-effort effort-xs">~2 ชม.</span>
+      </div>
+
+      <div class="check-item todo">
+        <div class="check-icon">~</div>
+        <div class="check-content">
+          <div class="check-title">เปิดใช้ Waitlist Notification <span class="tag tag-done">Schema มีแล้ว</span></div>
+          <div class="check-detail">ตาราง <code>waitlist_entries</code> มีใน schema แต่ไม่มี logic แจ้งเตือนเมื่อมีคิวว่าง — เป็น feature ที่คู่แข่งส่วนใหญ่ยังไม่มี</div>
+          <span class="check-file">supabase/schema.sql · webhook/route.ts booking cancel handler</span>
+        </div>
+        <span class="check-effort effort-m">~1 วัน</span>
+      </div>
+
+      <div class="check-item todo">
+        <div class="check-icon">~</div>
+        <div class="check-content">
+          <div class="check-title">เพิ่ม Review Request Message หลังบริการ 24 ชม. <span class="tag tag-done">Schema มีแล้ว</span></div>
+          <div class="check-detail">LIFF <code>/liff/review</code> มีอยู่แล้ว แต่ไม่มีการส่ง push message ขอรีวิว — เพิ่มใน cron reminders ได้เลย</div>
+          <span class="check-file">src/app/liff/review/ · scripts/send-reminders.mjs</span>
+        </div>
+        <span class="check-effort effort-s">~3 ชม.</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span style="font-size:18px;">🟢</span>
+    <span style="font-weight:700;">ทำแล้วดี (ข้อได้เปรียบจริงจากโค้ด)</span>
+  </div>
+  <div class="card-body">
+    <div class="checklist">
+
+      <div class="check-item done">
+        <div class="check-icon">✓</div>
+        <div class="check-content">
+          <div class="check-title">Rate Limiting <span class="tag tag-new">เพิ่งเพิ่ม</span></div>
+          <div class="check-detail">Admin password: 5 ครั้ง/15 นาที per IP · LINE user event: 20 events/นาที per userId</div>
+          <span class="check-file">src/lib/rate-limit.ts · admin-auth.ts · webhook/route.ts</span>
+        </div>
+      </div>
+
+      <div class="check-item done">
+        <div class="check-icon">✓</div>
+        <div class="check-content">
+          <div class="check-title">LINE idToken Server-Side Verify</div>
+          <div class="check-detail">ตรวจ idToken ผ่าน <code>api.line.me/oauth2/v2.1/verify</code> ทุกครั้ง ป้องกัน impersonation</div>
+          <span class="check-file">src/lib/admin-auth.ts · verifyLineIdToken()</span>
+        </div>
+      </div>
+
+      <div class="check-item done">
+        <div class="check-icon">✓</div>
+        <div class="check-content">
+          <div class="check-title">Healthcheck Dashboard พร้อม Actionable Hints</div>
+          <div class="check-detail">หน้า <code>/admin/healthcheck</code> ตรวจ LINE, Supabase, Admin config และบอกวิธีแก้เป็นข้อๆ — ลด support cost สูงมาก</div>
+          <span class="check-file">src/app/admin/healthcheck/page.tsx</span>
+        </div>
+      </div>
+
+      <div class="check-item done">
+        <div class="check-icon">✓</div>
+        <div class="check-content">
+          <div class="check-title">PostgreSQL Exclusion Constraint ป้องกัน Double-Booking</div>
+          <div class="check-detail">ป้องกันที่ระดับ database — แม้มี concurrent requests ก็ไม่จองทับกัน ต่างจากคู่แข่งที่เช็คที่ application layer</div>
+          <span class="check-file">supabase/schema.sql</span>
+        </div>
+      </div>
+
+      <div class="check-item done">
+        <div class="check-icon">✓</div>
+        <div class="check-content">
+          <div class="check-title">Thai NLP Parser ครอบคลุม</div>
+          <div class="check-detail">รองรับ "พรุ่งนี้บ่ายสองครึ่ง", "วันศุกร์ 2 โมงเย็น", "14:30" และชื่อบริการ/ช่างแบบ fuzzy</div>
+          <span class="check-file">src/lib/thai-nlp.ts (23KB)</span>
+        </div>
+      </div>
+
+      <div class="check-item done">
+        <div class="check-icon">✓</div>
+        <div class="check-content">
+          <div class="check-title">Admin Setup Wizard ผ่าน LINE Chat</div>
+          <div class="check-detail">ตั้งค่าร้านได้ครบ 9 ขั้นตอน (ชื่อร้าน → เบอร์ → ที่อยู่ → บริการ → ช่าง → เวลาทำการ) โดยไม่ต้องเข้าเว็บ</div>
+          <span class="check-file">webhook/route.ts · AdminWizardStep type</span>
+        </div>
+      </div>
+
+      <div class="check-item done">
+        <div class="check-icon">✓</div>
+        <div class="check-content">
+          <div class="check-title">Realtime Queue Dashboard</div>
+          <div class="check-detail">Supabase Realtime subscription ที่ <code>/admin</code> อัปเดตคิวทันทีโดยไม่ต้อง refresh</div>
+          <span class="check-file">src/app/admin/page.tsx · sb.channel("bookings-admin")</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== SECTION 3: MOAT ===== -->
+<div class="section-label">
+  <div class="num">2</div>
+  <h2>5 จุดเด่นที่คู่แข่งทำไม่ได้ (Technical Moat)</h2>
+</div>
+<div class="moat-grid">
+
+  <div class="moat-card">
+    <div class="moat-icon">💬</div>
+    <div class="moat-title">LINE-Native: ไม่ต้องออกจากแอป</div>
+    <div class="moat-desc">ลูกค้าจองผ่าน LIFF ภายใน LINE chat ได้เลย ไม่ต้องโหลดแอปเพิ่ม ไม่ต้องจำ URL</div>
+    <div class="moat-vs">❌ คู่แข่ง: ต้องส่ง link ออกไปเว็บ/แอปอื่น<br><span>✅ LineBook: อยู่ใน LINE ตลอด</span></div>
+  </div>
+
+  <div class="moat-card">
+    <div class="moat-icon">🧠</div>
+    <div class="moat-title">พิมพ์ภาษาไทยธรรมชาติได้</div>
+    <div class="moat-desc">"พรุ่งนี้บ่ายสองตัดผมกับน้องแนน" → ระบบเข้าใจได้เลย ไม่ต้องกดปุ่มทีละขั้น</div>
+    <div class="moat-vs">❌ คู่แข่ง: กดเลือกจาก form หรือ menu เท่านั้น<br><span>✅ LineBook: NLP parser ภาษาไทย</span></div>
+  </div>
+
+  <div class="moat-card">
+    <div class="moat-icon">🛡️</div>
+    <div class="moat-title">DB-Level Double-Booking Prevention</div>
+    <div class="moat-desc">PostgreSQL exclusion constraint หมายความว่าจองทับกันไม่ได้ แม้มีคน 100 คนกดพร้อมกัน</div>
+    <div class="moat-vs">❌ คู่แข่ง: เช็ค application layer อาจ race condition<br><span>✅ LineBook: database จัดการ</span></div>
+  </div>
+
+  <div class="moat-card">
+    <div class="moat-icon">⚙️</div>
+    <div class="moat-title">ตั้งค่าร้านผ่าน LINE Chat</div>
+    <div class="moat-desc">เจ้าของร้านตั้งค่าบริการ ราคา ช่าง และเวลาทำการได้ผ่านแชทโดยไม่ต้องเข้าเว็บ</div>
+    <div class="moat-vs">❌ คู่แข่ง: ต้องเข้า web dashboard เสมอ<br><span>✅ LineBook: LINE chat wizard</span></div>
+  </div>
+
+  <div class="moat-card">
+    <div class="moat-icon">💰</div>
+    <div class="moat-title">ราคา One-Time Fee ไม่มีรายเดือน</div>
+    <div class="moat-desc">จ่ายครั้งเดียว เจ้าของร้านเป็นเจ้าของระบบและข้อมูลลูกค้าทั้งหมด</div>
+    <div class="moat-vs">❌ FoxConnect: ฿500–2,000/เดือน ตลอดชีพ<br><span>✅ LineBook: จ่ายครั้งเดียว ฿4,900–49,900</span></div>
+  </div>
+
+</div>
+
+<!-- ===== SECTION 4: DEMO SCRIPT ===== -->
+<div class="section-label">
+  <div class="num">3</div>
+  <h2>Demo Script ที่โน้มน้าวได้ใน 90 วินาที</h2>
+</div>
+<div class="card">
+  <div class="card-body" style="padding:1rem 1.25rem;">
+    <div class="notice notice-warn" style="margin-bottom:1rem;">
+      <span>⚡</span>
+      <div><strong>หลักการ:</strong> ให้เจ้าของร้านสแกน QR แล้วลองจองเอง — อย่าอธิบาย ให้ <em>สัมผัส</em></div>
+    </div>
+
+    <div class="demo-step">
+      <div class="demo-num">1</div>
+      <div>
+        <div class="demo-time">0:00 – 0:15</div>
+        <div class="demo-action">เปิด LINE ของตัวเอง สแกน QR Demo OA</div>
+        <div class="demo-says">"ลองสแกน QR นี้แล้วกด 'จองคิว' ดูครับ/ค่ะ"</div>
+        <div class="demo-why">ให้ลูกค้าเห็นว่าเริ่มจาก LINE ที่มีอยู่แล้ว ไม่ต้องโหลดอะไร</div>
+      </div>
+    </div>
+
+    <div class="demo-step">
+      <div class="demo-num">2</div>
+      <div>
+        <div class="demo-time">0:15 – 0:45</div>
+        <div class="demo-action">ลูกค้าจองผ่าน LIFF — กดเลือกบริการ → ช่าง → วัน → เวลา</div>
+        <div class="demo-says">"30 วินาทีก็จองเสร็จแล้วครับ — ไม่ต้องโทรหาร้าน"</div>
+        <div class="demo-why">Step-by-step flow ใน <code>liff/booking</code> — ไม่มีขั้นตอนที่ยุ่งยาก</div>
+      </div>
+    </div>
+
+    <div class="demo-step">
+      <div class="demo-num">3</div>
+      <div>
+        <div class="demo-time">0:45 – 1:00</div>
+        <div class="demo-action">เปิด Admin Dashboard บนมือถืออีกเครื่อง — คิวขึ้นทันที</div>
+        <div class="demo-says">"เจ้าของร้านเห็นคิวใหม่แบบ Real-time เลย ไม่ต้อง refresh"</div>
+        <div class="demo-why">Supabase Realtime subscription — <strong>wow moment</strong></div>
+      </div>
+    </div>
+
+    <div class="demo-step">
+      <div class="demo-num">4</div>
+      <div>
+        <div class="demo-time">1:00 – 1:15</div>
+        <div class="demo-action">พิมพ์ในแชทว่า "พรุ่งนี้บ่ายสองตัดผม"</div>
+        <div class="demo-says">"หรือจะพิมพ์เป็นประโยคก็ได้ ไม่ต้องกด menu"</div>
+        <div class="demo-why">Thai NLP — differentiator ที่คู่แข่งไม่มี</div>
+      </div>
+    </div>
+
+    <div class="demo-step">
+      <div class="demo-num">5</div>
+      <div>
+        <div class="demo-time">1:15 – 1:30</div>
+        <div class="demo-action">แสดงว่าระบบส่ง reminder อัตโนมัติ</div>
+        <div class="demo-says">"ลูกค้าจะได้รับแจ้งเตือนก่อนนัด 24 ชม. และ 1 ชม. โดยอัตโนมัติ"</div>
+        <div class="demo-why">ลด no-show — ปัญหาหลักของร้านบริการทุกประเภท</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== SECTION 5: IMPACT-EFFORT MATRIX ===== -->
+<div class="section-label">
+  <div class="num">4</div>
+  <h2>Impact × Effort Matrix — ลำดับการพัฒนาแนะนำ</h2>
+</div>
+<div class="matrix-grid">
+
+  <div class="matrix-quadrant matrix-q1">
+    <div class="matrix-title">🚀 ทำก่อน — Impact สูง / Effort ต่ำ</div>
+    <ul class="matrix-items">
+      <li>Cron reminders API route (~2 ชม.)</li>
+      <li>Reminder 24 ชั่วโมง (~3 ชม.)</li>
+      <li>Demo seed script (~2 ชม.)</li>
+      <li>Review request push (~3 ชม.)</li>
+      <li>Revenue card บน dashboard (~4 ชม.)</li>
+    </ul>
+  </div>
+
+  <div class="matrix-quadrant matrix-q2">
+    <div class="matrix-title">📅 วางแผน — Impact สูง / Effort สูง</div>
+    <ul class="matrix-items">
+      <li>Waitlist auto-notification</li>
+      <li>Refactor webhook เป็น modules</li>
+      <li>Multi-stage reminders (24h / 2h / 30m)</li>
+      <li>Customer profile timeline</li>
+      <li>Tier system (Silver/Gold/VIP)</li>
+    </ul>
+  </div>
+
+  <div class="matrix-quadrant matrix-q3">
+    <div class="matrix-title">⚡ Fill-in — Impact ต่ำ / Effort ต่ำ</div>
+    <ul class="matrix-items">
+      <li>Error message ภาษาไทยทุกจุด</li>
+      <li>Loading skeleton บน LIFF</li>
+      <li>Admin healthcheck: cron last-run</li>
+      <li>vercel.json สำหรับ cron</li>
+    </ul>
+  </div>
+
+  <div class="matrix-quadrant matrix-q4">
+    <div class="matrix-title">🔮 Long-term — Impact ต่ำ / Effort สูง</div>
+    <ul class="matrix-items">
+      <li>Voice-to-booking (Whisper API)</li>
+      <li>Multi-shop mode</li>
+      <li>LINE Pay / PromptPay deposit</li>
+      <li>Before/After photo gallery</li>
+      <li>Automated unit test suite</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ===== SECTION 6: FIRST 10 SHOPS ===== -->
+<div class="section-label">
+  <div class="num">5</div>
+  <h2>กลยุทธ์ "10 ร้านแรก" ใน 2 เดือน</h2>
+</div>
+<div class="card">
+  <div class="card-body">
+    <div class="checklist">
+
+      <div class="check-item todo">
+        <div class="check-icon">1</div>
+        <div class="check-content">
+          <div class="check-title">เปิด LINE OA ของ LineBook เองเป็น Live Demo</div>
+          <div class="check-detail">สร้าง OA สมมติ "ร้านตัดผมบ้านๆ Demo" ให้ร้านค้าสแกน QR แล้วลองจองเองได้ทันทีในระหว่าง pitch — ไม่ต้องอธิบายด้วยคำพูด</div>
+        </div>
+        <span class="check-effort effort-xs">~1 วัน</span>
+      </div>
+
+      <div class="check-item todo">
+        <div class="check-icon">2</div>
+        <div class="check-content">
+          <div class="check-title">หาร้านนำร่อง 3 ร้านแรก — ให้ใช้ฟรี 3 เดือน</div>
+          <div class="check-detail">เป้าหมาย: เก็บ testimonial จริง (ลด no-show กี่%) ซึ่งมีมูลค่าทางการตลาดสูงกว่าโฆษณาทุกประเภท</div>
+        </div>
+        <span class="check-effort effort-s">ทันที</span>
+      </div>
+
+      <div class="check-item todo">
+        <div class="check-icon">3</div>
+        <div class="check-content">
+          <div class="check-title">โพสต์ใน Facebook Group "ช่างตัดผม" + "เจ้าของร้านเสริมสวย"</div>
+          <div class="check-detail">กลุ่มมีสมาชิกหลักแสน — โพสต์ video สั้น "จองคิวผ่าน LINE ใน 30 วินาที" พร้อม QR demo ลิงก์</div>
+        </div>
+        <span class="check-effort effort-xs">ฟรี</span>
+      </div>
+
+      <div class="check-item todo">
+        <div class="check-icon">4</div>
+        <div class="check-content">
+          <div class="check-title">TikTok: "ก่อน vs หลัง" ใช้ LineBook</div>
+          <div class="check-detail">ถ่ายคลิปเปรียบเทียบ: ก่อน = เจ้าของร้านรับโทรศัพท์ + จดกระดาษ หลัง = ดูคิว real-time บนมือถือ ข้อความ visual story ที่ viral ได้</div>
+        </div>
+        <span class="check-effort effort-xs">ฟรี</span>
+      </div>
+
+      <div class="check-item todo">
+        <div class="check-icon">5</div>
+        <div class="check-content">
+          <div class="check-title">Referral: ร้านแนะนำเพื่อน → ได้ maintenance ฟรี 6 เดือน</div>
+          <div class="check-detail">เจ้าของร้านมักรู้จักกันในกลุ่มอาชีพ — Referral program จาก 3 ร้านแรกสามารถขยายเป็น 10 ร้านได้ใน 2 เดือน</div>
+        </div>
+        <span class="check-effort effort-xs">ฟรี</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<div style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid #e5e8f0; text-align:center; color:#94a3b8; font-size:12px;">
+  LineBook Startup Playbook · เวอร์ชัน 1.0 · 20 เมษายน 2569<br>
+  อ้างอิงจาก codebase จริง: webhook/route.ts · admin-auth.ts · scripts/send-reminders.mjs · supabase/schema.sql
+</div>
+
+</div>
+</body>
+</html>

@@ -11,6 +11,7 @@ body {
   background-image: radial-gradient(circle at top left, rgba(109,59,255,0.06), transparent 34%), radial-gradient(circle at top right, rgba(255,155,122,0.07), transparent 32%);
 }
 
+@layer components {
 /* ── Buttons ─────────────────────────────────────────── */
 .btn { @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-semibold text-[15px] transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none select-none; }
 .btn-primary { @apply btn bg-brand-500 text-white shadow-glow hover:bg-brand-600 hover:shadow-lift; }
@@ -35,15 +36,16 @@ body {
 
 /* ── LINEX design language ───────────────────────────── */
 .linex-shell { @apply bg-linex-50 text-ink-900 bg-linex-mesh; }
-.linex-panel { @apply rounded-[2rem] border border-linex-200/70 bg-white/88 backdrop-blur-xl shadow-linex-panel; }
+.linex-panel { @apply rounded-[2rem] border border-linex-200/70 bg-white/[0.88] backdrop-blur-xl shadow-linex-panel; }
 .linex-panel-dark { @apply rounded-[2rem] border border-white/10 bg-linex-950 text-white shadow-linex-panel; }
 .linex-kicker { @apply text-[11px] font-bold uppercase tracking-[0.18em] text-linex-600; }
 .linex-title { @apply font-display font-extrabold tracking-tight text-linex-950; }
 .linex-subtle { @apply text-ink-500; }
 .linex-btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-linex-600 px-5 py-3 font-semibold text-white shadow-linex-glow transition-all duration-200 hover:bg-linex-500 hover:-translate-y-0.5; }
-.linex-btn-secondary { @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-linex-200 bg-white/85 px-5 py-3 font-semibold text-linex-900 transition-all duration-200 hover:bg-linex-100; }
+.linex-btn-secondary { @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-linex-200 bg-white/[0.85] px-5 py-3 font-semibold text-linex-900 transition-all duration-200 hover:bg-linex-100; }
 .linex-input { @apply w-full rounded-2xl border border-linex-200 bg-white/90 px-4 py-3 text-[15px] text-linex-950 outline-none transition placeholder:text-ink-400 focus:border-linex-500 focus:ring-4 focus:ring-linex-500/15; }
 .linex-chip { @apply inline-flex items-center gap-1 rounded-full border border-peach-200 bg-peach-50 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-peach-600; }
+}
 .linex-grad-text {
   background-image: linear-gradient(120deg, #6d3bff 0%, #b89cff 55%, #ff9b7a 100%);
   -webkit-background-clip: text;

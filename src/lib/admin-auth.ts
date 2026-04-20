@@ -10,6 +10,10 @@
 // e.g. "1234567890-abcdefgh" → client_id = "1234567890".
 
 import { NextRequest, NextResponse } from "next/server";
+import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
+
+// 5 wrong-password attempts per 15 minutes per IP
+const _pwLimiter = createRateLimiter(5, 15 * 60 * 1000);
 
 export type AdminIdentity = {
   mode: "password" | "line";
@@ -20,8 +24,14 @@ export type AdminIdentity = {
 export async function verifyAdmin(req: NextRequest): Promise<AdminIdentity | null> {
   // ── 1) Password ──
   const pw = req.headers.get("x-admin-password");
-  if (pw && process.env.ADMIN_PASSWORD && pw === process.env.ADMIN_PASSWORD) {
-    return { mode: "password" };
+  if (pw && process.env.ADMIN_PASSWORD) {
+    const ip = getClientIp(req);
+    const { allowed } = _pwLimiter.check(ip);
+    if (!allowed) return null;
+    if (pw === process.env.ADMIN_PASSWORD) {
+      _pwLimiter.reset(ip);
+      return { mode: "password" };
+    }
   }
 
   // ── 2) LINE idToken ──

@@ -141,6 +141,44 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // ── 9c. Cron last-run ──
+  if (sbUrl && sbKey) {
+    try {
+      const sb = createClient(sbUrl, sbKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const shopId = Number(process.env.DEFAULT_SHOP_ID ?? 1);
+      const { data: shopRow } = await sb
+        .from("shops")
+        .select("cron_last_run")
+        .eq("id", shopId)
+        .maybeSingle();
+      const lastRun = (shopRow as any)?.cron_last_run as string | null;
+      if (!lastRun) {
+        checks.push({
+          id: "cron_last_run",
+          label: "Cron Reminders — ทำงานล่าสุด",
+          status: "warn",
+          detail: "ยังไม่เคยรัน — ตรวจสอบ vercel.json และ CRON_SECRET",
+        });
+      } else {
+        const ageMin = Math.round((Date.now() - new Date(lastRun).getTime()) / 60_000);
+        const fmt = new Date(lastRun).toLocaleString("th-TH", { timeZone: "Asia/Bangkok" });
+        checks.push({
+          id: "cron_last_run",
+          label: "Cron Reminders — ทำงานล่าสุด",
+          status: ageMin <= 30 ? "ok" : "warn",
+          detail:
+            ageMin <= 30
+              ? `ทำงานล่าสุด ${ageMin} นาทีที่แล้ว (${fmt}) ✅`
+              : `ทำงานล่าสุดเมื่อ ${ageMin} นาทีที่แล้ว — อาจมีปัญหากับ Vercel Cron`,
+        });
+      }
+    } catch {
+      // non-fatal — column may not exist yet
+    }
+  }
+
   // ── 10. LINE API reachability (lightweight check) ──
   const lineToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (lineToken) {

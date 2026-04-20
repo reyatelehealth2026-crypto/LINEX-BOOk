@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarDays,
+  TrendingUp,
 } from "lucide-react";
 
 type Booking = {
@@ -84,11 +85,37 @@ export default function AdminHome() {
   }, [list]);
 
   const [filter, setFilter] = useState<"all" | "pending" | "confirmed" | "done">("all");
+  const [staffFilter, setStaffFilter] = useState<string>("all");
+
+  const staffNames = useMemo(() => {
+    const names = new Set<string>();
+    for (const b of list) {
+      const n = b.staff?.nickname ?? b.staff?.name;
+      if (n) names.add(n);
+    }
+    return Array.from(names).sort();
+  }, [list]);
+
   const visible = useMemo(() => {
-    if (filter === "all") return list;
-    if (filter === "done") return list.filter((b) => b.status === "completed");
-    return list.filter((b) => b.status === filter);
-  }, [list, filter]);
+    let result = list;
+    if (filter === "done") result = result.filter((b) => b.status === "completed");
+    else if (filter !== "all") result = result.filter((b) => b.status === filter);
+    if (staffFilter !== "all") {
+      result = result.filter((b) => (b.staff?.nickname ?? b.staff?.name) === staffFilter);
+    }
+    return result;
+  }, [list, filter, staffFilter]);
+
+  const revenue = useMemo(() => {
+    let actual = 0;
+    let estimated = 0;
+    for (const b of list) {
+      const p = Number(b.price ?? 0);
+      if (b.status === "completed") { actual += p; estimated += p; }
+      else if (b.status === "confirmed" || b.status === "pending") { estimated += p; }
+    }
+    return { actual, estimated };
+  }, [list]);
 
   const dateObj = new Date(date);
   const today = new Date().toISOString().slice(0, 10);
@@ -148,6 +175,25 @@ export default function AdminHome() {
         </div>
       </div>
 
+      {/* Revenue summary card */}
+      {isToday && (revenue.actual > 0 || revenue.estimated > 0) && (
+        <div className="card p-4 bg-gradient-to-r from-brand-600 to-brand-700 text-white flex items-center gap-4">
+          <div className="w-10 h-10 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+            <TrendingUp size={20} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] uppercase tracking-wider opacity-75 font-semibold">รายได้วันนี้</div>
+            <div className="text-2xl font-extrabold leading-none mt-0.5">{baht(revenue.actual)}</div>
+          </div>
+          {revenue.estimated > revenue.actual && (
+            <div className="text-right shrink-0">
+              <div className="text-[11px] opacity-70">คาดการณ์</div>
+              <div className="text-lg font-bold opacity-90">{baht(revenue.estimated)}</div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Stats grid */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
         <Stat label="ทั้งหมด" value={counts.all} tone="neutral" />
@@ -157,24 +203,38 @@ export default function AdminHome() {
         <Stat label="ยกเลิก" value={counts.lost} tone="rose" />
       </div>
 
-      {/* Filter pills */}
-      <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1">
-        <FilterPill active={filter === "all"} onClick={() => setFilter("all")} label="ทั้งหมด" count={counts.all} />
-        <FilterPill
-          active={filter === "pending"}
-          onClick={() => setFilter("pending")}
-          label="รอยืนยัน"
-          count={counts.pending}
-          tone="amber"
-        />
-        <FilterPill
-          active={filter === "confirmed"}
-          onClick={() => setFilter("confirmed")}
-          label="ยืนยันแล้ว"
-          count={counts.confirmed}
-          tone="brand"
-        />
-        <FilterPill active={filter === "done"} onClick={() => setFilter("done")} label="เสร็จสิ้น" count={counts.done} />
+      {/* Filter pills + staff dropdown */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+          <FilterPill active={filter === "all"} onClick={() => setFilter("all")} label="ทั้งหมด" count={counts.all} />
+          <FilterPill
+            active={filter === "pending"}
+            onClick={() => setFilter("pending")}
+            label="รอยืนยัน"
+            count={counts.pending}
+            tone="amber"
+          />
+          <FilterPill
+            active={filter === "confirmed"}
+            onClick={() => setFilter("confirmed")}
+            label="ยืนยันแล้ว"
+            count={counts.confirmed}
+            tone="brand"
+          />
+          <FilterPill active={filter === "done"} onClick={() => setFilter("done")} label="เสร็จสิ้น" count={counts.done} />
+        </div>
+        {staffNames.length > 1 && (
+          <select
+            value={staffFilter}
+            onChange={(e) => setStaffFilter(e.target.value)}
+            className="ml-auto shrink-0 text-xs font-semibold bg-white border border-ink-200 text-ink-700 rounded-full px-3 py-2 outline-none hover:border-ink-300 cursor-pointer"
+          >
+            <option value="all">ช่างทั้งหมด</option>
+            {staffNames.map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {loading ? (
