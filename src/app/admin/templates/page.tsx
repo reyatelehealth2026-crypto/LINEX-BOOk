@@ -3,15 +3,16 @@ import { useEffect, useState, useCallback } from "react";
 import { useAdmin } from "../_ctx";
 import {
   Plus, Pencil, Trash2, Check, X, RefreshCw,
-  ToggleLeft, ToggleRight, Eye, Tag, Send,
+  ToggleLeft, ToggleRight, Eye, Tag, Send, Database, Copy,
+  MessageSquareText,
 } from "lucide-react";
 import type { MessageTemplate, TemplateCategory } from "@/types/db";
 
 const CATEGORY_LABELS: Record<TemplateCategory, { label: string; color: string }> = {
   reminder: { label: "⏰ เตือน", color: "bg-amber-100 text-amber-700" },
-  promo: { label: "🎉 โปรโมชั่น", color: "bg-purple-100 text-purple-700" },
-  follow_up: { label: "💬 ติดตาม", color: "bg-blue-100 text-blue-700" },
-  custom: { label: "📝 อื่นๆ", color: "bg-neutral-100 text-neutral-600" },
+  promo: { label: "🎉 โปรโมชั่น", color: "bg-violet-100 text-violet-700" },
+  follow_up: { label: "💬 ติดตาม", color: "bg-sky-100 text-sky-700" },
+  custom: { label: "📝 อื่นๆ", color: "bg-ink-100 text-ink-700" },
 };
 
 const CATEGORY_OPTIONS: { value: TemplateCategory; label: string }[] = [
@@ -26,10 +27,13 @@ const KNOWN_VARS = [
   "{{time}}", "{{shop_name}}", "{{staff_name}}",
 ];
 
+type TableMissingInfo = { error: "table_missing"; table: string; detail: string; migration: string };
+
 export default function TemplatesPage() {
   const { pw } = useAdmin();
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tableMissing, setTableMissing] = useState<TableMissingInfo | null>(null);
   const [editing, setEditing] = useState<number | "new" | null>(null);
   const [saving, setSaving] = useState(false);
   const [previewId, setPreviewId] = useState<number | null>(null);
@@ -39,9 +43,17 @@ export default function TemplatesPage() {
 
   const reload = useCallback(async () => {
     setLoading(true);
+    setTableMissing(null);
     const r = await fetch("/api/admin/message-templates", { headers: { "x-admin-password": pw } });
     const d = await r.json();
-    setTemplates(d.templates ?? []);
+    if (!r.ok) {
+      if (d?.error === "table_missing") {
+        setTableMissing(d);
+      }
+      setTemplates([]);
+    } else {
+      setTemplates(d.templates ?? []);
+    }
     setLoading(false);
   }, [pw]);
 
@@ -97,33 +109,68 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold">📩 เทมเพลตข้อความ</h1>
+    <div className="space-y-4 sm:space-y-5 animate-fade-up">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div className="eyebrow flex items-center gap-1.5">
+            <MessageSquareText size={12} /> Message Templates
+          </div>
+          <h1 className="h-display text-2xl sm:text-3xl">เทมเพลตข้อความ</h1>
+        </div>
         <div className="flex gap-2">
-          <button onClick={reload} className="btn-secondary"><RefreshCw size={16} /> รีโหลด</button>
-          <button onClick={() => setEditing("new")} className="btn-primary"><Plus size={16} /> สร้างเทมเพลต</button>
+          <button onClick={reload} className="btn-secondary" disabled={loading}>
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> รีโหลด
+          </button>
+          <button
+            onClick={() => setEditing("new")}
+            className="btn-primary"
+            disabled={!!tableMissing}
+          >
+            <Plus size={16} /> สร้างเทมเพลต
+          </button>
         </div>
       </div>
 
-      <div className="card p-4 bg-brand-50/40 border-brand-200">
-        <div className="flex items-start gap-2">
-          <Tag size={18} className="text-brand-500 mt-0.5 shrink-0" />
-          <div className="text-sm text-neutral-600">
-            <span className="font-semibold text-brand-700">ตัวแปรที่ใช้ได้:</span>{" "}
-            {KNOWN_VARS.map((v) => (
-              <code key={v} className="bg-white px-1.5 py-0.5 rounded text-xs border border-neutral-200 mr-1">{v}</code>
-            ))}
-            <span className="block text-xs text-neutral-500 mt-1">วางในข้อความได้เลย ระบบจะแทนที่อัตโนมัติเวลาส่งจริง</span>
+      {tableMissing ? (
+        <TableMissingBanner info={tableMissing} onRetry={reload} />
+      ) : (
+        <div className="card p-4 bg-brand-50/50 border-brand-200">
+          <div className="flex items-start gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-brand-500 text-white flex items-center justify-center shrink-0">
+              <Tag size={16} />
+            </div>
+            <div className="text-sm text-ink-700">
+              <span className="font-semibold text-brand-700">ตัวแปรที่ใช้ได้:</span>{" "}
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {KNOWN_VARS.map((v) => (
+                  <code key={v} className="bg-white px-2 py-0.5 rounded-lg text-xs border border-ink-200 font-mono">
+                    {v}
+                  </code>
+                ))}
+              </div>
+              <span className="block text-xs text-ink-500 mt-2">
+                วางในข้อความได้เลย ระบบจะแทนที่อัตโนมัติเวลาส่งจริง
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {loading ? (
-        <div className="card p-8 text-center text-neutral-500">กำลังโหลด...</div>
+      {tableMissing ? null : loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="skeleton h-28" />
+          ))}
+        </div>
       ) : templates.length === 0 && editing !== "new" ? (
-        <div className="card p-8 text-center text-neutral-500">
-          ยังไม่มีเทมเพลต กด &quot;สร้างเทมเพลต&quot; เพื่อเริ่มต้น
+        <div className="card p-10 text-center space-y-3">
+          <div className="mx-auto w-12 h-12 rounded-2xl bg-ink-100 text-ink-400 flex items-center justify-center">
+            <MessageSquareText size={22} />
+          </div>
+          <div className="text-sm text-ink-500">ยังไม่มีเทมเพลต</div>
+          <button onClick={() => setEditing("new")} className="btn-primary text-sm">
+            <Plus size={14} /> สร้างเทมเพลตแรก
+          </button>
         </div>
       ) : (
         <div className="space-y-2">
@@ -293,5 +340,54 @@ function TemplateEditor({
         <button type="submit" className="btn-primary" disabled={saving}><Check size={16} /> {saving ? "กำลังบันทึก..." : "บันทึก"}</button>
       </div>
     </form>
+  );
+}
+
+function TableMissingBanner({ info, onRetry }: { info: TableMissingInfo; onRetry: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(info.migration);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <div className="card p-5 border-amber-200 bg-amber-50/60 animate-fade-up">
+      <div className="flex items-start gap-3">
+        <div className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+          <Database size={20} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-ink-900">ยังไม่มีตาราง <code className="bg-white px-1.5 py-0.5 rounded text-sm">{info.table}</code> ในฐานข้อมูล</div>
+          <div className="text-sm text-ink-600 mt-1">
+            ฐานข้อมูลของคุณสร้างไว้ตั้งแต่ยังไม่มีฟีเจอร์นี้ — ต้องรันไฟล์ migration เพิ่มเติม
+          </div>
+
+          <ol className="list-decimal list-inside text-sm text-ink-700 mt-3 space-y-1">
+            <li>เปิด Supabase Dashboard → <strong>SQL Editor</strong></li>
+            <li>
+              เปิดไฟล์ในโปรเจกต์:{" "}
+              <code className="bg-white px-2 py-0.5 rounded text-xs border border-ink-200">{info.migration}</code>
+            </li>
+            <li>คัดลอกเนื้อหาทั้งหมดไปวาง แล้วกด <strong>Run</strong></li>
+            <li>กลับมากด <strong>รีโหลด</strong> ที่หน้านี้</li>
+          </ol>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button onClick={copy} className="btn-secondary text-xs">
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+              {copied ? "คัดลอกแล้ว!" : "คัดลอก path"}
+            </button>
+            <button onClick={onRetry} className="btn-primary text-xs">
+              <RefreshCw size={14} /> รันเสร็จแล้ว ตรวจใหม่
+            </button>
+          </div>
+
+          <details className="mt-3 text-xs text-ink-500">
+            <summary className="cursor-pointer select-none">ดู error ต้นทาง</summary>
+            <pre className="mt-1 bg-white p-2 rounded-lg border border-ink-200 overflow-x-auto text-[11px]">{info.detail}</pre>
+          </details>
+        </div>
+      </div>
+    </div>
   );
 }

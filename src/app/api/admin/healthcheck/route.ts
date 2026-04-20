@@ -112,6 +112,35 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  // ── 9b. Schema migrations (detect optional tables) ──
+  if (sbUrl && sbKey) {
+    try {
+      const sb = createClient(sbUrl, sbKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const missing: string[] = [];
+      for (const t of ["message_templates", "reviews"] as const) {
+        const { error } = await sb.from(t).select("id", { head: true, count: "exact" }).limit(1);
+        // Postgres "relation does not exist" → code 42P01. Supabase returns
+        // either a schema-cache error or a generic error here.
+        if (error && /does not exist|schema cache/i.test(error.message ?? "")) {
+          missing.push(t);
+        }
+      }
+      checks.push({
+        id: "schema_migrations",
+        label: "Schema migrations",
+        status: missing.length === 0 ? "ok" : "warn",
+        detail:
+          missing.length === 0
+            ? "ตารางเสริมครบ (message_templates, reviews) ✅"
+            : `ตารางยังไม่ครบ: ${missing.join(", ")} — รัน supabase/migrations/001_add_message_templates_and_reviews.sql ใน Supabase SQL Editor`,
+      });
+    } catch {
+      // non-fatal
+    }
+  }
+
   // ── 10. LINE API reachability (lightweight check) ──
   const lineToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (lineToken) {

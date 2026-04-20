@@ -44,10 +44,13 @@ export default function CustomersPage() {
   const totalPoints = customers.reduce((a, c) => a + c.points, 0);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold">ลูกค้า</h1>
-        <button onClick={reload} className="btn-secondary">
+    <div className="space-y-4 sm:space-y-5 animate-fade-up">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div className="eyebrow">Customers</div>
+          <h1 className="h-display text-2xl sm:text-3xl">ลูกค้า</h1>
+        </div>
+        <button onClick={reload} className="btn-secondary shrink-0">
           <RefreshCw size={16} /> รีโหลด
         </button>
       </div>

@@ -85,7 +85,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100 transition"
+      className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100 transition"
       title={`คัดลอก ${label}`}
     >
       {copied ? <Check size={12} /> : <Copy size={12} />}
@@ -97,7 +97,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 // ─── Expanded step detail component ───
 function StepDetail({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-3 pl-4 border-l-2 border-brand-200 space-y-2 text-sm text-neutral-600">
+    <div className="mt-3 pl-4 border-l-2 border-brand-200 space-y-2 text-sm text-ink-600">
       {children}
     </div>
   );
@@ -298,33 +298,46 @@ export default function SetupPage() {
   const progressPct = Math.round((doneSteps / totalSteps) * 100);
   const allDone = doneSteps === totalSteps;
 
+  const migrationCheck = findCheck(health, "schema_migrations");
+  const needsMigration = migrationCheck && migrationCheck.status !== "ok";
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 animate-fade-up">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">🛠️ ตั้งค่าร้าน</h1>
-          <p className="text-sm text-neutral-500 mt-1">
-            ทำตามขั้นตอนทีละข้อ — เสร็จแล้วร้านพร้อมใช้งาน!
+          <div className="eyebrow flex items-center gap-1.5">
+            <Rocket size={12} /> Setup Wizard
+          </div>
+          <h1 className="h-display text-2xl sm:text-3xl">ตั้งค่าร้าน</h1>
+          <p className="text-sm text-ink-500 mt-1">
+            ทำตามขั้นตอนทีละข้อ — เสร็จแล้วร้านพร้อมใช้งาน
           </p>
         </div>
-        <button onClick={reload} className="btn-secondary" disabled={loading}>
+        <button onClick={reload} className="btn-secondary shrink-0" disabled={loading}>
           <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> ตรวจใหม่
         </button>
       </div>
 
-      {/* Progress bar */}
-      <div className={`card p-5 ${allDone ? "border-brand-300 bg-gradient-to-r from-brand-50 to-emerald-50" : ""}`}>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium flex items-center gap-2">
-            {allDone && <Sparkles size={16} className="text-brand-500" />}
-            {allDone ? "ร้านพร้อมใช้งานแล้ว! 🎉" : "ความพร้อมของร้าน"}
-          </span>
-          <span className="text-sm text-neutral-500">
+      {/* Progress hero */}
+      <div
+        className={`card p-5 relative overflow-hidden ${
+          allDone ? "bg-gradient-to-br from-brand-50 via-white to-emerald-50 border-brand-200" : ""
+        }`}
+      >
+        {allDone && (
+          <div className="absolute right-4 top-4 text-brand-500">
+            <Sparkles size={18} />
+          </div>
+        )}
+        <div className="eyebrow">ความพร้อมของร้าน</div>
+        <div className="flex items-end gap-3 mt-1">
+          <div className="h-display text-4xl sm:text-5xl grad-text">{progressPct}%</div>
+          <div className="text-sm text-ink-500 pb-2">
             {doneSteps}/{totalSteps} ขั้นตอน
-          </span>
+          </div>
         </div>
-        <div className="w-full h-3 bg-neutral-100 rounded-full overflow-hidden">
+        <div className="w-full h-2.5 bg-ink-100 rounded-full overflow-hidden mt-3">
           <div
             className={`h-full rounded-full transition-all duration-700 ${
               allDone ? "bg-gradient-to-r from-brand-500 to-emerald-400" : "bg-brand-500"
@@ -332,18 +345,34 @@ export default function SetupPage() {
             style={{ width: `${progressPct}%` }}
           />
         </div>
-        <div className="text-right text-xs text-neutral-400 mt-1">{progressPct}%</div>
         {allDone && (
-          <div className="mt-3 pt-3 border-t border-brand-200 text-sm text-brand-700">
-            🚀 ร้านคุณพร้อมแล้ว! ลองส่ง LIFF URL ให้ตัวเองใน LINE แล้วจองคิวดู
-            {sv.liffUrl && (
-              <div className="mt-2">
-                <CopyButton text={sv.liffUrl} label="คัดลอก LIFF URL" />
-              </div>
-            )}
+          <div className="mt-4 pt-4 border-t border-brand-200 text-sm text-brand-700 flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+            <span>🚀 ร้านคุณพร้อมแล้ว! ส่ง LIFF URL ให้ตัวเองใน LINE แล้วทดลองจอง</span>
+            {sv.liffUrl && <CopyButton text={sv.liffUrl} label="คัดลอก LIFF URL" />}
           </div>
         )}
       </div>
+
+      {/* Missing schema banner */}
+      {needsMigration && (
+        <div className="card p-4 sm:p-5 border-amber-200 bg-amber-50/60">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+              <AlertTriangle size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-ink-900">ต้องรัน migration เพิ่มตาราง</div>
+              <div className="text-sm text-ink-600 mt-1 whitespace-pre-line">{migrationCheck!.detail}</div>
+              <div className="mt-3 bg-ink-900 text-white rounded-2xl p-3 text-xs font-mono">
+                supabase/migrations/001_add_message_templates_and_reviews.sql
+              </div>
+              <div className="text-[11px] text-ink-500 mt-2">
+                เปิด Supabase Dashboard → SQL Editor → คัดลอกเนื้อหาไฟล์นี้ไปวางแล้วกด Run
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Setup Steps */}
       <div className="space-y-3">
@@ -359,18 +388,18 @@ export default function SetupPage() {
             <div
               key={step.id}
               className={`card overflow-hidden transition-all ${
-                isDone ? "border-brand-100" : showWarning ? "border-amber-200 bg-amber-50/30" : ""
+                isDone ? "border-brand-100" : showWarning ? "border-amber-200 bg-amber-50/30" : "hover:border-ink-300"
               }`}
             >
               {/* Step header */}
-              <div className="p-4 flex items-start gap-4">
+              <div className="p-4 flex items-start gap-3 sm:gap-4">
                 {/* Step number / check */}
                 <button
                   onClick={() => step.manualKey && toggleManual(step.manualKey)}
-                  className={`mt-0.5 shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold transition ${
+                  className={`mt-0.5 shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center text-white text-sm font-bold transition ${
                     isDone
-                      ? "bg-brand-500"
-                      : "bg-neutral-200 text-neutral-500"
+                      ? "bg-brand-500 shadow-glow"
+                      : "bg-ink-200 text-ink-500"
                   } ${step.manualKey ? "cursor-pointer hover:bg-brand-400 hover:text-white" : ""}`}
                   title={step.manualKey ? (isDone ? "กดเพื่อย้อนกลับ" : "กดเพื่อบอกว่าทำแล้ว") : undefined}
                 >
@@ -379,19 +408,19 @@ export default function SetupPage() {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Icon size={16} className="text-neutral-400 shrink-0" />
-                    <h3 className={`font-semibold ${isDone ? "line-through text-neutral-400" : ""}`}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Icon size={14} className="text-ink-400 shrink-0" />
+                    <h3 className={`font-semibold text-ink-900 ${isDone ? "line-through text-ink-400" : ""}`}>
                       {step.title}
                     </h3>
                     {isDone && (
-                      <span className="text-xs bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">เสร็จแล้ว</span>
+                      <span className="chip bg-brand-100 text-brand-700">เสร็จแล้ว</span>
                     )}
                     {showWarning && (
-                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">ยังไม่ได้ตั้งค่า</span>
+                      <span className="chip bg-amber-100 text-amber-700">ยังไม่ได้ตั้งค่า</span>
                     )}
                   </div>
-                  <p className="text-sm text-neutral-500 mt-0.5">{step.subtitle}</p>
+                  <p className="text-sm text-ink-500 mt-0.5">{step.subtitle}</p>
 
                   {/* Auto-check status badge */}
                   {step.auto && !step.manualKey && (
@@ -439,30 +468,30 @@ export default function SetupPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <a
           href="/admin/healthcheck"
-          className="card p-4 flex items-center justify-between hover:border-brand-200 transition group"
+          className="card p-4 flex items-center justify-between hover:border-ink-300 hover:shadow-lift transition group"
         >
           <div>
-            <div className="font-semibold">🩺 ตรวจสอบระบบละเอียด</div>
-            <div className="text-sm text-neutral-500">เช็คการเชื่อมต่อทุกอย่างแบบละเอียด</div>
+            <div className="font-semibold text-ink-900">🩺 ตรวจสอบระบบละเอียด</div>
+            <div className="text-sm text-ink-500">เช็คการเชื่อมต่อทุกอย่างแบบละเอียด</div>
           </div>
-          <ChevronRight size={20} className="text-neutral-400 group-hover:text-brand-500 transition" />
+          <ChevronRight size={18} className="text-ink-400 group-hover:text-brand-500 transition" />
         </a>
         <a
           href="/admin/services"
-          className="card p-4 flex items-center justify-between hover:border-brand-200 transition group"
+          className="card p-4 flex items-center justify-between hover:border-ink-300 hover:shadow-lift transition group"
         >
           <div>
-            <div className="font-semibold">💇 จัดการบริการ</div>
-            <div className="text-sm text-neutral-500">เพิ่ม แก้ไข รายการบริการของร้าน</div>
+            <div className="font-semibold text-ink-900">💇 จัดการบริการ</div>
+            <div className="text-sm text-ink-500">เพิ่ม แก้ไข รายการบริการของร้าน</div>
           </div>
-          <ChevronRight size={20} className="text-neutral-400 group-hover:text-brand-500 transition" />
+          <ChevronRight size={18} className="text-ink-400 group-hover:text-brand-500 transition" />
         </a>
       </div>
 
       {/* Help text */}
-      <div className="card p-4 text-sm text-neutral-500 bg-neutral-50">
-        <p>💡 <strong>ต้องการความช่วยเหลือ?</strong> กดปุ่ม <ChevronRight size={12} className="inline" /> ที่แต่ละขั้นตอนเพื่อดูวิธีทำแบบทีละขั้นตอน</p>
-        <p className="mt-1">📌 ถ้าทำเสร็จแล้วแต่ระบบยังขึ้นว่ายังไม่เสร็จ ลองกดปุ่ม <strong>ตรวจใหม่</strong> ด้านบน</p>
+      <div className="card p-4 text-sm text-ink-500 bg-ink-50/60 border-ink-100 space-y-1">
+        <p>💡 <strong>ต้องการความช่วยเหลือ?</strong> กดปุ่ม <ChevronRight size={12} className="inline" /> ที่แต่ละขั้นตอนเพื่อดูวิธีทำทีละขั้น</p>
+        <p>📌 ถ้าทำเสร็จแล้วแต่ระบบยังขึ้นว่ายังไม่เสร็จ ลองกดปุ่ม <strong>ตรวจใหม่</strong> ด้านบน</p>
       </div>
     </div>
   );
@@ -477,16 +506,16 @@ function StatusBadge({ status, detail }: { status: "ok" | "warn" | "fail"; detai
   const styles = {
     ok: "bg-brand-100 text-brand-700",
     warn: "bg-amber-100 text-amber-700",
-    fail: "bg-red-100 text-red-700",
+    fail: "bg-accent-rose/15 text-accent-rose",
   };
   const icons = {
-    ok: <CheckCircle2 size={14} />,
-    warn: <AlertTriangle size={14} />,
-    fail: <XCircle size={14} />,
+    ok: <CheckCircle2 size={12} />,
+    warn: <AlertTriangle size={12} />,
+    fail: <XCircle size={12} />,
   };
   return (
-    <span className={`chip ${styles[status]} gap-1`}>
-      {icons[status]} {detail}
+    <span className={`chip ${styles[status]} gap-1 max-w-full`}>
+      {icons[status]} <span className="truncate">{detail}</span>
     </span>
   );
 }

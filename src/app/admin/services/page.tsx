@@ -57,9 +57,12 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold">จัดการบริการ</h1>
+    <div className="space-y-4 sm:space-y-5 animate-fade-up">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div className="eyebrow">Services</div>
+          <h1 className="h-display text-2xl sm:text-3xl">จัดการบริการ</h1>
+        </div>
         <div className="flex gap-2">
           <button onClick={reload} className="btn-secondary"><RefreshCw size={16} /> รีโหลด</button>
           <button onClick={() => setEditing("new")} className="btn-primary"><Plus size={16} /> เพิ่มบริการ</button>

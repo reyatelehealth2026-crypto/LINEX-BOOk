@@ -130,8 +130,9 @@ export default function HealthcheckPage() {
             <ChevronLeft size={20} />
           </a>
           <div>
-            <h1 className="text-2xl font-bold">🩺 ตรวจสอบระบบ</h1>
-            <p className="text-sm text-neutral-500 mt-0.5">
+            <div className="eyebrow">Health Check</div>
+            <h1 className="h-display text-2xl sm:text-3xl">ตรวจสอบระบบ</h1>
+            <p className="text-sm text-ink-500 mt-0.5">
               สถานะการเชื่อมต่อและการตั้งค่าทั้งหมด
             </p>
           </div>

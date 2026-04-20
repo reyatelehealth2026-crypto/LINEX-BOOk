@@ -4,6 +4,22 @@ import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Friendly error when the table hasn't been migrated yet.
+function tableMissingResponse(err: { message: string }) {
+  if (/does not exist|schema cache/i.test(err.message)) {
+    return NextResponse.json(
+      {
+        error: "table_missing",
+        table: "reviews",
+        detail: err.message,
+        migration: "supabase/migrations/001_add_message_templates_and_reviews.sql",
+      },
+      { status: 503 }
+    );
+  }
+  return null;
+}
+
 /**
  * GET /api/reviews
  * Query params:
@@ -24,7 +40,7 @@ export async function GET(req: NextRequest) {
       .select("*, service:services(id,name,name_en), staff:staff(id,name,nickname), customer:customers(id,display_name,full_name,picture_url)")
       .eq("booking_id", Number(bookingId))
       .maybeSingle();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return tableMissingResponse(error) ?? NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ review: data });
   }
 
@@ -37,7 +53,7 @@ export async function GET(req: NextRequest) {
       .eq("staff_id", Number(staffId))
       .order("created_at", { ascending: false })
       .limit(50);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return tableMissingResponse(error) ?? NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ reviews: data ?? [] });
   }
 
@@ -50,7 +66,7 @@ export async function GET(req: NextRequest) {
       .eq("service_id", Number(serviceId))
       .order("created_at", { ascending: false })
       .limit(50);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return tableMissingResponse(error) ?? NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ reviews: data ?? [] });
   }
 
@@ -65,7 +81,7 @@ export async function GET(req: NextRequest) {
     .eq("shop_id", SHOP_ID)
     .order("created_at", { ascending: false })
     .limit(200);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return tableMissingResponse(error) ?? NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ reviews: data ?? [] });
 }
 

@@ -119,12 +119,13 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fade-up">
         <div>
-          <h1 className="text-2xl font-bold">📊 แดชบอร์ด</h1>
-          <p className="text-sm text-neutral-500 mt-1">{thaiDate}</p>
+          <div className="eyebrow">Business Overview</div>
+          <h1 className="h-display text-2xl sm:text-3xl">แดชบอร์ด</h1>
+          <p className="text-sm text-ink-500 mt-1">{thaiDate}</p>
         </div>
-        <button onClick={reload} className="btn-secondary">
+        <button onClick={reload} className="btn-secondary shrink-0">
           <RefreshCw size={16} /> รีเฟรช
         </button>
       </div>

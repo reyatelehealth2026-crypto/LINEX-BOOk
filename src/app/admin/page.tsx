@@ -1,9 +1,17 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useAdmin } from "./_ctx";
 import { createClient } from "@supabase/supabase-js";
 import { baht } from "@/lib/utils";
-import { CheckCircle2, XCircle, Clock, UserX, RefreshCw } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  UserX,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
+} from "lucide-react";
 
 type Booking = {
   id: number;
@@ -64,108 +72,308 @@ export default function AdminHome() {
     reload();
   }
 
-  const counts = list.reduce((a, b) => { a[b.status] = (a[b.status] ?? 0) + 1; return a; }, {} as Record<string, number>);
+  const counts = useMemo(() => {
+    const c = { all: list.length, pending: 0, confirmed: 0, done: 0, lost: 0 };
+    for (const b of list) {
+      if (b.status === "pending") c.pending++;
+      else if (b.status === "confirmed") c.confirmed++;
+      else if (b.status === "completed") c.done++;
+      else if (b.status === "cancelled" || b.status === "no_show") c.lost++;
+    }
+    return c;
+  }, [list]);
+
+  const [filter, setFilter] = useState<"all" | "pending" | "confirmed" | "done">("all");
+  const visible = useMemo(() => {
+    if (filter === "all") return list;
+    if (filter === "done") return list.filter((b) => b.status === "completed");
+    return list.filter((b) => b.status === filter);
+  }, [list, filter]);
+
+  const dateObj = new Date(date);
+  const today = new Date().toISOString().slice(0, 10);
+  const isToday = date === today;
+  const shiftDate = (days: number) => {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    setDate(d.toISOString().slice(0, 10));
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">คิวประจำวัน</h1>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input !py-2 !px-3 w-auto" />
+    <div className="space-y-4 sm:space-y-5 animate-fade-up">
+      {/* Page title + date nav (mobile-first) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div className="eyebrow">Admin · Daily Queue</div>
+          <h1 className="h-display text-2xl sm:text-3xl">คิวประจำวัน</h1>
         </div>
-        <button onClick={reload} className="btn-secondary"><RefreshCw size={16} /> รีโหลด</button>
+
+        <div className="card p-1.5 flex items-center gap-1 shadow-soft">
+          <button
+            onClick={() => shiftDate(-1)}
+            className="w-9 h-9 rounded-xl hover:bg-ink-100 text-ink-600 flex items-center justify-center"
+            aria-label="ก่อนหน้า"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="bg-transparent text-sm font-semibold text-ink-800 text-center outline-none w-36 sm:w-40"
+          />
+          <button
+            onClick={() => shiftDate(1)}
+            className="w-9 h-9 rounded-xl hover:bg-ink-100 text-ink-600 flex items-center justify-center"
+            aria-label="ถัดไป"
+          >
+            <ChevronRight size={16} />
+          </button>
+          {!isToday && (
+            <button
+              onClick={() => setDate(today)}
+              className="hidden sm:inline-flex px-2.5 h-9 rounded-xl text-xs font-semibold text-brand-600 hover:bg-brand-50 items-center"
+            >
+              วันนี้
+            </button>
+          )}
+          <button
+            onClick={reload}
+            className="w-9 h-9 rounded-xl hover:bg-ink-100 text-ink-600 flex items-center justify-center"
+            aria-label="รีเฟรช"
+            title="รีเฟรช"
+          >
+            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-        <Stat label="ทั้งหมด" value={list.length} color="bg-neutral-100" />
-        <Stat label="รอยืนยัน" value={counts.pending ?? 0} color="bg-amber-100 text-amber-700" />
-        <Stat label="ยืนยันแล้ว" value={counts.confirmed ?? 0} color="bg-brand-100 text-brand-700" />
-        <Stat label="เสร็จสิ้น" value={counts.completed ?? 0} color="bg-neutral-200" />
-        <Stat label="ยกเลิก" value={(counts.cancelled ?? 0) + (counts.no_show ?? 0)} color="bg-red-100 text-red-700" />
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
+        <Stat label="ทั้งหมด" value={counts.all} tone="neutral" />
+        <Stat label="รอยืนยัน" value={counts.pending} tone="amber" />
+        <Stat label="ยืนยันแล้ว" value={counts.confirmed} tone="brand" />
+        <Stat label="เสร็จสิ้น" value={counts.done} tone="ink" />
+        <Stat label="ยกเลิก" value={counts.lost} tone="rose" />
+      </div>
+
+      {/* Filter pills */}
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1">
+        <FilterPill active={filter === "all"} onClick={() => setFilter("all")} label="ทั้งหมด" count={counts.all} />
+        <FilterPill
+          active={filter === "pending"}
+          onClick={() => setFilter("pending")}
+          label="รอยืนยัน"
+          count={counts.pending}
+          tone="amber"
+        />
+        <FilterPill
+          active={filter === "confirmed"}
+          onClick={() => setFilter("confirmed")}
+          label="ยืนยันแล้ว"
+          count={counts.confirmed}
+          tone="brand"
+        />
+        <FilterPill active={filter === "done"} onClick={() => setFilter("done")} label="เสร็จสิ้น" count={counts.done} />
       </div>
 
       {loading ? (
-        <div className="card p-8 text-center text-neutral-500">กำลังโหลด...</div>
-      ) : list.length === 0 ? (
-        <div className="card p-8 text-center text-neutral-500">ยังไม่มีคิวในวันนี้</div>
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="skeleton h-28" />
+          ))}
+        </div>
+      ) : visible.length === 0 ? (
+        <div className="card p-10 text-center space-y-3 text-ink-500">
+          <div className="mx-auto w-12 h-12 rounded-2xl bg-ink-100 flex items-center justify-center">
+            <CalendarDays size={22} />
+          </div>
+          <div className="text-sm">
+            {list.length === 0
+              ? `ยังไม่มีคิวในวัน ${dateObj.toLocaleDateString("th-TH", { day: "numeric", month: "short" })}`
+              : "ไม่มีรายการในช่วงที่เลือก"}
+          </div>
+        </div>
       ) : (
         <div className="space-y-2">
-          {list.map((b) => <BookingCard key={b.id} b={b} onSet={setStatus} />)}
+          {visible.map((b) => <BookingCard key={b.id} b={b} onSet={setStatus} />)}
         </div>
       )}
     </div>
   );
 }
 
-function Stat({ label, value, color }: { label: string; value: number; color: string }) {
+function Stat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "neutral" | "amber" | "brand" | "ink" | "rose";
+}) {
+  const toneMap = {
+    neutral: "bg-white border border-ink-200 text-ink-700",
+    amber: "bg-amber-50 border border-amber-200 text-amber-800",
+    brand: "bg-brand-50 border border-brand-200 text-brand-800",
+    ink: "bg-ink-100 border border-ink-200 text-ink-700",
+    rose: "bg-accent-rose/10 border border-accent-rose/20 text-accent-rose",
+  };
   return (
-    <div className={`${color} rounded-2xl px-4 py-3`}>
-      <div className="text-xs opacity-70">{label}</div>
-      <div className="text-2xl font-bold">{value}</div>
+    <div className={`rounded-2xl px-3 py-2.5 ${toneMap[tone]}`}>
+      <div className="text-[10px] uppercase tracking-wider font-semibold opacity-80">{label}</div>
+      <div className="text-2xl sm:text-3xl font-extrabold leading-none mt-1">{value}</div>
     </div>
+  );
+}
+
+function FilterPill({
+  active,
+  onClick,
+  label,
+  count,
+  tone,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  count: number;
+  tone?: "amber" | "brand";
+}) {
+  const activeBg =
+    tone === "amber" ? "bg-amber-500 text-white" : tone === "brand" ? "bg-brand-500 text-white" : "bg-ink-900 text-white";
+  return (
+    <button
+      onClick={onClick}
+      className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold transition ${
+        active ? activeBg : "bg-white border border-ink-200 text-ink-700 hover:border-ink-300"
+      }`}
+    >
+      {label}
+      <span className={`px-1.5 rounded-full text-[10px] ${active ? "bg-white/25" : "bg-ink-100 text-ink-700"}`}>
+        {count}
+      </span>
+    </button>
   );
 }
 
 function BookingCard({ b, onSet }: { b: Booking; onSet: (id: number, status: string) => void }) {
   const start = new Date(b.starts_at);
   const time = start.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+  const statusMeta = STATUS_MAP[b.status] ?? STATUS_MAP.pending;
+
   return (
-    <div className="card p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-      <div className="text-center sm:w-20">
-        <div className="text-2xl font-bold">{time}</div>
-        <div className="text-xs text-neutral-500">{b.service?.duration_min} นาที</div>
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          {b.customer?.picture_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={b.customer.picture_url} alt="" className="w-8 h-8 rounded-full" />
-          )}
-          <div>
-            <div className="font-semibold">
-              {b.customer?.full_name ?? b.customer?.display_name ?? "ลูกค้า"}
-              {b.customer?.phone && <span className="text-xs text-neutral-500 ml-2">{b.customer.phone}</span>}
-            </div>
-            <div className="text-sm text-neutral-600">
-              {b.service?.name} · ช่าง {b.staff?.nickname ?? b.staff?.name ?? "—"} · {baht(b.price)}
-            </div>
-            {b.customer && (
-              <div className="text-xs text-neutral-500 mt-0.5">
-                {b.customer.visit_count} ครั้ง · {b.customer.points} แต้ม
-              </div>
-            )}
-            {b.note && <div className="text-xs italic text-neutral-500 mt-1">📝 {b.note}</div>}
+    <div className="card p-4 animate-fade-up">
+      <div className="flex items-start gap-3">
+        <div className="shrink-0 text-center w-16">
+          <div className="text-2xl font-extrabold text-ink-900 leading-none">{time}</div>
+          <div className="text-[10px] text-ink-400 uppercase tracking-wider mt-1">
+            {b.service?.duration_min ?? 0} นาที
           </div>
         </div>
-      </div>
-      <div className="flex flex-wrap gap-1 sm:flex-col sm:w-36">
-        <StatusPill status={b.status} />
-        <div className="flex gap-1 flex-wrap">
-          {b.status === "pending" && (
-            <button onClick={() => onSet(b.id, "confirmed")} className="btn-ghost !py-1 !px-2 text-xs text-brand-600"><CheckCircle2 size={14} /> ยืนยัน</button>
-          )}
-          {(b.status === "pending" || b.status === "confirmed") && (
-            <>
-              <button onClick={() => onSet(b.id, "completed")} className="btn-ghost !py-1 !px-2 text-xs text-neutral-700"><CheckCircle2 size={14} /> เสร็จ</button>
-              <button onClick={() => onSet(b.id, "no_show")} className="btn-ghost !py-1 !px-2 text-xs text-red-600"><UserX size={14} /> ไม่มา</button>
-              <button onClick={() => onSet(b.id, "cancelled")} className="btn-ghost !py-1 !px-2 text-xs text-neutral-500"><XCircle size={14} /> ยกเลิก</button>
-            </>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            {b.customer?.picture_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={b.customer.picture_url} alt="" className="w-7 h-7 rounded-full" />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-ink-900 truncate">
+                {b.customer?.full_name ?? b.customer?.display_name ?? "ลูกค้า"}
+                {b.customer?.phone && <span className="text-xs font-normal text-ink-500 ml-2">{b.customer.phone}</span>}
+              </div>
+              <div className="text-xs text-ink-500 truncate">
+                {b.service?.name} · {b.staff?.nickname ?? b.staff?.name ?? "—"} · {baht(b.price)}
+              </div>
+            </div>
+          </div>
+          {b.customer && (b.customer.visit_count || b.customer.points) ? (
+            <div className="text-[11px] text-ink-400 mt-1">
+              {b.customer.visit_count} ครั้ง · {b.customer.points} แต้ม
+            </div>
+          ) : null}
+          {b.note && (
+            <div className="text-[11px] italic text-ink-500 mt-1.5 bg-ink-50 p-2 rounded-xl">📝 {b.note}</div>
           )}
         </div>
+        <span className={`chip ${statusMeta.cls} shrink-0`}>{statusMeta.label}</span>
       </div>
+
+      {(b.status === "pending" || b.status === "confirmed") && (
+        <div className="mt-3 pt-3 border-t border-ink-100 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {b.status === "pending" && (
+            <ActionButton
+              onClick={() => onSet(b.id, "confirmed")}
+              icon={<CheckCircle2 size={14} />}
+              label="ยืนยัน"
+              tone="brand"
+            />
+          )}
+          {b.status === "confirmed" && (
+            <ActionButton
+              onClick={() => onSet(b.id, "completed")}
+              icon={<CheckCircle2 size={14} />}
+              label="เสร็จสิ้น"
+              tone="brand"
+            />
+          )}
+          {b.status === "pending" && (
+            <ActionButton
+              onClick={() => onSet(b.id, "completed")}
+              icon={<CheckCircle2 size={14} />}
+              label="เสร็จสิ้น"
+              tone="ghost"
+            />
+          )}
+          <ActionButton
+            onClick={() => onSet(b.id, "no_show")}
+            icon={<UserX size={14} />}
+            label="ไม่มา"
+            tone="rose"
+          />
+          <ActionButton
+            onClick={() => onSet(b.id, "cancelled")}
+            icon={<XCircle size={14} />}
+            label="ยกเลิก"
+            tone="ghost"
+          />
+        </div>
+      )}
     </div>
   );
 }
 
-function StatusPill({ status }: { status: string }) {
-  const map: Record<string, { cls: string; label: string; icon: any }> = {
-    pending: { cls: "bg-amber-100 text-amber-700", label: "รอยืนยัน", icon: Clock },
-    confirmed: { cls: "bg-brand-100 text-brand-700", label: "ยืนยันแล้ว", icon: CheckCircle2 },
-    completed: { cls: "bg-neutral-200 text-neutral-700", label: "เสร็จสิ้น", icon: CheckCircle2 },
-    cancelled: { cls: "bg-neutral-100 text-neutral-500", label: "ยกเลิก", icon: XCircle },
-    no_show: { cls: "bg-red-100 text-red-700", label: "ไม่มา", icon: UserX }
-  };
-  const m = map[status] ?? { cls: "", label: status, icon: Clock };
-  const Icon = m.icon;
-  return <span className={`chip ${m.cls} inline-flex gap-1 items-center`}><Icon size={12} /> {m.label}</span>;
+function ActionButton({
+  onClick,
+  icon,
+  label,
+  tone,
+}: {
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  tone: "brand" | "rose" | "ghost";
+}) {
+  const cls =
+    tone === "brand"
+      ? "bg-brand-500 text-white hover:bg-brand-600 shadow-soft"
+      : tone === "rose"
+        ? "bg-accent-rose/10 text-accent-rose hover:bg-accent-rose/15"
+        : "bg-ink-100 text-ink-700 hover:bg-ink-200";
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition active:scale-95 ${cls}`}
+    >
+      {icon} {label}
+    </button>
+  );
 }
+
+const STATUS_MAP: Record<string, { cls: string; label: string }> = {
+  pending: { cls: "bg-amber-100 text-amber-700", label: "รอยืนยัน" },
+  confirmed: { cls: "bg-brand-100 text-brand-700", label: "ยืนยันแล้ว" },
+  completed: { cls: "bg-ink-200 text-ink-700", label: "เสร็จสิ้น" },
+  cancelled: { cls: "bg-ink-100 text-ink-500", label: "ยกเลิก" },
+  no_show: { cls: "bg-accent-rose/15 text-accent-rose", label: "ไม่มา" },
+};

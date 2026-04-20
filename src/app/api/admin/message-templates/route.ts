@@ -20,7 +20,20 @@ export async function GET(req: NextRequest) {
     .select("*")
     .eq("shop_id", SHOP_ID)
     .order("sort_order");
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    if (/does not exist|schema cache/i.test(error.message)) {
+      return NextResponse.json(
+        {
+          error: "table_missing",
+          table: "message_templates",
+          detail: error.message,
+          migration: "supabase/migrations/001_add_message_templates_and_reviews.sql",
+        },
+        { status: 503 }
+      );
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ templates: data });
 }
 

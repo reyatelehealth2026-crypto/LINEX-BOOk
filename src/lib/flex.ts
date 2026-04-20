@@ -274,22 +274,26 @@ export function bookingConfirmedMessage(b: BookingWithJoins) {
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box", layout: "vertical", backgroundColor: BRAND, paddingAll: "16px",
-        contents: [
-          { type: "text", text: "BOOKING CONFIRMED", color: "#ffffffcc", size: "xs", weight: "bold" },
-          { type: "text", text: "จองคิวสำเร็จ", color: "#ffffff", weight: "bold", size: "xl", margin: "sm" }
-        ]
+      hero: {
+        type: "image",
+        url: APP_URL("/brand/hero-confirmed.png"),
+        size: "full",
+        aspectRatio: "2:1",
+        aspectMode: "cover"
       },
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
+        paddingAll: "16px",
         contents: [
-          infoRow("บริการ", b.service?.name ?? "-", "✂️"),
-          infoRow("วันที่", formatDateTH(b.starts_at), "📅"),
-          infoRow("เวลา", formatTimeRange(b.starts_at, b.ends_at), "🕐"),
-          infoRow("ช่าง", b.staff?.nickname ?? b.staff?.name ?? "ไม่ระบุ", "💇"),
+          { type: "text", text: "BOOKING CONFIRMED", color: TEXT_MUTED, size: "xs", weight: "bold" },
+          { type: "text", text: "จองคิวสำเร็จ", color: TEXT_MAIN, weight: "bold", size: "xl", margin: "sm" },
+          { type: "separator", margin: "md" },
+          infoRowImg("บริการ", b.service?.name ?? "-", "tile-service.png"),
+          infoRowImg("วันที่", formatDateTH(b.starts_at), "tile-calendar.png"),
+          infoRowImg("เวลา", formatTimeRange(b.starts_at, b.ends_at), "tile-time.png"),
+          infoRowImg("ช่าง", b.staff?.nickname ?? b.staff?.name ?? "ไม่ระบุ", "tile-staff.png"),
           totalCard("ยอดรวม", `${b.price.toLocaleString()} บาท`),
           { type: "separator", margin: "md" },
           { type: "text", text: `หมายเลขจอง #${b.id}`, size: "xs", color: TEXT_MUTED, margin: "md" },
@@ -1540,6 +1544,41 @@ function infoRow(label: string, value: string, emoji: string) {
         contents: [
           { type: "text", text: label, size: "xs", color: TEXT_MUTED },
           { type: "text", text: value, size: "sm", color: TEXT_MAIN, weight: "bold", wrap: true }
+        ]
+      }
+    ]
+  };
+}
+
+/** Branded row: 3D isometric image tile + label + value. Used by confirmation / reminder flexes. */
+function infoRowImg(label: string, value: string, imgFile: string) {
+  return {
+    type: "box",
+    layout: "horizontal",
+    spacing: "md",
+    paddingAll: "10px",
+    backgroundColor: PANEL,
+    cornerRadius: "12px",
+    borderWidth: "1px",
+    borderColor: BORDER,
+    contents: [
+      {
+        type: "image",
+        url: APP_URL(`/brand/${imgFile}`),
+        aspectRatio: "1:1",
+        aspectMode: "cover",
+        size: "xs",
+        flex: 0
+      },
+      {
+        type: "box",
+        layout: "vertical",
+        flex: 1,
+        spacing: "xs",
+        justifyContent: "center",
+        contents: [
+          { type: "text", text: label, size: "xs", color: TEXT_MUTED },
+          { type: "text", text: value, size: "md", color: TEXT_MAIN, weight: "bold", wrap: true }
         ]
       }
     ]

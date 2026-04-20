@@ -169,12 +169,13 @@ export default function WorkingHoursPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fade-up">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Clock size={24} /> เวลาทำการ
-          </h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <div className="eyebrow flex items-center gap-1.5">
+            <Clock size={12} /> Working Hours
+          </div>
+          <h1 className="h-display text-2xl sm:text-3xl">เวลาทำการ</h1>
+          <p className="text-sm text-ink-500 mt-1">
             กำหนดเวลาเปิด-ปิดของร้าน และช่วงเวลาของแต่ละช่าง
           </p>
         </div>
