@@ -13,6 +13,7 @@ import {
   Clock,
   Users,
   MessageSquareText,
+  Bot,
   LogOut,
   Menu,
   X,
@@ -36,6 +37,7 @@ const NAV: NavItem[] = [
   { href: "/admin/working-hours", label: "เวลาทำการ", icon: Clock },
   { href: "/admin/customers", label: "ลูกค้า", icon: Users },
   { href: "/admin/templates", label: "เทมเพลตข้อความ", icon: MessageSquareText },
+  { href: "/admin/ai-settings", label: "ตั้งค่า AI แชท", icon: Bot },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

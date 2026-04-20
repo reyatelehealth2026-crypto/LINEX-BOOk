@@ -1,13 +1,57 @@
 import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
 
 const ZAI_API_URL = "https://api.z.ai/api/paas/v4/chat/completions";
-const ZAI_MODEL = "glm-4.5-flash";
-const HISTORY_LIMIT = 10;
-const MAX_TOKENS = 350;
+
+export type AiSettings = {
+  enabled: boolean;
+  model: string;
+  temperature: number;
+  max_tokens: number;
+  history_limit: number;
+  bot_name: string;
+  business_desc: string;
+  custom_rules: string;
+  booking_redirect: string;
+};
+
+const DEFAULT_SETTINGS: AiSettings = {
+  enabled: true,
+  model: "glm-4.5-flash",
+  temperature: 0.7,
+  max_tokens: 350,
+  history_limit: 10,
+  bot_name: "ผู้ช่วยร้าน",
+  business_desc: "",
+  custom_rules: "",
+  booking_redirect: "พิมพ์ว่า จอง ได้เลยค่ะ หรือกดปุ่มจองคิวในเมนูนะคะ",
+};
+
+// ─── Load AI settings from DB ────────────────────────────────────────────────
+
+export async function getAiSettings(): Promise<AiSettings> {
+  const db = supabaseAdmin();
+  const { data } = await db
+    .from("ai_settings")
+    .select("*")
+    .eq("shop_id", SHOP_ID)
+    .maybeSingle();
+  if (!data) return DEFAULT_SETTINGS;
+  return {
+    enabled: data.enabled ?? DEFAULT_SETTINGS.enabled,
+    model: data.model ?? DEFAULT_SETTINGS.model,
+    temperature: Number(data.temperature ?? DEFAULT_SETTINGS.temperature),
+    max_tokens: data.max_tokens ?? DEFAULT_SETTINGS.max_tokens,
+    history_limit: data.history_limit ?? DEFAULT_SETTINGS.history_limit,
+    bot_name: data.bot_name ?? DEFAULT_SETTINGS.bot_name,
+    business_desc: data.business_desc ?? "",
+    custom_rules: data.custom_rules ?? "",
+    booking_redirect: data.booking_redirect ?? DEFAULT_SETTINGS.booking_redirect,
+  };
+}
 
 // ─── Shop context (system prompt) ───────────────────────────────────────────
 
-async function buildShopSystemPrompt(): Promise<string> {
+async function buildShopSystemPrompt(settings: AiSettings): Promise<string> {
   const db = supabaseAdmin();
 
   const [shopRes, servicesRes, staffRes] = await Promise.all([
@@ -29,9 +73,17 @@ async function buildShopSystemPrompt(): Promise<string> {
     .map((s: any) => `• ${s.nickname ?? s.name}`)
     .join("\n");
 
-  return `คุณคือผู้ช่วยบริการลูกค้าของร้าน ${shopName} ตอบภาษาไทยเสมอ พูดสุภาพ กระชับ และเป็นมิตร
+  const businessBlock = settings.business_desc
+    ? `\nข้อมูลธุรกิจเพิ่มเติม:\n${settings.business_desc}`
+    : "";
+
+  const customRulesBlock = settings.custom_rules
+    ? `\nกฎเพิ่มเติมจากเจ้าของร้าน:\n${settings.custom_rules}`
+    : "";
+
+  return `คุณคือ${settings.bot_name}ของร้าน ${shopName} ตอบภาษาไทยเสมอ พูดสุภาพ กระชับ และเป็นมิตร
 เบอร์ร้าน: ${phone}
-ที่อยู่: ${address}
+ที่อยู่: ${address}${businessBlock}
 
 บริการและราคา:
 ${serviceLines || "ยังไม่มีข้อมูลบริการ"}
@@ -40,15 +92,15 @@ ${serviceLines || "ยังไม่มีข้อมูลบริการ"
 ${staffLines || "ยังไม่มีข้อมูลช่าง"}
 
 กฎสำคัญ:
-- ถ้าลูกค้าต้องการจองคิว ให้บอกว่า "พิมพ์ว่า จอง ได้เลยค่ะ หรือกดปุ่มจองคิวในเมนูนะคะ"
+- ถ้าลูกค้าต้องการจองคิว ให้บอกว่า "${settings.booking_redirect}"
 - ห้ามยืนยันการจองในแชท ต้องจองผ่านระบบเท่านั้น
 - ถ้าไม่รู้คำตอบ ให้แนะนำให้โทรหาร้าน
-- ตอบสั้นๆ ไม่เกิน 3-4 ประโยค`;
+- ตอบสั้นๆ ไม่เกิน 3-4 ประโยค${customRulesBlock}`;
 }
 
 // ─── Chat history ────────────────────────────────────────────────────────────
 
-async function getLastMessages(lineUserId: string): Promise<Array<{ role: string; content: string }>> {
+async function getLastMessages(lineUserId: string, historyLimit: number): Promise<Array<{ role: string; content: string }>> {
   const db = supabaseAdmin();
   const { data } = await db
     .from("chat_history")
@@ -56,7 +108,7 @@ async function getLastMessages(lineUserId: string): Promise<Array<{ role: string
     .eq("shop_id", SHOP_ID)
     .eq("line_user_id", lineUserId)
     .order("created_at", { ascending: false })
-    .limit(HISTORY_LIMIT);
+    .limit(historyLimit);
 
   if (!data?.length) return [];
   return data.reverse();
@@ -84,9 +136,12 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
   }
 
   try {
+    const settings = await getAiSettings();
+    if (!settings.enabled) return null;
+
     const [systemPrompt, history] = await Promise.all([
-      buildShopSystemPrompt(),
-      getLastMessages(lineUserId),
+      buildShopSystemPrompt(settings),
+      getLastMessages(lineUserId, settings.history_limit),
     ]);
 
     const messages = [
@@ -102,10 +157,10 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: ZAI_MODEL,
+        model: settings.model,
         messages,
-        max_tokens: MAX_TOKENS,
-        temperature: 0.7,
+        max_tokens: settings.max_tokens,
+        temperature: settings.temperature,
         stream: false,
       }),
     });
