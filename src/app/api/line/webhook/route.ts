@@ -35,7 +35,9 @@ import {
   adminWizardBatchResultMessage,
   adminWizardProgressMessage,
   adminSetupStatusMessage,
+  setFlexTheme,
 } from "@/lib/flex";
+import { getShopThemeId } from "@/lib/shop-theme";
 import { askGLM } from "@/lib/zai";
 import { getOpenHandoff, requestHandoff, takeHandoff, closeHandoff, notifyAdminsOfHandoff } from "@/lib/handoff";
 import type { BookingWithJoins, Customer, LineAdminSession } from "@/types/db";
@@ -404,6 +406,14 @@ export async function POST(req: NextRequest) {
   const sig = req.headers.get("x-line-signature");
   if (!verifySignature(raw, sig)) {
     return NextResponse.json({ ok: false, error: "invalid signature" }, { status: 401 });
+  }
+
+  // Apply the shop's saved theme to Flex builders for this request.
+  // Safe — Flex construction is synchronous; no race inside a single builder call.
+  try {
+    setFlexTheme(await getShopThemeId());
+  } catch (err) {
+    console.error("[flex-theme] failed to load shop theme:", err);
   }
 
   const body = JSON.parse(raw) as { events?: any[] };

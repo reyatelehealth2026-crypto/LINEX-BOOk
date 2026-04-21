@@ -2,6 +2,7 @@
 import { LiffProvider, useLiff } from "@/components/LiffProvider";
 import { I18nProvider } from "@/lib/i18n";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { ThemePicker } from "@/components/ThemePicker";
 import Link from "next/link";
 import { ReactNode } from "react";
 import { Loader2, AlertTriangle } from "lucide-react";
@@ -69,6 +70,7 @@ function Shell({ children }: { children: ReactNode }) {
             <span className="grad-text tracking-tight">LineBook</span>
           </Link>
           <div className="flex items-center gap-3">
+            <ThemePicker variant="icon" />
             <LanguageToggle />
             {profile?.pictureUrl && (
               // eslint-disable-next-line @next/next/no-img-element

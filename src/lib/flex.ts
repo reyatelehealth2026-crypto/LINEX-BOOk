@@ -2,22 +2,53 @@
 import type { BookingWithJoins, Customer, Service, Staff } from "@/types/db";
 import { formatDateTH, formatTimeRange } from "./format";
 import type { Slot } from "./booking";
+import { getTheme, type ThemeId, type ThemePreset } from "./themes";
 
-// Premium design tokens
-const BRAND = "#6d3bff";
-const BRAND_DARK = "#34204d";
-const BRAND_SOFT = "#f7f2ff";
-const PREMIUM_DEEP = "#171220";
-const PREMIUM_MID = "#4d2b73";
-const PREMIUM_KICKER = "#d4c2ff";
+/* ================================================================== */
+/*  Dynamic brand palette — driven by the active shop theme.           */
+/*  Call `setFlexTheme(shopThemeId)` at the start of each webhook      */
+/*  request (synchronous). All builders below read these `let` vars    */
+/*  at build time, so no per-builder param threading is required.       */
+/* ================================================================== */
+
+// Brand-tied tokens (remapped per theme)
+let BRAND = "#6d3bff";
+let BRAND_DARK = "#34204d";
+let BRAND_SOFT = "#f7f2ff";
+let PREMIUM_DEEP = "#171220";
+let PREMIUM_MID = "#4d2b73";
+let PREMIUM_KICKER = "#d4c2ff";
+let PANEL = "#fcfaff";
+
+// Neutral tokens (theme-agnostic)
 const TEXT_MAIN = "#221733";
 const TEXT_MUTED = "#6b4e7a";
 const BORDER = "#e9dff0";
-const PANEL = "#fcfaff";
 const WARNING = "#ff9b7a";
 const IVORY = "#fff7fe";
 const PEACH_SOFT = "#ffe3d8";
 const DANGER = "#e11d48";
+
+/** Swap brand tokens to match a theme preset. Safe to call synchronously
+ *  before building Flex bubbles (the builders read the `let` bindings). */
+export function setFlexTheme(themeOrId: ThemeId | ThemePreset | null | undefined): void {
+  const theme = typeof themeOrId === "object" && themeOrId != null
+    ? (themeOrId as ThemePreset)
+    : getTheme(themeOrId ?? undefined);
+
+  BRAND = theme.primary;
+  BRAND_DARK = theme.primaryDark;
+  BRAND_SOFT = theme.accent;
+  PREMIUM_DEEP = theme.surfaceDark;
+  PREMIUM_MID = theme.primaryDark;
+  PREMIUM_KICKER = theme.accent;
+  PANEL = theme.surface;
+}
+
+/** Read current active brand color (primary). */
+export function getFlexBrand(): string {
+  return BRAND;
+}
 
 const LIFF_URL = (path = "") => {
   const id = process.env.NEXT_PUBLIC_LIFF_ID ?? "";

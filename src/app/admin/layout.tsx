@@ -22,6 +22,7 @@ import {
   BarChart3,
   Tag,
   Star,
+  Palette,
 } from "lucide-react";
 
 type NavItem = {
@@ -34,6 +35,7 @@ const NAV: NavItem[] = [
   { href: "/admin", label: "คิววันนี้", icon: CalendarCheck },
   { href: "/admin/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
   { href: "/admin/setup", label: "ตั้งค่าร้าน", icon: Settings },
+  { href: "/admin/theme", label: "ธีมของร้าน", icon: Palette },
   { href: "/admin/healthcheck", label: "ตรวจระบบ", icon: Stethoscope },
   { href: "/admin/services", label: "บริการ", icon: Sparkles },
   { href: "/admin/staff", label: "พนักงาน", icon: UserCircle2 },
