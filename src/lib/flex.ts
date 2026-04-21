@@ -3,18 +3,24 @@ import type { BookingWithJoins, Customer, Service, Staff } from "@/types/db";
 import { formatDateTH, formatTimeRange } from "./format";
 import type { Slot } from "./booking";
 
-const BRAND = "#06c755";
-const BRAND_DARK = "#049c44";
-const BRAND_SOFT = "#e8f8ee";
-const TEXT_MAIN = "#111827";
-const TEXT_MUTED = "#6b7280";
-const BORDER = "#e5e7eb";
-const PANEL = "#f8fafc";
-const WARNING = "#f59e0b";
+const BRAND = "#6d3bff";
+const BRAND_DARK = "#34204d";
+const BRAND_SOFT = "#f7f2ff";
+const TEXT_MAIN = "#221733";
+const TEXT_MUTED = "#6b4e7a";
+const BORDER = "#e9dff0";
+const PANEL = "#fcfaff";
+const WARNING = "#ff9b7a";
 const PREMIUM_DARK = "#221733";
 const PREMIUM_PRIMARY = "#6d3bff";
+const PREMIUM_MID = "#4d2b73";
+const PREMIUM_DEEP = "#171220";
 const PREMIUM_SOFT = "#f7f2ff";
 const PREMIUM_BORDER = "#e9dff0";
+const PREMIUM_KICKER = "#d4c2ff";
+const IVORY = "#fff7fe";
+const PEACH_SOFT = "#ffe3d8";
+const DANGER = "#e11d48";
 
 const LIFF_URL = (path = "") => {
   const id = process.env.NEXT_PUBLIC_LIFF_ID ?? "";
@@ -461,7 +467,117 @@ function statusLabel(s: string) {
   return { pending: "รอยืนยัน", confirmed: "ยืนยันแล้ว", completed: "เสร็จสิ้น", cancelled: "ยกเลิก", no_show: "ไม่มาตามนัด" }[s] ?? s;
 }
 function statusColor(s: string) {
-  return { pending: "#ff9800", confirmed: BRAND, completed: "#607d8b", cancelled: "#9e9e9e", no_show: "#e53935" }[s] ?? "#607d8b";
+  return { pending: WARNING, confirmed: BRAND, completed: PREMIUM_MID, cancelled: "#94a3b8", no_show: DANGER }[s] ?? PREMIUM_MID;
+}
+
+type FlexTone = "brand" | "dark" | "warning" | "success" | "critical";
+
+function toneTheme(tone: FlexTone = "brand") {
+  switch (tone) {
+    case "dark":
+      return { start: PREMIUM_DEEP, end: PREMIUM_DARK, kicker: PREMIUM_KICKER, meta: "#e9dff0", subtitle: "#f3e8ff" };
+    case "warning":
+      return { start: "#7c2d12", end: WARNING, kicker: PEACH_SOFT, meta: "#fff1eb", subtitle: "#fff7fe" };
+    case "success":
+      return { start: PREMIUM_MID, end: "#8f63ff", kicker: PREMIUM_KICKER, meta: "#eee6ff", subtitle: "#fff7fe" };
+    case "critical":
+      return { start: "#4c0519", end: DANGER, kicker: "#fecdd3", meta: "#ffe4e6", subtitle: "#fff1f2" };
+    default:
+      return { start: PREMIUM_DARK, end: PREMIUM_PRIMARY, kicker: PREMIUM_KICKER, meta: "#eee6ff", subtitle: "#f3e8ff" };
+  }
+}
+
+function headerChip(text: string) {
+  return {
+    type: "box",
+    layout: "vertical",
+    flex: 1,
+    paddingAll: "10px",
+    cornerRadius: "12px",
+    backgroundColor: "#ffffff14",
+    borderWidth: "1px",
+    borderColor: "#ffffff22",
+    contents: [
+      { type: "text", text, size: "xs", weight: "bold", color: "#ffffff", align: "center", wrap: true }
+    ]
+  };
+}
+
+function brandHeader(opts: {
+  kicker: string;
+  title: string;
+  subtitle?: string;
+  metaLines?: string[];
+  chips?: string[];
+  tone?: FlexTone;
+  compact?: boolean;
+}) {
+  const theme = toneTheme(opts.tone);
+  return {
+    type: "box",
+    layout: "vertical",
+    paddingAll: opts.compact ? "18px" : "20px",
+    background: {
+      type: "linearGradient",
+      angle: "135deg",
+      startColor: theme.start,
+      endColor: theme.end,
+    },
+    contents: [
+      { type: "text", text: opts.kicker, color: theme.kicker, size: "xs", weight: "bold", wrap: true },
+      ...(opts.metaLines ?? []).map((line) => ({ type: "text", text: line, color: theme.meta, size: "xs", margin: "xs", wrap: true })),
+      { type: "text", text: opts.title, color: "#ffffff", weight: "bold", size: opts.compact ? "lg" : "xl", margin: "sm", wrap: true },
+      ...(opts.subtitle ? [{ type: "text", text: opts.subtitle, color: theme.subtitle, size: "sm", margin: "sm", wrap: true } as any] : []),
+      ...(opts.chips?.length ? [{ type: "box", layout: "horizontal", spacing: "sm", margin: "lg", contents: opts.chips.slice(0, 3).map((chip) => headerChip(chip)) } as any] : [])
+    ]
+  };
+}
+
+function noteCard(title: string, description: string, tone: FlexTone | "soft" = "soft") {
+  const config = tone === "warning"
+    ? { bg: "#fff7f2", border: "#ffd7c7", title: "#9a3412", body: "#9a3412" }
+    : tone === "critical"
+      ? { bg: "#fff1f2", border: "#fecdd3", title: "#9f1239", body: "#9f1239" }
+      : tone === "dark"
+        ? { bg: "#f5f0f7", border: PREMIUM_BORDER, title: PREMIUM_DARK, body: TEXT_MUTED }
+        : { bg: IVORY, border: PREMIUM_BORDER, title: PREMIUM_DARK, body: TEXT_MUTED };
+  return {
+    type: "box",
+    layout: "vertical",
+    spacing: "sm",
+    paddingAll: "14px",
+    backgroundColor: config.bg,
+    cornerRadius: "16px",
+    borderWidth: "1px",
+    borderColor: config.border,
+    contents: [
+      { type: "text", text: title, size: "sm", weight: "bold", color: config.title, wrap: true },
+      { type: "text", text: description, size: "sm", color: config.body, wrap: true }
+    ]
+  };
+}
+
+function miniStat(label: string, value: string, tone: "brand" | "soft" | "warning" = "soft") {
+  const palette = tone === "brand"
+    ? { bg: PREMIUM_SOFT, border: PREMIUM_BORDER, value: PREMIUM_PRIMARY }
+    : tone === "warning"
+      ? { bg: "#fff7f2", border: "#ffd7c7", value: "#c2410c" }
+      : { bg: "#ffffff", border: PREMIUM_BORDER, value: TEXT_MAIN };
+  return {
+    type: "box",
+    layout: "vertical",
+    flex: 1,
+    spacing: "xs",
+    paddingAll: "14px",
+    cornerRadius: "16px",
+    backgroundColor: palette.bg,
+    borderWidth: "1px",
+    borderColor: palette.border,
+    contents: [
+      { type: "text", text: label, size: "xs", color: TEXT_MUTED, align: "center", wrap: true },
+      { type: "text", text: value, size: "xl", weight: "bold", color: palette.value, align: "center", wrap: true }
+    ]
+  };
 }
 
 // ======================= CHATBOT MENU & BOOKING FLOW =======================
@@ -477,45 +593,50 @@ export function mainMenuMessage(name: string) {
     contents: {
       type: "bubble",
       size: "giga",
-      hero: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: BRAND,
-        paddingAll: "20px",
-        contents: [
-          { type: "text", text: "LINEBOOK", color: "#ffffffcc", weight: "bold", size: "xs" },
-          { type: "text", text: `สวัสดีคุณ ${name}`, color: "#ffffff", weight: "bold", size: "xl", margin: "sm" },
-          { type: "text", text: "เลือกสิ่งที่ต้องการได้เลยจากเมนูด้านล่าง", color: "#ffffffcc", size: "sm", margin: "sm", wrap: true }
-        ]
-      },
+      hero: brandHeader({
+        kicker: "LINEBOOK HOME",
+        title: "สวัสดีคุณ " + name,
+        subtitle: "จัดการการจอง ดูคิวเดิม และเปิด Mini App ได้จากเมนูเดียว",
+        chips: ["จองคิว", "คิวของฉัน", "แต้มสะสม"]
+      }),
       body: {
         type: "box",
         layout: "vertical",
-        spacing: "sm",
+        spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
-          infoPanel("ใช้ได้ทั้งในแชทและ Mini App", [
+          noteCard("เลือกวิธีที่สะดวกที่สุด", "จะกดจากปุ่มด้านล่าง หรือพิมพ์เป็นประโยคธรรมชาติกับผู้ช่วยก็ได้"),
+          infoPanel("เริ่มได้ทันที", [
             "จองคิวแบบกดทีละขั้น",
-            "ดูคิวที่จองไว้",
+            "ดูคิวที่จองไว้และจัดการนัด",
             "เช็กโปรไฟล์และแต้มสะสม"
           ]),
+          noteCard("ตัวอย่างที่พิมพ์ได้", "เช่น จองทำผมพรุ่งนี้ 14:00 หรือพิมพ์ว่า คิวของฉัน")
+        ]
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        paddingAll: "16px",
+        backgroundColor: PANEL,
+        contents: [
           {
             type: "button",
             style: "primary",
             color: BRAND,
             height: "md",
-            action: { type: "postback", label: "📅 จองคิว", data: "action=book" }
+            action: { type: "postback", label: "✨ เริ่มจองคิว", data: "action=book" }
           },
           {
-            type: "button",
-            style: "secondary",
-            height: "md",
-            action: { type: "postback", label: "📋 คิวของฉัน", data: "action=my_bookings" }
-          },
-          {
-            type: "button",
-            style: "secondary",
-            height: "md",
-            action: { type: "postback", label: "⭐ โปรไฟล์ / แต้ม", data: "action=profile" }
+            type: "box",
+            layout: "horizontal",
+            spacing: "sm",
+            contents: [
+              { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "📋 คิวของฉัน", data: "action=my_bookings" } },
+              { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "⭐ โปรไฟล์", data: "action=profile" } }
+            ]
           },
           {
             type: "button",
@@ -996,33 +1117,25 @@ export function adminAuthPromptMessage() {
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: "#111827",
-        paddingAll: "18px",
-        contents: [
-          { type: "text", text: "ADMIN ACCESS", color: "#9ca3af", size: "xs", weight: "bold" },
-          { type: "text", text: "เข้าสู่โหมดแอดมินผ่านแชท", color: "#ffffff", size: "xl", weight: "bold", margin: "sm" }
-        ]
-      },
+      header: brandHeader({
+        kicker: "ADMIN ACCESS",
+        title: "เข้าสู่โหมดแอดมินผ่านแชท",
+        subtitle: "ยืนยันตัวตนแล้วระบบจะพาไปยังเมนูจัดการร้านทันที",
+        tone: "dark"
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
           infoPanel("วิธีเข้าใช้งาน", [
             "พิมพ์: รหัสแอดมิน <รหัสของคุณ>",
             "ตัวอย่าง: รหัสแอดมิน 1234",
             "เมื่อผ่านแล้วจะเปิดเมนูตั้งค่าร้านใน LINE ให้ทันที"
           ]),
-          {
-            type: "text",
-            text: "กดปุ่มด้านล่างเพื่อเติมข้อความเริ่มต้น แล้วค่อยพิมพ์รหัสต่อท้ายได้เลย",
-            size: "xs",
-            color: TEXT_MUTED,
-            wrap: true
-          },
+          noteCard("เริ่มได้ไวขึ้น", "กดปุ่มด้านล่างเพื่อเติมข้อความเริ่มต้น แล้วพิมพ์รหัสต่อท้ายได้เลย", "dark"),
           {
             type: "button",
             style: "secondary",
@@ -1045,24 +1158,22 @@ export function adminAuthRecoveryMessage(opts?: {
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: "#7c2d12",
-        paddingAll: "18px",
-        contents: [
-          { type: "text", text: "ADMIN SESSION CHECK", color: "#fed7aa", size: "xs", weight: "bold" },
-          { type: "text", text: opts?.title ?? "ต้องยืนยันตัวตนอีกครั้ง", color: "#ffffff", size: "xl", weight: "bold", margin: "sm", wrap: true }
-        ]
-      },
+      header: brandHeader({
+        kicker: "ADMIN SESSION CHECK",
+        title: opts?.title ?? "ต้องยืนยันตัวตนอีกครั้ง",
+        subtitle: "ระบบต้องตรวจสอบสิทธิ์อีกครั้งก่อนพาคุณกลับไปทำงานต่อ",
+        tone: "warning"
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
           infoPanel("เกิดอะไรขึ้น", [
             opts?.reason ?? "session แอดมินอาจหมดอายุหรือข้อมูลยืนยันตัวตนหลุดระหว่างทาง",
-            ...(opts?.pendingLabel ? [`สิ่งที่คุณกำลังกดอยู่: ${opts.pendingLabel}`] : []),
+            ...(opts?.pendingLabel ? ["สิ่งที่คุณกำลังกดอยู่: " + opts.pendingLabel] : []),
             "พิมพ์รหัสแอดมินอีกครั้ง แล้วระบบจะพากลับไปต่อให้อัตโนมัติ"
           ]),
           {
@@ -1083,20 +1194,19 @@ export function adminAuthSuccessMessage() {
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: BRAND,
-        paddingAll: "18px",
-        contents: [
-          { type: "text", text: "ADMIN MODE ENABLED", color: "#d1fae5", size: "xs", weight: "bold" },
-          { type: "text", text: "เปิดโหมดแอดมินแล้ว", color: "#ffffff", size: "xl", weight: "bold", margin: "sm" }
-        ]
-      },
+      header: brandHeader({
+        kicker: "ADMIN MODE ENABLED",
+        title: "เปิดโหมดแอดมินแล้ว",
+        subtitle: "ตอนนี้คุณจัดการร้าน ดูคิว และตั้งค่าหลักผ่าน LINE ได้ทันที",
+        chips: ["ตั้งค่าร้าน", "คิววันนี้", "เปิดแอดมิน"],
+        tone: "success"
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
           infoPanel("ตอนนี้คุณทำอะไรได้", [
             "เปิดแอดมินในแอป LINE (แนะนำ)",
@@ -1132,29 +1242,27 @@ export function adminMenuMessage() {
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: "#111827",
-        paddingAll: "18px",
-        contents: [
-          { type: "text", text: "LINE ADMIN HOME", color: "#9ca3af", size: "xs", weight: "bold" },
-          { type: "text", text: "หน้าแรกแอดมินผ่าน LINE", color: "#ffffff", size: "xl", weight: "bold", margin: "sm" },
-          { type: "text", text: "แอดมิน > หน้าแรก", color: "#d1d5db", size: "xs", margin: "sm" }
-        ]
-      },
+      header: brandHeader({
+        kicker: "LINE ADMIN HOME",
+        title: "หน้าแรกแอดมินผ่าน LINE",
+        subtitle: "ทุกปุ่มจะพาคุณเข้า step ถัดไปทันที พร้อมสถานะการทำงานที่อ่านง่ายขึ้น",
+        chips: ["ตั้งค่าร้าน", "คิวและรายได้", "จัดการระบบ"],
+        tone: "dark"
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
-          { type: "text", text: "ทุกปุ่มจะพาคุณเข้า step ถัดไปทันที และระบบจะแสดงสถานะกำลังทำงานก่อนตอบกลับ", size: "xs", color: TEXT_MUTED, wrap: true },
+          noteCard("เริ่มจากโหมดที่ต้องการ", "ถ้าจะตั้งค่าร้าน แนะนำให้เปิด Setup Wizard เพื่อไล่ทีละขั้น"),
           infoPanel("โหมด 1 · ตั้งค่าร้าน", ["ใช้เมื่ออยากไล่ตั้งค่า shop, service, staff, hours ผ่านแชท"]),
           { type: "box", layout: "horizontal", spacing: "sm", contents: [
             { type: "button", style: "primary", color: BRAND, flex: 1, height: "md", action: { type: "postback", label: "⚙️ ตั้งค่าร้าน", data: "action=adm_setup" } },
             { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "📊 สถานะร้าน", data: "action=adm_status" } }
           ] },
-          infoPanel("โหมด 2 · คิวและรายได้", ["ใช้ดูงานวันนี้เร็วๆ โดยไม่ต้องเปิดเว็บหลังบ้าน"]),
+          infoPanel("โหมด 2 · คิวและรายได้", ["ใช้ดูงานวันนี้เร็ว ๆ โดยไม่ต้องเปิดเว็บหลังบ้าน"]),
           { type: "box", layout: "horizontal", spacing: "sm", contents: [
             { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "📋 คิววันนี้", data: "action=adm_queue_today" } },
             { type: "button", style: "secondary", flex: 1, height: "md", action: { type: "postback", label: "💰 ยอดวันนี้", data: "action=adm_revenue" } }
@@ -1177,25 +1285,27 @@ export function adminSetupMenuMessage() {
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: BRAND,
-        paddingAll: "18px",
-        contents: [
-          { type: "text", text: "SHOP SETUP VIA LINE", color: "#d1fae5", size: "xs", weight: "bold" },
-          { type: "text", text: "ตั้งค่าร้านผ่านแชท", color: "#ffffff", size: "xl", weight: "bold", margin: "sm" },
-          { type: "text", text: "แอดมิน > ตั้งค่าร้าน", color: "#ecfdf5", size: "xs", margin: "sm" }
-        ]
-      },
+      header: brandHeader({
+        kicker: "SHOP SETUP VIA LINE",
+        title: "ตั้งค่าร้านผ่านแชท",
+        subtitle: "เริ่มจาก Setup Wizard หรือเลือกหัวข้อที่ต้องการจัดการได้ทันที",
+        chips: ["Wizard", "สถานะร้าน", "เปิดตั้งค่า"]
+      }),
       body: {
         type: "box",
         layout: "vertical",
-        spacing: "sm",
+        spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
-          { type: "text", text: "แนะนำให้เริ่มจาก Setup Wizard เพราะมันพาไปทีละขั้นและลดความงงระหว่างตั้งค่า", size: "xs", color: TEXT_MUTED, wrap: true },
+          noteCard("แนะนำสำหรับครั้งแรก", "เริ่มจาก Setup Wizard เพราะมันพาไปทีละขั้นและลดความงงระหว่างตั้งค่า"),
           { type: "button", style: "primary", color: BRAND, height: "md", action: { type: "postback", label: "🪄 Setup Wizard", data: "action=adm_wizard_start" } },
           { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "📊 สถานะร้านตอนนี้", data: "action=adm_status" } },
+          infoPanel("หัวข้อที่ตั้งค่าแยกได้", [
+            "ตั้งชื่อ / เบอร์ / ที่อยู่ร้าน",
+            "เพิ่มบริการและราคา",
+            "เพิ่มช่างและเวลาทำการ"
+          ]),
           { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "🏪 ตั้งชื่อ / เบอร์ / ที่อยู่", data: "action=adm_help_shop" } },
           { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "✂️ เพิ่มบริการ", data: "action=adm_help_service" } },
           { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "💇 เพิ่มช่าง", data: "action=adm_help_staff" } },
@@ -1220,23 +1330,25 @@ export function adminSetupStatusMessage(opts: {
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: opts.readyCount === opts.totalCount ? BRAND : "#111827",
-        paddingAll: "18px",
-        contents: [
-          { type: "text", text: "SHOP STATUS", color: "#d1fae5", size: "xs", weight: "bold" },
-          { type: "text", text: `${opts.readyCount}/${opts.totalCount} พร้อมแล้ว`, color: "#ffffff", size: "xl", weight: "bold", margin: "sm" },
-          { type: "text", text: opts.summary, color: "#ffffffcc", size: "sm", margin: "sm", wrap: true },
-          { type: "text", text: "แอดมิน > สถานะร้าน", color: "#d1d5db", size: "xs", margin: "sm" }
-        ]
-      },
+      header: brandHeader({
+        kicker: "SHOP STATUS",
+        title: String(opts.readyCount) + "/" + String(opts.totalCount) + " พร้อมแล้ว",
+        subtitle: opts.summary,
+        chips: ["พร้อมแล้ว " + String(opts.readyCount), "เหลือ " + String(Math.max(opts.totalCount - opts.readyCount, 0))],
+        tone: opts.readyCount === opts.totalCount ? "success" : "dark"
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
+          statsRow([
+            { label: "พร้อมแล้ว", value: String(opts.readyCount), tone: "brand" },
+            { label: "เหลือ", value: String(Math.max(opts.totalCount - opts.readyCount, 0)), tone: "default" }
+          ]),
+          noteCard("สรุปตอนนี้", opts.summary),
           infoPanel("สิ่งที่ยังควรทำต่อ", opts.missing.length ? opts.missing : ["ตอนนี้พร้อมใช้งานพื้นฐานแล้ว"]),
           { type: "box", layout: "horizontal", spacing: "sm", contents: [
             { type: "button", style: "primary", color: BRAND, flex: 1, action: { type: "postback", label: "🪄 Setup Wizard", data: "action=adm_wizard_start" } },
@@ -1255,13 +1367,20 @@ export function adminTextExamplesMessage(title: string, examples: string[]) {
     contents: {
       type: "bubble",
       size: "giga",
+      header: brandHeader({
+        kicker: "TEXT EXAMPLES",
+        title,
+        subtitle: "คัดลอกแนวทางแล้วพิมพ์ต่อได้เลย",
+        tone: "dark",
+        compact: true
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
         paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
-          { type: "text", text: title, weight: "bold", size: "lg", color: TEXT_MAIN, wrap: true },
           infoPanel("พิมพ์ตามตัวอย่างนี้ได้เลย", examples),
           { type: "button", style: "secondary", action: { type: "postback", label: "⬅️ กลับเมนูตั้งค่า", data: "action=adm_setup" } }
         ]
@@ -1287,27 +1406,25 @@ export function adminWizardPromptMessage(opts: {
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: BRAND,
-        paddingAll: "18px",
-        contents: [
-          { type: "text", text: opts.stepLabel ?? "SETUP WIZARD", color: "#d1fae5", size: "xs", weight: "bold" },
-          ...(opts.progressText ? [{ type: "text", text: opts.progressText, color: "#ecfdf5", size: "xs", margin: "xs" } as any] : []),
-          ...(opts.breadcrumb ? [{ type: "text", text: opts.breadcrumb, color: "#ecfdf5", size: "xs", margin: "xs", wrap: true } as any] : []),
-          { type: "text", text: opts.title, color: "#ffffff", size: "xl", weight: "bold", margin: "sm", wrap: true }
+      header: brandHeader({
+        kicker: opts.stepLabel ?? "SETUP WIZARD",
+        title: opts.title,
+        subtitle: opts.description,
+        metaLines: [
+          ...(opts.progressText ? [opts.progressText] : []),
+          ...(opts.breadcrumb ? [opts.breadcrumb] : [])
         ]
-      },
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
-          { type: "text", text: opts.description, size: "sm", color: TEXT_MUTED, wrap: true },
           ...(opts.savedItems?.length ? [infoPanel("บันทึกไปแล้ว", opts.savedItems)] : []),
           ...(opts.example ? [infoPanel("ตัวอย่างข้อความที่พิมพ์ได้", [opts.example])] : []),
-          ...(opts.tip ? [{ type: "text", text: opts.tip, size: "xs", color: TEXT_MUTED, wrap: true } as any] : []),
+          ...(opts.tip ? [noteCard("Tips", opts.tip, "dark")] : []),
           {
             type: "box",
             layout: "horizontal",
@@ -1340,30 +1457,26 @@ export function adminWizardDayPickerMessage(savedItems: string[] = []) {
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: BRAND,
-        paddingAll: "18px",
-        contents: [
-          { type: "text", text: "SETUP WIZARD · STEP 6/6", color: "#d1fae5", size: "xs", weight: "bold" },
-          { type: "text", text: "● ● ● ● ● ●", color: "#ecfdf5", size: "xs", margin: "xs" },
-          { type: "text", text: "แอดมิน > ตั้งค่าร้าน > Setup Wizard > เวลาทำการ", color: "#ecfdf5", size: "xs", margin: "xs", wrap: true },
-          { type: "text", text: "เลือกว่าเวลาทำการนี้ใช้กับวันไหน", color: "#ffffff", size: "xl", weight: "bold", margin: "sm", wrap: true }
-        ]
-      },
+      header: brandHeader({
+        kicker: "SETUP WIZARD · STEP 6/6",
+        title: "เลือกว่าเวลาทำการนี้ใช้กับวันไหน",
+        subtitle: "กดเลือกวัน แล้วผมจะถามเวลาของวันนั้นต่อทันที",
+        metaLines: ["● ● ● ● ● ●", "แอดมิน > ตั้งค่าร้าน > Setup Wizard > เวลาทำการ"]
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "sm",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
           ...(savedItems.length ? [infoPanel("บันทึกไปแล้ว", savedItems)] : []),
-          { type: "text", text: "กดเลือกวัน แล้วผมจะถามเวลาของวันนั้นต่อทันที", size: "xs", color: TEXT_MUTED, wrap: true },
+          noteCard("เลือกรายวัน", "เหมาะสำหรับร้านที่มีเวลาเปิดปิดต่างกันในแต่ละวัน"),
           ...days.map((day) => ({
             type: "button",
             style: "secondary",
             height: "md",
-            action: { type: "postback", label: day.label, data: `action=adm_wizard_day&value=${day.value}&label=${encodeURIComponent(day.label)}`, displayText: `เลือกวัน${day.label}` }
+            action: { type: "postback", label: day.label, data: "action=adm_wizard_day&value=" + day.value + "&label=" + encodeURIComponent(day.label), displayText: "เลือกวัน" + day.label }
           })),
           { type: "button", style: "secondary", action: { type: "postback", label: "ยกเลิก", data: "action=adm_wizard_cancel", displayText: "ยกเลิก Setup Wizard" } }
         ]
@@ -1390,15 +1503,16 @@ export function adminWizardProgressMessage(opts: {
       body: {
         type: "box",
         layout: "vertical",
-        spacing: "sm",
-        paddingAll: "16px",
+        spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
-          { type: "text", text: `STEP ${opts.currentStep}/${opts.totalSteps}`, size: "xs", weight: "bold", color: BRAND_DARK },
-          { type: "text", text: progress, size: "sm", color: BRAND_DARK },
+          miniStat("ความคืบหน้า", String(opts.currentStep) + "/" + String(opts.totalSteps), "brand"),
+          noteCard("กำลังไปขั้นถัดไป", opts.title, "dark"),
+          { type: "text", text: progress, size: "sm", color: BRAND_DARK, align: "center" },
           ...(opts.breadcrumb ? [{ type: "text", text: opts.breadcrumb, size: "xs", color: TEXT_MUTED, wrap: true } as any] : []),
-          { type: "text", text: opts.title, size: "md", weight: "bold", color: TEXT_MAIN, wrap: true },
-          ...(opts.description ? [{ type: "text", text: opts.description, size: "xs", color: TEXT_MUTED, wrap: true } as any] : []),
-          ...(opts.savedItems?.length ? [{ type: "text", text: `บันทึกแล้ว: ${opts.savedItems.join(" • ")}`, size: "xs", color: TEXT_MUTED, wrap: true } as any] : []),
+          ...(opts.description ? [{ type: "text", text: opts.description, size: "sm", color: TEXT_MUTED, wrap: true } as any] : []),
+          ...(opts.savedItems?.length ? [infoPanel("บันทึกแล้ว", opts.savedItems)] : [])
         ]
       }
     }
@@ -1412,32 +1526,26 @@ export function adminWizardDoneMessage(summary: string[]) {
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: BRAND,
-        paddingAll: "18px",
-        contents: [
-          { type: "text", text: "SETUP COMPLETE", color: "#d1fae5", size: "xs", weight: "bold" },
-          { type: "text", text: "ตั้งค่าพื้นฐานร้านเสร็จแล้ว", color: "#ffffff", size: "xl", weight: "bold", margin: "sm", wrap: true }
-        ]
-      },
+      header: brandHeader({
+        kicker: "SETUP COMPLETE",
+        title: "ตั้งค่าพื้นฐานร้านเสร็จแล้ว",
+        subtitle: "พร้อมไปต่อที่เมนูแอดมิน หรือเพิ่มข้อมูลร้านต่อได้ทันที",
+        tone: "success",
+        chips: ["พร้อมใช้งาน", "เพิ่มบริการ", "เพิ่มช่าง"]
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
           infoPanel("สิ่งที่ wizard ทำให้แล้ว", summary),
-          {
-            type: "box",
-            layout: "vertical",
-            spacing: "sm",
-            contents: [
-              { type: "button", style: "primary", color: BRAND, action: { type: "postback", label: "➕ เพิ่มบริการอีก", data: "action=adm_wizard_more_service", displayText: "เพิ่มบริการอีก" } },
-              { type: "button", style: "secondary", action: { type: "postback", label: "➕ เพิ่มช่างอีก", data: "action=adm_wizard_more_staff", displayText: "เพิ่มช่างอีก" } },
-              { type: "button", style: "secondary", action: { type: "postback", label: "✅ เสร็จแล้ว ไปเมนูแอดมิน", data: "action=adm_menu", displayText: "กลับเมนูแอดมิน" } }
-            ]
-          }
+          { type: "box", layout: "vertical", spacing: "sm", contents: [
+            { type: "button", style: "primary", color: BRAND, action: { type: "postback", label: "➕ เพิ่มบริการอีก", data: "action=adm_wizard_more_service", displayText: "เพิ่มบริการอีก" } },
+            { type: "button", style: "secondary", action: { type: "postback", label: "➕ เพิ่มช่างอีก", data: "action=adm_wizard_more_staff", displayText: "เพิ่มช่างอีก" } },
+            { type: "button", style: "secondary", action: { type: "postback", label: "✅ เสร็จแล้ว ไปเมนูแอดมิน", data: "action=adm_menu", displayText: "กลับเมนูแอดมิน" } }
+          ] }
         ]
       }
     }
@@ -1469,13 +1577,20 @@ export function adminWizardBatchResultMessage(opts: {
     contents: {
       type: "bubble",
       size: "giga",
+      header: brandHeader({
+        kicker: "WIZARD RESULT",
+        title: opts.title,
+        subtitle: "สรุปสิ่งที่ทำสำเร็จและปุ่มไปต่อที่เกี่ยวข้อง",
+        tone: "dark",
+        compact: true
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
         paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
-          { type: "text", text: opts.title, weight: "bold", size: "lg", color: TEXT_MAIN, wrap: true },
           infoPanel("สรุป", opts.lines),
           { type: "box", layout: "vertical", spacing: "sm", contents: buttons }
         ]
@@ -1488,47 +1603,43 @@ export function adminWizardBatchResultMessage(opts: {
 export function smartWelcomeMessage(name: string) {
   return {
     type: "flex",
-    altText: `ยินดีต้อนรับ คุณ ${name}`,
+    altText: "ยินดีต้อนรับ คุณ " + name,
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: BRAND,
-        paddingAll: "20px",
-        contents: [
-          { type: "text", text: "WELCOME TO LINEBOOK", color: "#ffffffcc", weight: "bold", size: "xs" },
-          { type: "text", text: `สวัสดีค่ะ คุณ ${name}`, color: "#ffffff", weight: "bold", size: "xl", margin: "sm" },
-          { type: "text", text: "จองคิวผ่าน LINE ได้ทันที ไม่ต้องออกจากแชท", color: "#ffffffcc", size: "sm", margin: "sm", wrap: true }
-        ]
-      },
+      hero: brandHeader({
+        kicker: "WELCOME TO LINEBOOK",
+        title: "สวัสดีค่ะ คุณ " + name,
+        subtitle: "จองคิวผ่าน LINE ได้ทันที ไม่ต้องออกจากแชท",
+        chips: ["จองคิว", "คิวของฉัน", "โปรไฟล์"]
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
           infoPanel("ลองพิมพ์แบบนี้ได้เลย", [
             "จองตัดผมพรุ่งนี้บ่ายสอง",
             "คิวของฉัน",
             "แต้มสะสม"
           ]),
-          {
-            type: "button",
-            style: "primary",
-            color: BRAND,
-            action: { type: "postback", label: "📅 จองคิวเลย", data: "action=book" }
-          },
-          {
-            type: "button",
-            style: "secondary",
-            action: { type: "postback", label: "📋 คิวของฉัน", data: "action=my_bookings" }
-          },
-          {
-            type: "button",
-            style: "secondary",
-            action: { type: "postback", label: "⭐ โปรไฟล์ / แต้ม", data: "action=profile" }
-          }
+          noteCard("เริ่มใช้งานแบบเร็ว", "คุณสามารถแตะปุ่มด้านล่าง หรือพิมพ์คุยกับผู้ช่วยได้ทันที")
+        ]
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        paddingAll: "16px",
+        backgroundColor: PANEL,
+        contents: [
+          { type: "button", style: "primary", color: BRAND, action: { type: "postback", label: "📅 จองคิวเลย", data: "action=book" } },
+          { type: "box", layout: "horizontal", spacing: "sm", contents: [
+            { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "📋 คิวของฉัน", data: "action=my_bookings" } },
+            { type: "button", style: "secondary", flex: 1, action: { type: "postback", label: "⭐ โปรไฟล์ / แต้ม", data: "action=profile" } }
+          ] }
         ]
       }
     }
@@ -1611,13 +1722,13 @@ function infoPanel(title: string, items: string[]) {
     layout: "vertical",
     spacing: "sm",
     paddingAll: "14px",
-    backgroundColor: PANEL,
-    cornerRadius: "14px",
+    backgroundColor: "#ffffff",
+    cornerRadius: "16px",
     borderWidth: "1px",
-    borderColor: BORDER,
+    borderColor: PREMIUM_BORDER,
     contents: [
-      { type: "text", text: title, size: "sm", weight: "bold", color: TEXT_MAIN },
-      ...items.map((item) => ({ type: "text", text: `• ${item}`, size: "sm", color: TEXT_MUTED, wrap: true }))
+      { type: "text", text: title, size: "sm", weight: "bold", color: PREMIUM_DARK, wrap: true },
+      ...items.map((item) => ({ type: "text", text: "• " + item, size: "sm", color: TEXT_MUTED, wrap: true }))
     ]
   };
 }
@@ -1627,13 +1738,24 @@ function infoRow(label: string, value: string, emoji: string) {
     type: "box",
     layout: "horizontal",
     spacing: "md",
-    paddingAll: "12px",
-    backgroundColor: PANEL,
-    cornerRadius: "12px",
+    paddingAll: "14px",
+    backgroundColor: "#ffffff",
+    cornerRadius: "16px",
     borderWidth: "1px",
-    borderColor: BORDER,
+    borderColor: PREMIUM_BORDER,
     contents: [
-      { type: "text", text: emoji, size: "lg", flex: 0, gravity: "center" },
+      {
+        type: "box",
+        layout: "vertical",
+        flex: 0,
+        paddingAll: "8px",
+        justifyContent: "center",
+        backgroundColor: PREMIUM_SOFT,
+        cornerRadius: "12px",
+        contents: [
+          { type: "text", text: emoji, size: "lg", align: "center", gravity: "center" }
+        ]
+      },
       {
         type: "box",
         layout: "vertical",
@@ -1641,7 +1763,7 @@ function infoRow(label: string, value: string, emoji: string) {
         spacing: "xs",
         contents: [
           { type: "text", text: label, size: "xs", color: TEXT_MUTED },
-          { type: "text", text: value, size: "sm", color: TEXT_MAIN, weight: "bold", wrap: true }
+          { type: "text", text: value, size: "sm", color: PREMIUM_DARK, weight: "bold", wrap: true }
         ]
       }
     ]
@@ -1657,12 +1779,12 @@ function thankYouCard(opts: { title?: string; subtitle?: string } = {}) {
     layout: "vertical",
     margin: "md",
     paddingAll: "14px",
-    backgroundColor: "#f5f0f7",
-    cornerRadius: "12px",
+    backgroundColor: IVORY,
+    cornerRadius: "16px",
     borderWidth: "1px",
-    borderColor: "#e9dff0",
+    borderColor: PREMIUM_BORDER,
     contents: [
-      { type: "text", text: title, color: "#3b2340", size: "sm", weight: "bold", align: "center" },
+      { type: "text", text: title, color: PREMIUM_DARK, size: "sm", weight: "bold", align: "center", wrap: true },
       { type: "text", text: subtitle, color: "#6b4e7a", size: "xs", align: "center", margin: "xs" }
     ]
   };
@@ -1673,10 +1795,15 @@ function totalCard(label: string, value: string) {
     type: "box",
     layout: "horizontal",
     paddingAll: "14px",
-    backgroundColor: "#111827",
-    cornerRadius: "14px",
+    background: {
+      type: "linearGradient",
+      angle: "135deg",
+      startColor: PREMIUM_DARK,
+      endColor: PREMIUM_PRIMARY,
+    },
+    cornerRadius: "16px",
     contents: [
-      { type: "text", text: label, color: "#d1d5db", size: "sm", gravity: "center" },
+      { type: "text", text: label, color: "#e9dff0", size: "sm", gravity: "center" },
       { type: "text", text: value, color: "#ffffff", size: "xl", weight: "bold", align: "end", gravity: "center" }
     ]
   };
@@ -1687,20 +1814,6 @@ function statsRow(items: Array<{ label: string; value: string; tone?: "brand" | 
     type: "box",
     layout: "horizontal",
     spacing: "sm",
-    contents: items.map((item) => ({
-      type: "box",
-      layout: "vertical",
-      flex: 1,
-      spacing: "xs",
-      paddingAll: "14px",
-      cornerRadius: "14px",
-      backgroundColor: item.tone === "brand" ? BRAND_SOFT : PANEL,
-      borderWidth: "1px",
-      borderColor: item.tone === "brand" ? "#b7ebcb" : BORDER,
-      contents: [
-        { type: "text", text: item.label, size: "xs", color: TEXT_MUTED, align: "center", wrap: true },
-        { type: "text", text: item.value, size: "xl", weight: "bold", color: item.tone === "brand" ? BRAND_DARK : TEXT_MAIN, align: "center" }
-      ]
-    }))
+    contents: items.map((item) => miniStat(item.label, item.value, item.tone === "brand" ? "brand" : "soft"))
   };
 }
