@@ -30,16 +30,15 @@ type AiSettings = {
 };
 
 const MODELS = [
-  { value: "glm-4.5-flash", label: "GLM-4.5-Flash — เร็ว ประหยัด แนะนำ" },
-  { value: "glm-4.5-air", label: "GLM-4.5-Air — สมดุล" },
-  { value: "glm-4.5", label: "GLM-4.5 — ฉลาดกว่า ช้ากว่า" },
-  { value: "glm-5-turbo", label: "GLM-5-Turbo — รุ่นใหม่เร็ว" },
-  { value: "glm-5.1", label: "GLM-5.1 — Flagship" },
+  { value: "glm-4.7", label: "GLM-4.7 — แนะนำ สมดุล quota ปรกติ" },
+  { value: "glm-4.5-air", label: "GLM-4.5-Air — เบา quota น้อยที่สุด" },
+  { value: "glm-5-turbo", label: "GLM-5-Turbo — เร็ว ฉลาด (quota 2-3×)" },
+  { value: "glm-5.1", label: "GLM-5.1 — Flagship ฉลาดที่สุด (quota 2-3×)" },
 ];
 
 const DEFAULT: AiSettings = {
   enabled: true,
-  model: "glm-4.5-flash",
+  model: "glm-4.7",
   temperature: 0.7,
   max_tokens: 350,
   history_limit: 10,
@@ -291,7 +290,7 @@ export default function AiSettingsPage() {
               <option key={m.value} value={m.value}>{m.label}</option>
             ))}
           </select>
-          <Hint>GLM-4.5-Flash เร็วที่สุดและประหยัดสุด แนะนำสำหรับแชทบอท</Hint>
+          <Hint>GLM-4.7 แนะนำสำหรับแชทบอท ใช้ quota 1× ตลอด / GLM-5.1 ฉลาดที่สุดแต่ใช้ quota 2-3× ใน peak hours</Hint>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -30,6 +30,7 @@ async function lineFetch(path: string, body: unknown) {
   });
   if (!res.ok) {
     const text = await res.text();
+    console.error(`[line] ${path} ${res.status} error:`, text);
     throw new Error(`LINE ${path} ${res.status}: ${text}`);
   }
   return res;

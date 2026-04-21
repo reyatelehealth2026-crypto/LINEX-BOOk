@@ -1,6 +1,6 @@
 import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
 
-const ZAI_API_URL = "https://api.z.ai/api/paas/v4/chat/completions";
+const ZAI_API_URL = "https://api.z.ai/api/coding/paas/v4/chat/completions";
 
 export type AiSettings = {
   enabled: boolean;
@@ -16,7 +16,7 @@ export type AiSettings = {
 
 const DEFAULT_SETTINGS: AiSettings = {
   enabled: true,
-  model: "glm-4.5-flash",
+  model: "glm-4.7",
   temperature: 0.7,
   max_tokens: 350,
   history_limit: 10,
@@ -168,6 +168,10 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
     if (!res.ok) {
       const errText = await res.text();
       console.error(`[zai] API error ${res.status}:`, errText);
+      // 429 = rate limit — return a polite fallback instead of null so LINE can still reply
+      if (res.status === 429) {
+        return "ขออภัยค่ะ ขณะนี้บอทมีผู้ใช้งานมากค่ะ กรุณาลองถามใหม่อีกครั้งในอีกสักครู่นะคะ 🙏";
+      }
       return null;
     }
 

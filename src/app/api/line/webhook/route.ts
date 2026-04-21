@@ -1020,7 +1020,11 @@ async function handleMessage(ev: any, customer: Customer) {
   if (aiReply) {
     return replyMessage(rt, [{ type: "text", text: aiReply }]);
   }
-  return replyMessage(rt, [smartWelcomeMessage(customer.display_name ?? "คุณลูกค้า")]);
+  // Fallback: use plain text (not Flex) to guarantee LINE accepts the reply
+  const name = customer.display_name ?? customer.full_name ?? "คุณลูกค้า";
+  return replyMessage(rt, [textMessage(
+    `สวัสดีค่ะ ${name} 👋\nพิมพ์ "จอง" เพื่อจองคิว หรือ "คิว" เพื่อดูนัดหมายของคุณนะคะ`
+  )]);
 }
 
 // ───────────────── AI Booking Handler ─────────────────
