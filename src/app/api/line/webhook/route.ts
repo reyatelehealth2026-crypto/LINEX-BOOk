@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { verifySignature, replyMessage, getProfile, pushMessage, startLoading } from "@/lib/line";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, SHOP_ID, getShopByLineOaId, getShopById } from "@/lib/supabase";
+import { runWithShopContext } from "@/lib/request-context";
 import { availableSlots } from "@/lib/booking";
 import { parseBookingIntent, parseAdminCommand, detectHandoffIntent } from "@/lib/thai-nlp";
 import {
@@ -405,30 +406,51 @@ function wizardPromptForStepWithState(step: AdminWizardStep, payload: Record<str
 export async function POST(req: NextRequest) {
   const raw = await req.text();
   const sig = req.headers.get("x-line-signature");
-  if (!verifySignature(raw, sig)) {
-    return NextResponse.json({ ok: false, error: "invalid signature" }, { status: 401 });
+
+  // Multi-tenant: resolve shop from LINE `destination` field (the OA's user
+  // id that the event was sent to). Each tenant has its own channel secret
+  // + access token, so we must load the shop row before signature verify.
+  const body = JSON.parse(raw) as { destination?: string; events?: any[] };
+  const destination = body.destination;
+  let shop =
+    destination ? await getShopByLineOaId(destination) : null;
+  if (!shop) {
+    shop = await getShopById(Number(process.env.DEFAULT_SHOP_ID ?? 1));
+  }
+  if (!shop) {
+    return NextResponse.json({ ok: false, error: "shop not found" }, { status: 404 });
   }
 
-  // Apply the shop's saved theme to Flex builders for this request.
-  // Safe — Flex construction is synchronous; no race inside a single builder call.
-  try {
-    setFlexTheme(await getShopThemeId());
-  } catch (err) {
-    console.error("[flex-theme] failed to load shop theme:", err);
-  }
+  return runWithShopContext(
+    {
+      shop,
+      accessToken: shop.line_channel_access_token ?? process.env.LINE_CHANNEL_ACCESS_TOKEN ?? "",
+      channelSecret: shop.line_channel_secret ?? process.env.LINE_CHANNEL_SECRET ?? "",
+      liffId: shop.liff_id,
+    },
+    async () => {
+      // Verify with the shop's own secret (falls back to env if shop has none).
+      if (!verifySignature(raw, sig)) {
+        return NextResponse.json({ ok: false, error: "invalid signature" }, { status: 401 });
+      }
 
-  const body = JSON.parse(raw) as { events?: any[] };
-  const events = body.events ?? [];
+      try {
+        setFlexTheme(await getShopThemeId());
+      } catch (err) {
+        console.error("[flex-theme] failed to load shop theme:", err);
+      }
 
-  for (const e of events) {
-    try {
-      await enqueueLineEvent(e);
-    } catch (err) {
-      console.error("event err:", err);
-    }
-  }
-
-  return NextResponse.json({ ok: true });
+      const events = body.events ?? [];
+      for (const e of events) {
+        try {
+          await enqueueLineEvent(e);
+        } catch (err) {
+          console.error("event err:", err);
+        }
+      }
+      return NextResponse.json({ ok: true });
+    },
+  );
 }
 
 async function enqueueLineEvent(ev: any) {

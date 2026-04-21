@@ -1,9 +1,17 @@
-# 💚 LineBook — LINE Booking (Barber / Salon / Nails)
+# 💚 LineBook — Multi-tenant LINE Booking SaaS
 
-ระบบจองคิวผ่าน LINE สำหรับร้านเล็ก–กลาง เช่น ร้านตัดผม เสริมสวย ทำเล็บ
-ลูกค้าจองผ่าน **LIFF Mini App** + แอดมินจัดการผ่านหน้าเว็บ realtime
+ระบบจองคิวผ่าน LINE แบบ **SaaS multi-tenant** สำหรับร้านเสริมสวย ร้านทำเล็บ และสปา
+เจ้าของร้านสมัครเองได้ที่ `/signup` เลือกพรีเซทธุรกิจ (Salon / Nail / Spa) ผูก LINE OA ของร้านเอง
+แล้วใช้งานได้ที่ subdomain ของร้าน เช่น `mysalon.linebook.app`
 
-**Stack**: Next.js 14 (App Router) · Supabase (Postgres + Realtime) · LINE Messaging API · LIFF v2 · Tailwind
+**Stack**: Next.js 16 (App Router) · Supabase (Postgres + Realtime) · LINE Messaging API · LIFF v2 · Tailwind
+
+## 🏢 Multi-tenant model
+- 1 deployment ของ LineBook รองรับหลายร้าน (tenants)
+- 1 ร้าน = 1 LINE OA ของร้านเอง (credentials เก็บใน `shops` table)
+- routing ผ่าน subdomain: `<slug>.linebook.app` → Next.js middleware → shop context
+- webhook (`/api/line/webhook`) resolves shop จาก `destination` ใน payload
+- admin auth scoped ต่อร้าน (ดู `admin_users` table)
 
 ---
 
@@ -51,36 +59,34 @@ npm install
    - `anon public key` → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `service_role key` → `SUPABASE_SERVICE_ROLE_KEY` *(อย่าเผยสู่ client)*
 
-### 3. ตั้งค่า LINE OA
+### 3. Platform env (.env.local)
 
-ที่ <https://developers.line.biz/console/>:
+คัดลอกจาก `.env.example` แล้วเติมค่า **Supabase + ROOT_DOMAIN** เท่านั้น
+(LINE credentials เป็นของแต่ละร้าน ลูกค้ากรอกเองตอน signup)
 
-1. เปิด **Provider → Messaging API channel** ของ OA ที่มีอยู่
-2. **Channel access token (long-lived)** → copy ไปใส่ `LINE_CHANNEL_ACCESS_TOKEN`
-3. **Channel secret** → `LINE_CHANNEL_SECRET`
-4. ใน *Messaging API* tab:
-   - ปิด **Auto-reply messages** (Off)
-   - เปิด **Webhooks** = Enabled
-   - **Webhook URL** = `https://<your-domain>/api/line/webhook` (ต้อง HTTPS — ใช้ Vercel หรือ ngrok ตอน dev)
+```bash
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+ROOT_DOMAIN=linebook.app       # local dev: ใช้ "localhost"
+```
 
-### 4. สร้าง LIFF
+### 4. Run migrations
 
-1. ใน channel เดียวกัน → **LIFF** tab → **Add**
-2. Size: **Full** / Endpoint URL: `https://<your-domain>/liff`
-3. Scopes: `profile`, `openid`
-4. Copy **LIFF ID** → `NEXT_PUBLIC_LIFF_ID`
+รัน SQL ทั้งหมดใน `supabase/schema.sql` + ทุกไฟล์ใน `supabase/migrations/` ตามลำดับ
+ไฟล์สำคัญสำหรับ SaaS mode: `011_saas_multitenant.sql`
 
-### 5. `.env.local`
-
-คัดลอกจาก `.env.example` แล้วเติมค่า
-
-### 6. Dev
+### 5. Dev + test multi-tenant
 
 ```bash
 npm run dev
-# เปิด http://localhost:3000 (หน้าแอดมิน)
-# LIFF ต้องเปิดผ่าน https://liff.line.me/<LIFF_ID>
 ```
+
+- เปิด `http://localhost:3000` → marketing + signup
+- ลงทะเบียนร้านทดสอบผ่าน `/signup` (ต้องมี LINE OA + LIFF ของร้านทดสอบเอง)
+- หลัง signup redirect ไป `http://<slug>.localhost:3000/admin/setup`
+
+> Chrome/Safari รองรับ wildcard `*.localhost` โดยอัตโนมัติ ไม่ต้องแก้ /etc/hosts
 
 สำหรับ dev LIFF + webhook บน localhost ใช้ **ngrok**:
 ```bash
@@ -88,25 +94,16 @@ ngrok http 3000
 # แล้ว update LIFF Endpoint + Webhook URL ใน LINE console
 ```
 
-### 7. Rich menu
+### 6. Rich menu (per-shop, อัตโนมัติ)
 
-1. ทำภาพ **2500×1686 PNG** แบ่ง 2 แถว × 3 คอลัมน์ ตาม `scripts/setup-richmenu.mjs`
-2. วางที่ `scripts/richmenu.png`
-3. รัน:
-   ```bash
-   npm run richmenu
-   ```
+หลัง signup เจ้าของร้านกดปุ่ม "ติดตั้ง Rich Menu" ในหน้า `/admin/setup` — ระบบจะเรียก
+`uploadRichMenuForShop(shopId)` (ดู `src/lib/rich-menu.ts`) โดยใช้ token ของร้านเอง
+ภาพ default อ่านจาก `scripts/richmenu.png` (optional)
 
-### 8. Cron reminder
+### 7. Cron reminder (multi-shop)
 
-Set ให้ run ทุก ~10–15 นาที:
-
-- **Vercel**: เพิ่มใน `vercel.json`:
-  ```json
-  { "crons": [{ "path": "/api/cron/reminders", "schedule": "*/15 * * * *" }] }
-  ```
-  *(ต้องสร้าง route `/api/cron/reminders` ที่เรียก logic จาก `scripts/send-reminders.mjs`)*
-- **หรือ** รันเองบน VPS: `*/15 * * * * cd /app && npm run reminders`
+`/api/cron/reminders` วนทุกร้านที่ onboarding เสร็จแล้ว แล้วส่ง push ด้วย token ของ
+แต่ละร้านเอง — ใน `vercel.json` ตั้ง schedule ไว้แล้ว
 
 ---
 
