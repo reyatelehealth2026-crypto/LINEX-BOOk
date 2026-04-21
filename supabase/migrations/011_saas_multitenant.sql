@@ -99,5 +99,5 @@ end $$;
 
 -- Ensure a sensible default exists so pre-SaaS single-tenant code keeps working
 -- when no slug subdomain is used.
-update shops set slug = 'default', onboarding_status = coalesce(onboarding_status, 'completed')
-  where id = 1 and (slug is null or slug = 'shop-1');
+update shops set slug = 'default', onboarding_status = 'completed'
+  where id = 1 and (slug is null or slug in ('shop-1', 'default'));

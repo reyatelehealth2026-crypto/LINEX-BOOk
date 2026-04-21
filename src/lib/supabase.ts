@@ -192,5 +192,10 @@ const _shopIdBox = {
   toString(): string {
     return String(this.valueOf());
   },
+  // JSON.stringify uses toJSON() if present — critical for Supabase .insert()
+  // which serializes the row object to a PostgREST JSON body.
+  toJSON(): number {
+    return this.valueOf();
+  },
 };
 export const SHOP_ID = _shopIdBox as unknown as number;

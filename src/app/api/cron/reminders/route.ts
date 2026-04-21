@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, type Shop } from "@/lib/supabase";
-import { runWithShopContext } from "@/lib/request-context";
+import { runWithShopContext, currentAccessToken } from "@/lib/request-context";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Per-invocation token — set by runWithShopContext per shop.
 function currentToken(): string {
-  // Lazy require avoids a circular during route build; line.ts doesn't
-  // depend on this file, so a direct require works.
-  const { currentAccessToken } = require("@/lib/request-context") as typeof import("@/lib/request-context");
   return currentAccessToken() || process.env.LINE_CHANNEL_ACCESS_TOKEN || "";
 }
 
