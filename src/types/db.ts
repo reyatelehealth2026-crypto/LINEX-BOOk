@@ -65,6 +65,11 @@ export type Customer = {
   birthday: string | null;
   points: number;
   visit_count: number;
+  no_show_count?: number;
+  blocked_until?: string | null;
+  referral_code?: string | null;
+  referred_by?: number | null;
+  notes?: string | null;
   registered_at: string | null;
   created_at: string;
 };

@@ -55,6 +55,47 @@ const lineEventQueues = ((globalThis as any).__lineEventQueues ??= new Map<strin
 // 20 events per minute per LINE userId — prevents a single user from exhausting DB resources
 const _userEventLimiter = createRateLimiter(20, 60 * 1000);
 
+function rebookCtaFlex(params: { serviceId: number; staffId: number | null; serviceName: string; staffName: string }) {
+  const { serviceId, staffId, serviceName, staffName } = params;
+  const stf = staffId ?? 0;
+  return {
+    type: "flex" as const,
+    altText: `อยากจอง ${serviceName} อีกไหมคะ?`,
+    contents: {
+      type: "bubble",
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        paddingAll: "16px",
+        contents: [
+          { type: "text", text: "อยากจองใหม่ไหมคะ?", weight: "bold", size: "md" },
+          { type: "text", text: `${serviceName} · ${staffName}`, size: "sm", color: "#64748b", wrap: true },
+        ],
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        paddingAll: "16px",
+        contents: [
+          {
+            type: "button",
+            style: "primary",
+            color: "#06c755",
+            action: { type: "postback", label: "📅 จองใหม่ (บริการเดิม)", data: `action=book_stf&svc=${serviceId}&id=${stf}` },
+          },
+          {
+            type: "button",
+            style: "secondary",
+            action: { type: "postback", label: "🔍 เลือกบริการอื่น", data: "action=book" },
+          },
+        ],
+      },
+    },
+  };
+}
+
 const ADMIN_RECOVERY_ACTIONS: Record<string, string> = {
   adm_menu: "หน้าแรกแอดมิน",
   adm_setup: "เมนูตั้งค่าร้าน",
@@ -598,9 +639,49 @@ async function handlePostback(ev: any, customer: Customer) {
   }
   if (action === "cancel_booking") {
     const id = Number(data.get("id"));
-    if (id) await cancelBookingByCustomer(id, customer.id);
-    const list = await fetchMyBookings(customer.id);
-    return replyMessage(rt, [textMessage("ยกเลิกคิวเรียบร้อย ✅"), myBookingsMessage(list)]);
+    let rebookCtx: { serviceId: number; staffId: number | null; serviceName: string; staffName: string } | null = null;
+    if (id) {
+      // Load context before cancelling so we can offer a rebook CTA for the same setup.
+      const { data: prev } = await db
+        .from("bookings")
+        .select("service_id, staff_id, service:services(name), staff:staff(nickname, name)")
+        .eq("id", id)
+        .eq("customer_id", customer.id)
+        .maybeSingle();
+      if (prev) {
+        rebookCtx = {
+          serviceId: prev.service_id,
+          staffId: prev.staff_id,
+          serviceName: (prev.service as any)?.name ?? "บริการ",
+          staffName: (prev.staff as any)?.nickname ?? (prev.staff as any)?.name ?? "ช่างคนไหนก็ได้",
+        };
+      }
+      await cancelBookingByCustomer(id, customer.id);
+    }
+    const messages: any[] = [textMessage("ยกเลิกคิวเรียบร้อย ✅")];
+    if (rebookCtx) {
+      messages.push(rebookCtaFlex(rebookCtx));
+    }
+    return replyMessage(rt, messages);
+  }
+
+  // ── Customer confirms attendance from 2h reminder Flex ──
+  if (action === "confirm_attendance") {
+    const id = Number(data.get("id"));
+    if (!id) return replyMessage(rt, [textMessage("ไม่พบข้อมูลคิว")]);
+    const { data: booking } = await db
+      .from("bookings")
+      .select("id, status")
+      .eq("id", id)
+      .eq("customer_id", customer.id)
+      .maybeSingle();
+    if (!booking) return replyMessage(rt, [textMessage("ไม่พบคิวนี้")]);
+    if (booking.status === "cancelled" || booking.status === "no_show") {
+      return replyMessage(rt, [textMessage("คิวนี้ถูกยกเลิกไปแล้ว")]);
+    }
+    // Mark a lightweight confirmation; reuse reminded_2h_at if not yet stamped
+    await db.from("bookings").update({ status: "confirmed" }).eq("id", id);
+    return replyMessage(rt, [textMessage("ขอบคุณค่ะ 🙏 ร้านรับทราบแล้ว เจอกันตามนัดนะคะ ✨")]);
   }
 
   // ── Reschedule: open LIFF reschedule page with booking info ──
@@ -900,6 +981,26 @@ async function handleMessage(ev: any, customer: Customer) {
         { type: "button", style: "primary", color: "#06c755", margin: "md", action: { type: "uri", label: "🔍 ดูบริการ/ราคา", uri: `https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID ?? ""}/services` } }
       ]}}
     }]);
+  }
+
+  // ── FAQ: Shop hours ──
+  if (/(?:เปิด(?:กี่โมง|ตอน[กก]ี่|วันไหน)|ปิดกี่โมง|เวลาทำการ|เวลาเปิดปิด|opening hours|hours)/i.test(text)) {
+    const [shopRes, hoursRes] = await Promise.all([
+      db.from("shops").select("name, phone, address").eq("id", SHOP_ID).maybeSingle(),
+      db.from("working_hours").select("day_of_week, open_time, close_time").eq("shop_id", SHOP_ID).is("staff_id", null).order("day_of_week"),
+    ]);
+    const days = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+    const lines = (hoursRes.data ?? []).map((h: any) => {
+      const open = String(h.open_time).slice(0, 5);
+      const close = String(h.close_time).slice(0, 5);
+      return `วัน${days[h.day_of_week]}. ${open}-${close}`;
+    });
+    const body = lines.length
+      ? lines.join("\n")
+      : "ยังไม่ได้ตั้งเวลาทำการในระบบ";
+    const shopName = shopRes.data?.name ?? "ร้าน";
+    const phone = shopRes.data?.phone ? `\n📞 ${shopRes.data.phone}` : "";
+    return replyMessage(rt, [textMessage(`⏰ เวลาทำการ ${shopName}\n${body}${phone}`)]);
   }
 
   // ── Human handoff intent (before AI fallback) ──
@@ -1372,6 +1473,7 @@ async function adminSetBookingStatus(id: number, newStatus: "confirmed" | "compl
       updates.points_earned = earned;
       await db.from("customers").update({
         points: (current.customer?.points ?? 0) + earned,
+        lifetime_points: ((current.customer as any)?.lifetime_points ?? 0) + earned,
         visit_count: (current.customer?.visit_count ?? 0) + 1
       }).eq("id", current.customer_id);
     }

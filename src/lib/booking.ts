@@ -146,6 +146,61 @@ function isTimeOff(
  * This matches the product direction: customers don't pick a 15-min slot,
  * they pick an hour bucket ("10 โมงว่าง / 11 โมงไม่ว่าง").
  */
+/**
+ * Find free slots on nearby dates when the requested date is full / inconvenient.
+ * Searches up to `daysAhead` forward, returning the first slot (by time) on each
+ * day that has availability.
+ */
+export async function nearbySlotSuggestions(args: {
+  fromDateYmd: string;
+  serviceId: number;
+  staffId?: number | null;
+  daysAhead?: number;
+  maxResults?: number;
+}): Promise<Array<{ dateYmd: string; slot: Slot }>> {
+  const daysAhead = args.daysAhead ?? 7;
+  const maxResults = args.maxResults ?? 3;
+  const [y, m, d] = args.fromDateYmd.split("-").map(Number);
+  const out: Array<{ dateYmd: string; slot: Slot }> = [];
+  for (let offset = 1; offset <= daysAhead && out.length < maxResults; offset++) {
+    const next = new Date(Date.UTC(y, m - 1, d + offset));
+    const ymd = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}-${String(next.getUTCDate()).padStart(2, "0")}`;
+    const slots = await availableSlots({ dateYmd: ymd, serviceId: args.serviceId, staffId: args.staffId });
+    if (slots.length > 0) {
+      out.push({ dateYmd: ymd, slot: slots[0] });
+    }
+  }
+  return out;
+}
+
+/**
+ * Compute popularity score per hour-of-day from historical bookings (last N days).
+ * Returns a map {0..23 → count}. Used to highlight "popular times" on date picker.
+ */
+export async function popularTimesByHour(args: {
+  serviceId?: number | null;
+  lookbackDays?: number;
+}): Promise<Record<number, number>> {
+  const db = supabaseAdmin();
+  const lookback = args.lookbackDays ?? 60;
+  const since = new Date(Date.now() - lookback * 86400_000).toISOString();
+  let q = db
+    .from("bookings")
+    .select("starts_at, service_id")
+    .eq("shop_id", SHOP_ID)
+    .in("status", ["confirmed", "completed"])
+    .gte("starts_at", since);
+  if (args.serviceId) q = q.eq("service_id", args.serviceId);
+  const { data } = await q;
+  const counts: Record<number, number> = {};
+  for (const r of data ?? []) {
+    const zoned = toZonedTime(new Date(r.starts_at), TZ);
+    const h = zoned.getHours();
+    counts[h] = (counts[h] ?? 0) + 1;
+  }
+  return counts;
+}
+
 export type HourBucket = {
   hour: number;          // 0-23
   label: string;         // "10:00"

@@ -38,6 +38,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       .from("customers")
       .update({
         points: (current.customer?.points ?? 0) + earned,
+        lifetime_points: ((current.customer as any)?.lifetime_points ?? 0) + earned,
         visit_count: (current.customer?.visit_count ?? 0) + 1
       })
       .eq("id", current.customer_id);

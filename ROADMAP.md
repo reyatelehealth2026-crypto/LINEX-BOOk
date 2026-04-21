@@ -25,25 +25,27 @@
 > **เป้าหมาย**: เพิ่ม Booking conversion rate + ลด No-show
 
 ### 1.1 Smart Reminders
-- [ ] Reminder ก่อนนัด 24h → LINE Flex Message
-- [ ] Reminder 2h ก่อนนัด พร้อมปุ่ม Confirm/ยกเลิก
-- [ ] รีไมนเดอร์หลังยกเลิก → Rebook CTA อัตโนมัติ
+- [x] Reminder ก่อนนัด 24h **Flex** พร้อมปุ่ม confirm/reschedule/cancel — `reminder24hFlex`
+- [x] Reminder 2h พร้อมปุ่ม Confirm/ยกเลิก (Flex) — `reminder2hFlex`
+- [x] Reminder ก่อนนัด 1h (text)
+- [x] Rebook CTA หลังยกเลิก (flex ปุ่ม "จองใหม่ บริการเดิม") — `rebookCtaFlex`
 
 ### 1.2 Deposit & No-Show Prevention
-- [ ] ระบบมัดจำ (PromptPay QR / LINE Pay) เพื่อ confirm slot
-- [ ] บล็อกลูกค้า no-show เกิน 2 ครั้ง (flag ใน DB)
-- [ ] Auto-charge มัดจำเมื่อยกเลิกช้ากว่า policy
+- [ ] **Defer** ระบบมัดจำ PromptPay QR / LINE Pay (ต้องมี merchant account)
+- [x] บล็อกลูกค้า no-show เกิน 2 ครั้ง (auto-block 30 วัน) — migration 007 + trigger `bump_no_show_counter`
+- [ ] **Defer** Auto-charge มัดจำ (ขึ้นกับ payment 3.x)
 
 ### 1.3 Smart Booking Suggestions
-- [ ] แนะนำ slot ที่ว่าง "ใกล้เคียง" เมื่อ slot ที่ต้องการเต็ม
-- [ ] แสดง "Popular times" บน date picker
-- [ ] รองรับ Recurring booking (จอง "ทุกอาทิตย์" ได้)
+- [x] แนะนำ slot ว่างใกล้เคียง เมื่อ slot เต็ม — `nearbySlotSuggestions` + `/api/bookings/slots?mode=nearby`
+- [x] "Popular times" API (histogram) — `popularTimesByHour` + `/api/bookings/slots?mode=popular`
+- [ ] Recurring booking (จอง "ทุกอาทิตย์") — **backlog**
 
 ### 1.4 Review & Social Proof
-- [ ] หน้า Review post-service (star + text)
-- [ ] แสดง reviews บนหน้า Services
-- [ ] Export reviews → Google My Business (manual guide)
-- [ ] Admin: reply to reviews
+- [x] หน้า Review post-service (star + text) — `/liff/review`
+- [x] Review request push หลังเสร็จบริการ 24h — cron pass 3
+- [x] แสดง avg rating + count บนหน้า Services — `/api/reviews/summary`
+- [x] Admin reply to reviews — `PATCH /api/reviews` + column `reply/replied_at`
+- [ ] Export reviews → Google My Business (manual guide) — **docs task**
 
 ---
 
@@ -51,27 +53,30 @@
 > **เป้าหมาย**: เพิ่ม Customer LTV + Repeat visits
 
 ### 2.1 Points 2.0
-- [ ] Points tiers (Bronze / Silver / Gold / Platinum)
-- [ ] ระบบ Redeem: แลกส่วนลด, บริการฟรี
-- [ ] Birthday bonus points อัตโนมัติ
-- [ ] Referral program (เชิญเพื่อน รับ 100 แต้ม)
-- [ ] Points expiry policy ตั้งค่าได้
+- [x] Points tiers (Bronze / Silver / Gold / Platinum) — `@/lib/loyalty` `tierFor/tierProgress`
+- [x] Redeem: แลกแต้มเป็น coupon ส่วนลด — `redeemPoints` + `POST /api/loyalty`
+- [x] Birthday bonus points อัตโนมัติ — cron pass 4 (idempotent per day)
+- [x] Referral program — `referral_code` + `applyReferral`, bonus ทั้งสองฝั่ง
+- [x] `lifetime_points` tracking สำหรับ tier computation
+- [ ] Points expiry policy cron (DB column พร้อมแล้วใน migration 008)
 
 ### 2.2 Promotions Engine
-- [ ] สร้าง Coupon / Promo code ใน admin
-- [ ] Flash sale: ราคาพิเศษช่วงเวลา (off-peak)
-- [ ] Bundle packages (เช่น 10 ครั้งราคาพิเศษ)
-- [ ] แจก coupon ผ่าน LINE Broadcast อัตโนมัติ
+- [x] Coupon / Promo code engine — table `coupons` + `/api/coupons` (CRUD + validate) + wire เข้า POST /api/bookings (`couponCode`)
+- [x] Per-customer limit + max_uses + expiry + service-scope support
+- [ ] Flash sale (time-window coupons) — **schema รองรับ starts_at/expires_at แล้ว, เหลือแค่ UI admin**
+- [ ] Bundle packages — **Defer** (ขึ้นกับ 3.3 Package)
+- [ ] Broadcast coupon ผ่าน LINE — **backlog** (รอ Messaging API push broadcast)
 
 ### 2.3 Customer Segments & CRM
-- [ ] Segment ลูกค้า: New / Returning / At-risk / VIP
-- [ ] Automated win-back campaign (ไม่มา > 60 วัน → ส่ง offer)
-- [ ] Customer lifetime value (LTV) report
-- [ ] Export CSV สำหรับ LINE Official Account broadcast
+- [x] Segment: New / Returning / At-risk / VIP — `customerSegments` + `/api/admin/analytics?mode=segments`
+- [x] LTV report (avg LTV รวมใน KPI) — `shopKPIs.avg_ltv`
+- [ ] Automated win-back campaign ตาม at-risk segment — **backlog** (ใช้ร่วม broadcast)
+- [ ] Export CSV สำหรับ broadcast — **backlog**
 
 ---
 
-## Phase 3 — Payments & Revenue (3–5 เดือน)
+## Phase 3 — Payments & Revenue (3–5 เดือน) — **Defer ทั้ง phase**
+> **สถานะ**: รอ merchant/bank integration (LINE Pay, PromptPay). ทำ code ล่วงหน้าไม่ได้ — ต้องเปิดบัญชีกับ provider ก่อน
 > **เป้าหมาย**: ปิด Revenue loop ใน LINE ไม่ต้องออก app
 
 ### 3.1 LINE Pay Integration
@@ -95,25 +100,24 @@
 > **เป้าหมาย**: ระบบ "คิดแทน" ทั้งร้านและลูกค้า — จุดที่แข่งขันได้สูงสุด
 
 ### 4.1 AI Receptionist (LINE Chat)
-- [ ] Chatbot ตอบ: "มีคิวว่างไหมพรุ่งนี้?" → จองได้เลยใน chat
-- [ ] รองรับภาษาไทยธรรมชาติ (NLP via GPT-4o / Claude)
-- [ ] Fallback → human handoff เมื่อ bot ไม่เข้าใจ
-- [ ] Intent: จอง, ยกเลิก, ถามราคา, ถามเวลาทำการ
+- [x] Chatbot ตอบ: "มีคิวว่างไหมพรุ่งนี้?" → จองได้เลยใน chat — `parseBookingIntent` + `handleAIBooking`
+- [x] รองรับภาษาไทยธรรมชาติ (Z.AI GLM + Thai-NLP) — `@/lib/zai`, `@/lib/thai-nlp`
+- [x] Fallback → human handoff เมื่อ bot ไม่เข้าใจ — `@/lib/handoff` + migration 005
+- [x] Intent: จอง, ยกเลิก, ถามราคา, ถามเวลาทำการ
+- [x] Admin UI: ตั้งค่า bot name / temperature / custom rules — `/admin/ai-settings`
 
 ### 4.2 Demand Forecasting
-- [ ] Predict busy days จาก historical data
-- [ ] แนะนำ admin เปิด/ปิด time slots ล่วงหน้า
-- [ ] Alert: "สัปดาห์หน้าคาดว่า 85% full"
+- [x] Predict busy days (avg per weekday จาก 60-day history) — `demandForecast` + `/api/admin/analytics?mode=forecast`
+- [ ] UI: หน้า admin แสดงพยากรณ์ + แนะนำเปิดปิด slot — **backlog** (มี API แล้ว)
+- [ ] Alert push ไปหา admin เมื่อคาดว่า full — **backlog**
 
-### 4.3 Dynamic Pricing (Revenue Management)
-- [ ] ราคาสูงขึ้น off-peak / peak อัตโนมัติ
-- [ ] Early-bird discount (จองล่วงหน้า > 7 วัน)
-- [ ] Last-minute discount (จองวันเดียวกัน)
+### 4.3 Dynamic Pricing (Revenue Management) — **Defer** (รอ Phase 3 payments)
+- [ ] ราคาสูงขึ้น off-peak / peak
+- [ ] Early-bird / Last-minute discount
 
 ### 4.4 Smart Staff Assignment
-- [ ] Auto-assign ช่างที่มีภาระงานน้อยสุด
-- [ ] แนะนำช่างตามประวัติที่ลูกค้าเคยจอง
-- [ ] Work-life balance: กระจายงานให้สม่ำเสมอ
+- [x] Auto-assign ช่าง least-busy เมื่อลูกค้าไม่เจาะจง — `suggestLeastBusyStaff` + integrated in `POST /api/bookings`
+- [ ] แนะนำช่างตามประวัติลูกค้า — **backlog** (ต้องดู historical per customer)
 
 ### 4.5 Predictive Churn
 - [ ] คะแนน churn risk ต่อลูกค้า
@@ -122,7 +126,8 @@
 
 ---
 
-## Phase 5 — Multi-Vendor SaaS (6–12 เดือน)
+## Phase 5 — Multi-Vendor SaaS (6–12 เดือน) — **Defer ทั้ง phase**
+> **สถานะ**: ต้อง redesign infra (multi-tenant), domain/subdomain routing, billing system — แยกเป็น project หลังได้ product-market fit
 > **เป้าหมาย**: เปลี่ยน LineBook จาก single-shop เป็น SaaS Platform
 
 ### 5.1 Multi-Shop Architecture
@@ -150,7 +155,7 @@
 
 ---
 
-## Phase 6 — Staff & Operations Excellence (8–14 เดือน)
+## Phase 6 — Staff & Operations Excellence (8–14 เดือน) — **บางส่วนเริ่มได้**
 > **เป้าหมาย**: เครื่องมือหลังบ้านครบ ลด admin overhead 70%
 
 ### 6.1 Staff App (LIFF)
@@ -170,15 +175,16 @@
 - [ ] Cost per service (margin report)
 
 ### 6.4 Advanced Analytics Dashboard
-- [ ] Revenue by: service / staff / day / week / month
-- [ ] Customer acquisition cost + LTV ratio
-- [ ] Capacity utilization heat map
-- [ ] Churn rate trend
-- [ ] NPS score tracking
+- [x] Revenue by service / staff / day-of-week — `/api/admin/analytics?mode=kpi` (by_service, by_staff, by_day_of_week)
+- [x] LTV + retention rate + no-show rate — `shopKPIs`
+- [ ] UI dashboard page — **backlog** (API พร้อมแล้ว ต่อ UI ได้ทันที)
+- [ ] NPS score tracking — **backlog** (ใช้ร่วมกับ reviews rating)
+- [ ] Capacity utilization heat map — **backlog**
 
 ---
 
-## Phase 7 — Ecosystem & Growth (12–24 เดือน)
+## Phase 7 — Ecosystem & Growth (12–24 เดือน) — **Defer ทั้ง phase**
+> **สถานะ**: ขึ้นอยู่กับ business deal + marketplace product — ยังไม่ใช่ MVP code
 > **เป้าหมาย**: สร้าง moat ที่คู่แข่งลอกไม่ได้
 
 ### 7.1 LineBook Marketplace App

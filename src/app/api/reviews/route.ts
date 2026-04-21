@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -150,4 +151,29 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ review }, { status: 201 });
+}
+
+/**
+ * PATCH /api/reviews
+ * Admin-only: reply to a review (stores into `reply` column + `replied_at`).
+ * Body: { id, reply }
+ */
+export async function PATCH(req: NextRequest) {
+  const identity = await verifyAdmin(req);
+  if (!identity) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  const { id, reply } = (await req.json()) ?? {};
+  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+  const db = supabaseAdmin();
+  const { data, error } = await db
+    .from("reviews")
+    .update({ reply: reply ?? null, replied_at: reply ? new Date().toISOString() : null })
+    .eq("id", Number(id))
+    .eq("shop_id", SHOP_ID)
+    .select("*")
+    .single();
+  if (error) return tableMissingResponse(error) ?? NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ review: data });
 }
