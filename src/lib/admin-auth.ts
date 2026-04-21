@@ -1,50 +1,140 @@
-// Dual-mode admin authentication:
-//   1) `x-admin-password` header matches ADMIN_PASSWORD (desktop / legacy /admin).
-//   2) `x-line-id-token` header is a valid LINE idToken whose `sub` is listed
-//      in `ADMIN_LINE_IDS` env (comma-separated).
+// Per-shop admin authentication (SaaS multi-tenant).
 //
-// LINE idToken is obtained on the client via LIFF's `liff.getIDToken()` and
-// verified server-side against https://api.line.me/oauth2/v2.1/verify.
+// Two modes, both scoped to the current shop (resolved from subdomain via
+// middleware → x-shop-slug header, or from the x-shop-id header):
 //
-// The LIFF channel client_id is the numeric prefix of NEXT_PUBLIC_LIFF_ID,
-// e.g. "1234567890-abcdefgh" → client_id = "1234567890".
+//   1) `x-admin-password` header matches admin_users.password_hash for the
+//      current shop (bcrypt). Per-shop owners/managers create this on signup.
+//   2) `x-line-id-token` header is a valid LINE idToken whose `sub` matches
+//      admin_users.line_user_id for the current shop.
+//
+// For backwards compatibility with the single-tenant MVP, if the shop has
+// no admin_users rows yet and the ADMIN_PASSWORD / ADMIN_LINE_IDS env vars
+// are set, those are used as fallback.
 
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
+import { supabaseAdmin, getCurrentShop } from "@/lib/supabase";
 
-// 5 wrong-password attempts per 15 minutes per IP
 const _pwLimiter = createRateLimiter(5, 15 * 60 * 1000);
 
 export type AdminIdentity = {
   mode: "password" | "line";
+  shopId: number;
+  adminUserId?: number;
   lineUserId?: string;
+  email?: string;
   displayName?: string;
+  role?: "owner" | "manager" | "staff";
 };
 
+/**
+ * Hash a password for storage in admin_users.password_hash.
+ * Uses scrypt (available in node's crypto) — avoids adding bcrypt dependency.
+ * Format: `scrypt$<salt-hex>$<hash-hex>`
+ */
+export function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16);
+  const hash = crypto.scryptSync(password, salt, 64);
+  return `scrypt$${salt.toString("hex")}$${hash.toString("hex")}`;
+}
+
+export function verifyPassword(password: string, stored: string): boolean {
+  try {
+    const [algo, saltHex, hashHex] = stored.split("$");
+    if (algo !== "scrypt" || !saltHex || !hashHex) return false;
+    const salt = Buffer.from(saltHex, "hex");
+    const expected = Buffer.from(hashHex, "hex");
+    const computed = crypto.scryptSync(password, salt, expected.length);
+    return crypto.timingSafeEqual(expected, computed);
+  } catch {
+    return false;
+  }
+}
+
 export async function verifyAdmin(req: NextRequest): Promise<AdminIdentity | null> {
-  // ── 1) Password ──
+  let shopId: number;
+  try {
+    const shop = await getCurrentShop();
+    shopId = shop.id;
+  } catch {
+    return null;
+  }
+
+  const db = supabaseAdmin();
+
+  // ── 1) Password mode ──
   const pw = req.headers.get("x-admin-password");
-  if (pw && process.env.ADMIN_PASSWORD) {
+  if (pw) {
     const ip = getClientIp(req);
     const { allowed } = _pwLimiter.check(ip);
     if (!allowed) return null;
-    if (pw === process.env.ADMIN_PASSWORD) {
+
+    // Try DB-scoped admin_users first (per-shop owner/manager password).
+    const { data: users } = await db
+      .from("admin_users")
+      .select("id, email, password_hash, role, line_user_id")
+      .eq("shop_id", shopId)
+      .eq("active", true)
+      .not("password_hash", "is", null);
+    if (users && users.length > 0) {
+      for (const u of users) {
+        if (u.password_hash && verifyPassword(pw, u.password_hash)) {
+          _pwLimiter.reset(ip);
+          await db
+            .from("admin_users")
+            .update({ last_login_at: new Date().toISOString() })
+            .eq("id", u.id);
+          return {
+            mode: "password",
+            shopId,
+            adminUserId: u.id,
+            email: u.email ?? undefined,
+            role: u.role as any,
+          };
+        }
+      }
+    } else if (process.env.ADMIN_PASSWORD && pw === process.env.ADMIN_PASSWORD) {
+      // Legacy single-tenant fallback.
       _pwLimiter.reset(ip);
-      return { mode: "password" };
+      return { mode: "password", shopId };
     }
   }
 
-  // ── 2) LINE idToken ──
+  // ── 2) LINE idToken mode ──
   const idToken = req.headers.get("x-line-id-token");
   if (idToken) {
-    const identity = await verifyLineIdToken(idToken);
+    const shop = await getCurrentShop();
+    const identity = await verifyLineIdToken(idToken, shop.liff_id ?? process.env.NEXT_PUBLIC_LIFF_ID ?? "");
     if (!identity) return null;
-    const adminIds = (process.env.ADMIN_LINE_IDS ?? process.env.ADMIN_LINE_USER_IDS ?? "")
+
+    const { data: admin } = await db
+      .from("admin_users")
+      .select("id, line_user_id, display_name, role")
+      .eq("shop_id", shopId)
+      .eq("line_user_id", identity.sub)
+      .eq("active", true)
+      .maybeSingle();
+    if (admin) {
+      await db.from("admin_users").update({ last_login_at: new Date().toISOString() }).eq("id", admin.id);
+      return {
+        mode: "line",
+        shopId,
+        adminUserId: admin.id,
+        lineUserId: identity.sub,
+        displayName: admin.display_name ?? identity.name,
+        role: admin.role as any,
+      };
+    }
+
+    // Legacy fallback
+    const legacy = (process.env.ADMIN_LINE_IDS ?? process.env.ADMIN_LINE_USER_IDS ?? "")
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    if (adminIds.length > 0 && adminIds.includes(identity.sub)) {
-      return { mode: "line", lineUserId: identity.sub, displayName: identity.name };
+    if (legacy.includes(identity.sub)) {
+      return { mode: "line", shopId, lineUserId: identity.sub, displayName: identity.name };
     }
   }
 
@@ -55,18 +145,14 @@ export function unauthorized(extra?: Record<string, unknown>) {
   return NextResponse.json({ error: "unauthorized", ...(extra ?? {}) }, { status: 401 });
 }
 
-/** Verify LINE ID token via LINE OAuth2 endpoint. Returns payload on success. */
-async function verifyLineIdToken(idToken: string): Promise<{ sub: string; name?: string } | null> {
+async function verifyLineIdToken(idToken: string, liffId: string): Promise<{ sub: string; name?: string } | null> {
   try {
-    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || "";
     const clientId = liffId.split("-")[0];
     if (!clientId) return null;
-
     const res = await fetch("https://api.line.me/oauth2/v2.1/verify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ id_token: idToken, client_id: clientId }),
-      // Never cache
       cache: "no-store",
       signal: AbortSignal.timeout(5000),
     });

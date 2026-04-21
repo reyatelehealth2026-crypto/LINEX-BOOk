@@ -23,7 +23,7 @@ const Ctx = createContext<LiffCtx>({
   login: () => {}, logout: () => {}, closeWindow: () => {}
 });
 
-export function LiffProvider({ children }: { children: ReactNode }) {
+export function LiffProvider({ children, liffId: liffIdProp }: { children: ReactNode; liffId?: string | null }) {
   const [ready, setReady] = useState(false);
   const [profile, setProfile] = useState<Profile>(null);
   const [loggedIn, setLoggedIn] = useState(false);
@@ -35,8 +35,10 @@ export function LiffProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     (async () => {
       try {
-        const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
-        if (!liffId) throw new Error("NEXT_PUBLIC_LIFF_ID is not set");
+        // Prefer the prop (per-tenant, server-injected via subdomain → shop.liff_id).
+        // Fall back to the global env for backwards-compatible single-tenant mode.
+        const liffId = liffIdProp || process.env.NEXT_PUBLIC_LIFF_ID;
+        if (!liffId) throw new Error("LIFF ID not configured for this shop");
         const mod = await import("@line/liff");
         const L = mod.default;
         await L.init({ liffId });
@@ -56,7 +58,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
       }
     })();
     return () => { mounted = false; };
-  }, []);
+  }, [liffIdProp]);
 
   const value: LiffCtx = {
     ready,
