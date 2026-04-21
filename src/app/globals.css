@@ -4,10 +4,15 @@
 @tailwind utilities;
 
 /* ── LINEX Design System — CSS Custom Properties ──────── */
+/* Defaults below match the `linex` theme preset in src/lib/themes.ts.
+ * `ThemeProvider` overrides these at runtime per active theme. */
 :root {
   --primary: #6d3bff;
   --primary-light: #b89cff;
   --primary-dark: #4d2b73;
+  /* Foreground color for text on `--primary` bg (button labels, etc.).
+   * Fitness theme overrides to #171717 since yellow + white fails WCAG. */
+  --on-primary: #ffffff;
   --secondary: #ff9b7a;
   --accent: #d4c2ff;
   --surface: #fcfaff;
@@ -19,6 +24,23 @@
   --shadow-lift: 0 10px 30px -12px rgb(15 23 42 / 0.18), 0 4px 12px -4px rgb(15 23 42 / 0.08);
   --shadow-glow: 0 10px 40px -10px rgba(var(--primary-rgb), 0.45);
   --shadow-panel: 0 24px 60px -24px rgb(15 23 42 / 0.35), 0 12px 28px -14px rgb(15 23 42 / 0.18);
+}
+
+/* Smooth color transition when theme swaps at runtime. Disable for users who
+ * prefer reduced motion. Scoped so it doesn't fight page-level transitions. */
+@media (prefers-reduced-motion: no-preference) {
+  body,
+  [data-theme] .btn,
+  [data-theme] .card,
+  [data-theme] .input,
+  [data-theme] button,
+  [data-theme] [style*="--primary"] {
+    transition:
+      background-color 300ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 300ms ease,
+      color 250ms ease,
+      box-shadow 300ms ease;
+  }
 }
 
 html, body { height: 100%; }
