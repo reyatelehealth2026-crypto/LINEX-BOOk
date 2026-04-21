@@ -43,28 +43,41 @@ export default function ProfilePage() {
     if (r.ok) setCustomer(d.customer);
   }
 
-  if (loading) return <div className="text-center text-neutral-500 py-8">{t("common.loading")}</div>;
+  if (loading) return (
+    <div className="space-y-4 animate-fade-up">
+      <div className="skeleton h-8 w-40 rounded-xl" />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="skeleton h-20 rounded-2xl" />
+        <div className="skeleton h-20 rounded-2xl" />
+      </div>
+      <div className="skeleton h-48 rounded-2xl" />
+    </div>
+  );
 
   const isRegistered = !!customer?.registered_at;
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold">{t("profile.title")}</h1>
+    <div className="space-y-4 animate-fade-up">
+      <h1 className="h-display text-2xl">{t("profile.title")}</h1>
 
       {isRegistered && customer && (
         <div className="grid grid-cols-2 gap-3">
-          <div className="card p-4 flex items-center gap-3">
-            <Star className="text-amber-500" />
+          <div className="card card-hover p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
+              <Star size={18} />
+            </div>
             <div>
-              <div className="text-xs text-neutral-500">{t("profile.points")}</div>
-              <div className="text-xl font-bold">{customer.points}</div>
+              <div className="text-xs text-ink-500">{t("profile.points")}</div>
+              <div className="text-xl font-bold text-ink-900">{customer.points}</div>
             </div>
           </div>
-          <div className="card p-4 flex items-center gap-3">
-            <CalendarCheck2 className="text-brand-500" />
+          <div className="card card-hover p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center shrink-0">
+              <CalendarCheck2 size={18} />
+            </div>
             <div>
-              <div className="text-xs text-neutral-500">{t("profile.visit_count")}</div>
-              <div className="text-xl font-bold">{customer.visit_count}</div>
+              <div className="text-xs text-ink-500">{t("profile.visit_count")}</div>
+              <div className="text-xl font-bold text-ink-900">{customer.visit_count}</div>
             </div>
           </div>
         </div>
@@ -87,7 +100,7 @@ export default function ProfilePage() {
         <button disabled={saving || !fullName || !phone} onClick={save} className="btn-primary w-full">
           {saving ? t("common.loading") : (isRegistered ? t("common.save") : t("profile.register_submit"))}
         </button>
-        {!isRegistered && <p className="text-xs text-neutral-500">ลงทะเบียนครั้งแรกรับฟรี 50 แต้ม 🎉</p>}
+        {!isRegistered && <p className="text-xs text-ink-500">ลงทะเบียนครั้งแรกรับฟรี 50 แต้ม 🎉</p>}
       </div>
     </div>
   );

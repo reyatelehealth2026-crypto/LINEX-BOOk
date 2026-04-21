@@ -8,9 +8,15 @@ type Dict = typeof th;
 
 const dicts: Record<Lang, Dict> = { th, en: en as Dict };
 
-const Ctx = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (path: string) => string }>({
+const Ctx = createContext<{
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  toggleLang: () => void;
+  t: (path: string) => string;
+}>({
   lang: "th",
   setLang: () => {},
+  toggleLang: () => {},
   t: (p) => p
 });
 
@@ -18,13 +24,20 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("th");
 
   useEffect(() => {
-    const saved = (typeof window !== "undefined" && (localStorage.getItem("lang") as Lang)) || null;
+    const saved = (typeof window !== "undefined" && (localStorage.getItem("linex-lang") as Lang)) || null;
     if (saved === "th" || saved === "en") setLangState(saved);
   }, []);
 
   function setLang(l: Lang) {
     setLangState(l);
-    if (typeof window !== "undefined") localStorage.setItem("lang", l);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("linex-lang", l);
+      document.documentElement.lang = l;
+    }
+  }
+
+  function toggleLang() {
+    setLang(lang === "th" ? "en" : "th");
   }
 
   function t(path: string): string {
@@ -37,7 +50,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     return typeof cur === "string" ? cur : path;
   }
 
-  return <Ctx.Provider value={{ lang, setLang, t }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ lang, setLang, toggleLang, t }}>{children}</Ctx.Provider>;
 }
 
 export function useI18n() {

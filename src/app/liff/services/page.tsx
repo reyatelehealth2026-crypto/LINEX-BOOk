@@ -12,20 +12,29 @@ export default function ServicesPage() {
     fetch("/api/catalog").then((r) => r.json()).then((d) => setList(d.services ?? []));
   }, []);
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold">บริการ / ราคา</h1>
-      <div className="grid gap-2">
-        {list.map((s) => (
-          <div key={s.id} className="card p-4 flex items-center justify-between">
+    <div className="space-y-4 animate-fade-up">
+      <div>
+        <div className="eyebrow mb-0.5">บริการทั้งหมด</div>
+        <h1 className="h-display text-2xl">บริการ / ราคา</h1>
+      </div>
+      <div className="grid gap-2.5">
+        {list.length === 0 ? (
+          <>
+            <div className="skeleton h-16 rounded-2xl" />
+            <div className="skeleton h-16 rounded-2xl" />
+            <div className="skeleton h-16 rounded-2xl" />
+          </>
+        ) : list.map((s) => (
+          <div key={s.id} className="card card-hover p-4 flex items-center justify-between">
             <div>
-              <div className="font-semibold">{lang === "en" && s.name_en ? s.name_en : s.name}</div>
-              <div className="text-xs text-neutral-500">{s.duration_min} {t("common.minutes")}</div>
+              <div className="font-semibold text-ink-900">{lang === "en" && s.name_en ? s.name_en : s.name}</div>
+              <div className="text-xs text-ink-500 mt-0.5">{s.duration_min} {t("common.minutes")}</div>
             </div>
-            <div className="font-semibold text-brand-600">{baht(s.price)}</div>
+            <div className="font-bold text-linex-600">{baht(s.price)}</div>
           </div>
         ))}
       </div>
-      <Link href="/liff/booking" className="btn-primary w-full">{t("home.book_now")}</Link>
+      <Link href="/liff/booking" className="glow-btn w-full justify-center">{t("home.book_now")}</Link>
     </div>
   );
 }

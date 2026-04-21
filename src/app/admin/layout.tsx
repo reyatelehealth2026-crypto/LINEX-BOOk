@@ -70,10 +70,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!authed) {
     return (
       <main className="min-h-screen flex items-center justify-center p-6 bg-ink-50 relative">
-        <div className="absolute inset-x-0 top-0 h-72 bg-brand-mesh opacity-60 pointer-events-none" />
-        <form onSubmit={login} className="card-glass p-7 w-full max-w-sm space-y-4 relative animate-fade-up">
+        <div className="absolute inset-0 mesh-bg opacity-70 pointer-events-none" />
+        <form onSubmit={login} className="linex-panel p-7 w-full max-w-sm space-y-4 relative animate-fade-up">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-ink-900 text-white flex items-center justify-center shadow-lift">
+            <div className="w-11 h-11 rounded-2xl bg-linex-600 text-white flex items-center justify-center shadow-linex-glow">
               <Lock size={20} />
             </div>
             <div>
@@ -95,7 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               autoFocus
             />
           </div>
-          <button className="btn-primary w-full">
+          <button className="glow-btn w-full justify-center">
             <ShieldCheck size={16} /> เข้าสู่ระบบ
           </button>
           <div className="text-[11px] text-ink-400 text-center pt-1">
@@ -110,7 +110,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <AdminContext.Provider value={{ pw }}>
       <div className="min-h-screen bg-ink-50 relative">
-        <div className="absolute inset-x-0 top-0 h-64 bg-brand-mesh opacity-40 pointer-events-none" />
+        <div className="absolute inset-x-0 top-0 h-64 mesh-bg opacity-40 pointer-events-none" />
 
         {/* ── Header (mobile + desktop) ───────────────────────── */}
         <header className="sticky top-0 z-30 bg-white/75 backdrop-blur-xl border-b border-white/50">
@@ -124,10 +124,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
 
             <Link href="/admin" className="flex items-center gap-2 font-bold shrink-0">
-              <span className="w-8 h-8 rounded-xl bg-ink-900 text-white flex items-center justify-center text-xs">
+              <span className="w-8 h-8 rounded-xl bg-linex-600 text-white flex items-center justify-center text-xs shadow-linex-glow">
                 🛠
               </span>
-              <span className="grad-text tracking-tight hidden sm:inline">LineBook Admin</span>
+              <span className="gradient-text tracking-tight hidden sm:inline">LineBook Admin</span>
             </Link>
 
             {/* Desktop nav */}
@@ -141,8 +141,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     href={item.href}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition ${
                       active
-                        ? "bg-ink-900 text-white shadow-lift"
-                        : "text-ink-600 hover:bg-ink-100 hover:text-ink-900"
+                        ? "bg-linex-600 text-white shadow-linex-glow"
+                        : "text-ink-600 hover:bg-linex-50 hover:text-linex-700"
                     }`}
                   >
                     <Icon size={14} />
@@ -159,7 +159,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 sessionStorage.removeItem("adminPw");
                 setAuthed(false);
               }}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl text-ink-600 hover:text-accent-rose hover:bg-accent-rose/10 transition"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl text-ink-500 hover:text-accent-rose hover:bg-accent-rose/10 transition"
               title="ออกจากระบบ"
             >
               <LogOut size={14} />
@@ -175,13 +175,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className="absolute inset-0 bg-ink-900/40 backdrop-blur-sm animate-fade-up"
               onClick={() => setDrawerOpen(false)}
             />
-            <aside className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-white shadow-lift p-4 flex flex-col animate-fade-up">
+            <aside className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-white/95 backdrop-blur-xl shadow-linex-panel p-4 flex flex-col animate-fade-up">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 font-bold">
-                  <span className="w-8 h-8 rounded-xl bg-ink-900 text-white flex items-center justify-center text-xs">
+                  <span className="w-8 h-8 rounded-xl bg-linex-600 text-white flex items-center justify-center text-xs">
                     🛠
                   </span>
-                  <span className="grad-text tracking-tight">Admin</span>
+                  <span className="gradient-text tracking-tight">Admin</span>
                 </div>
                 <button
                   onClick={() => setDrawerOpen(false)}
@@ -200,11 +200,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       href={item.href}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition ${
                         active
-                          ? "bg-ink-900 text-white shadow-soft"
-                          : "text-ink-700 hover:bg-ink-100"
+                          ? "bg-linex-600 text-white shadow-linex-glow"
+                          : "text-ink-700 hover:bg-linex-50 hover:text-linex-700"
                       }`}
                     >
-                      <Icon size={16} className={active ? "text-brand-400" : "text-ink-400"} />
+                      <Icon size={16} className={active ? "text-linex-200" : "text-ink-400"} />
                       {item.label}
                     </Link>
                   );

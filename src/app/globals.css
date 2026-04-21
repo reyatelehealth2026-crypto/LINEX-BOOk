@@ -1,7 +1,25 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── LINEX Design System — CSS Custom Properties ──────── */
+:root {
+  --primary: #6d3bff;
+  --primary-light: #b89cff;
+  --primary-dark: #4d2b73;
+  --secondary: #ff9b7a;
+  --accent: #d4c2ff;
+  --surface: #fcfaff;
+  --surface-dark: #171220;
+  --glow: 0 18px 50px -18px rgb(109 59 255 / 0.42);
+  --mesh: radial-gradient(at 18% 12%, rgba(109,59,255,0.22) 0, transparent 42%), radial-gradient(at 82% 8%, rgba(255,155,122,0.18) 0, transparent 38%), radial-gradient(at 76% 78%, rgba(184,156,255,0.18) 0, transparent 42%), linear-gradient(180deg, #fcfaff 0%, #f7f2ff 100%);
+  --primary-rgb: 109, 59, 255;
+  --shadow-soft: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px -1px rgb(15 23 42 / 0.06);
+  --shadow-lift: 0 10px 30px -12px rgb(15 23 42 / 0.18), 0 4px 12px -4px rgb(15 23 42 / 0.08);
+  --shadow-glow: 0 10px 40px -10px rgba(var(--primary-rgb), 0.45);
+  --shadow-panel: 0 24px 60px -24px rgb(15 23 42 / 0.35), 0 12px 28px -14px rgb(15 23 42 / 0.18);
+}
 
 html, body { height: 100%; }
 body {
@@ -9,6 +27,7 @@ body {
   font-feature-settings: "cv11", "ss01", "ss03";
   letter-spacing: -0.005em;
   background-image: radial-gradient(circle at top left, rgba(109,59,255,0.06), transparent 34%), radial-gradient(circle at top right, rgba(255,155,122,0.07), transparent 32%);
+  transition: background-color 500ms cubic-bezier(0.22, 1, 0.36, 1), color 300ms ease;
 }
 
 @layer components {
@@ -33,6 +52,23 @@ body {
 .h-display { @apply font-display font-extrabold tracking-tight text-ink-900; }
 .section-title { @apply text-[11px] font-bold uppercase tracking-[0.14em] text-ink-400; }
 .eyebrow { @apply text-[11px] font-bold uppercase tracking-[0.18em] text-brand-600; }
+
+/* ── DSB Merged — Dynamic CSS var utilities ─────────── */
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.mesh-bg { background: var(--mesh); }
+.card-hover { @apply transition-all duration-200; }
+.card-hover:hover { transform: translateY(-4px); box-shadow: var(--shadow-lift); }
+.glow-btn {
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  box-shadow: var(--shadow-glow);
+}
+.glow-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
 
 /* ── LINEX design language ───────────────────────────── */
 .linex-shell { @apply bg-linex-50 text-ink-900 bg-linex-mesh; }

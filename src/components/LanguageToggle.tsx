@@ -2,21 +2,19 @@
 import { useI18n } from "@/lib/i18n";
 
 export function LanguageToggle() {
-  const { lang, setLang } = useI18n();
+  const { lang, toggleLang } = useI18n();
   return (
-    <div className="inline-flex rounded-full bg-neutral-100 p-1 text-xs">
-      <button
-        onClick={() => setLang("th")}
-        className={`px-3 py-1 rounded-full ${lang === "th" ? "bg-white shadow-sm font-semibold" : "text-neutral-500"}`}
-      >
+    <button
+      onClick={toggleLang}
+      className="inline-flex rounded-full bg-ink-100 p-1 text-xs gap-0.5"
+      aria-label="Toggle language"
+    >
+      <span className={`px-3 py-1 rounded-full transition-all ${lang === "th" ? "bg-white shadow-sm font-semibold text-ink-900" : "text-ink-500"}`}>
         ไทย
-      </button>
-      <button
-        onClick={() => setLang("en")}
-        className={`px-3 py-1 rounded-full ${lang === "en" ? "bg-white shadow-sm font-semibold" : "text-neutral-500"}`}
-      >
+      </span>
+      <span className={`px-3 py-1 rounded-full transition-all ${lang === "en" ? "bg-white shadow-sm font-semibold text-ink-900" : "text-ink-500"}`}>
         EN
-      </button>
-    </div>
+      </span>
+    </button>
   );
 }

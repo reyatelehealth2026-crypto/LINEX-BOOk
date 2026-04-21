@@ -61,7 +61,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["'Inter'", "ui-sans-serif", "system-ui", "'Noto Sans Thai'", "'IBM Plex Sans Thai'", "sans-serif"],
-        display: ["'Inter'", "ui-sans-serif", "system-ui", "'Noto Sans Thai'", "sans-serif"]
+        display: ["'Inter'", "ui-sans-serif", "system-ui", "'Noto Sans Thai'", "sans-serif"],
+        mono: ["'JetBrains Mono'", "'Fira Code'", "ui-monospace", "monospace"]
       },
       borderRadius: {
         "4xl": "2rem",
@@ -94,15 +95,51 @@ const config: Config = {
         pulseSoft: {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.7" }
+        },
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" }
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" }
+        },
+        "caret-blink": {
+          "0%,70%,100%": { opacity: "1" },
+          "20%,50%": { opacity: "0" }
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-8px)" }
+        },
+        "float-slow": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-6px)" }
+        },
+        "gradient-shift": {
+          "0%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+          "100%": { backgroundPosition: "0% 50%" }
+        },
+        "pulse-glow": {
+          "0%, 100%": { boxShadow: "0 0 20px rgba(109,59,255,0.3)" },
+          "50%": { boxShadow: "0 0 40px rgba(109,59,255,0.6)" }
         }
       },
       animation: {
         "fade-up": "fade-up 380ms cubic-bezier(0.22, 1, 0.36, 1) both",
         shimmer: "shimmer 2.2s linear infinite",
-        "pulse-soft": "pulseSoft 2.4s ease-in-out infinite"
+        "pulse-soft": "pulseSoft 2.4s ease-in-out infinite",
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+        "caret-blink": "caret-blink 1.25s ease-out infinite",
+        float: "float 4s ease-in-out infinite",
+        "float-slow": "float-slow 5s ease-in-out infinite",
+        "gradient-shift": "gradient-shift 6s ease infinite",
+        "pulse-glow": "pulse-glow 3s ease-in-out infinite"
       }
     }
   },
-  plugins: []
+  plugins: [require("tailwindcss-animate")]
 };
 export default config;

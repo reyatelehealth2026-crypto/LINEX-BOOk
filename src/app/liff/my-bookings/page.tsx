@@ -75,36 +75,43 @@ export default function MyBookings() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-up">
       {just && (
-        <div className="card p-4 bg-brand-50 border-brand-500 text-brand-700 flex items-center gap-2">
+        <div className="card p-4 border-brand-300 bg-brand-50 text-brand-700 flex items-center gap-2">
           <CheckCircle2 size={18} /> {t("booking.success")} #{just}
         </div>
       )}
       {rescheduled && (
-        <div className="card p-4 bg-blue-50 border-blue-500 text-blue-700 flex items-center gap-2">
+        <div className="card p-4 border-accent-sky/40 bg-accent-sky/10 text-accent-sky flex items-center gap-2">
           <Clock size={18} /> {lang === "en" ? "Rescheduled!" : "เปลี่ยนเวลาสำเร็จ!"} #{rescheduled}
         </div>
       )}
       {waitlisted && (
-        <div className="card p-4 bg-purple-50 border-purple-500 text-purple-700 flex items-center gap-2">
+        <div className="card p-4 border-linex-300 bg-linex-50 text-linex-700 flex items-center gap-2">
           🔔 {lang === "en" ? "You're on the waitlist! We'll notify you when a slot opens." : "ลงทะเบียนรอคิวสำเร็จ! เราจะแจ้งเตือนเมื่อมีคิวว่าง"}
         </div>
       )}
-      <h1 className="text-xl font-bold">{t("my.title")}</h1>
+      <h1 className="h-display text-2xl">{t("my.title")}</h1>
       {loading ? (
-        <div className="text-center text-neutral-500 py-8">{t("common.loading")}</div>
+        <div className="text-center text-ink-400 py-10">
+          <div className="skeleton h-16 rounded-2xl mb-2" />
+          <div className="skeleton h-16 rounded-2xl mb-2" />
+          <div className="skeleton h-16 rounded-2xl" />
+        </div>
       ) : list.length === 0 ? (
-        <div className="card p-8 text-center text-neutral-500">{t("my.empty")}</div>
+        <div className="card p-10 text-center">
+          <div className="text-3xl mb-2">📭</div>
+          <div className="text-ink-500 text-sm">{t("my.empty")}</div>
+        </div>
       ) : (
         <div className="space-y-2">
           {list.map((b) => (
-            <div key={b.id} className="card p-4">
+            <div key={b.id} className="card card-hover p-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="font-semibold">{lang === "en" && b.service?.name_en ? b.service.name_en : b.service?.name}</div>
-                  <div className="text-xs text-neutral-500">{new Date(b.starts_at).toLocaleString("th-TH")}</div>
-                  <div className="text-xs text-neutral-500">
+                  <div className="font-semibold text-ink-900">{lang === "en" && b.service?.name_en ? b.service.name_en : b.service?.name}</div>
+                  <div className="text-xs text-ink-500 mt-0.5">{new Date(b.starts_at).toLocaleString("th-TH")}</div>
+                  <div className="text-xs text-ink-400">
                     {lang === "en" ? "Staff" : "ช่าง"}: {b.staff?.nickname ?? b.staff?.name ?? "—"}
                   </div>
                 </div>
@@ -116,11 +123,11 @@ export default function MyBookings() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => reschedule(b)}
-                      className="text-blue-600 text-sm inline-flex items-center gap-1"
+                      className="text-accent-sky text-sm font-semibold inline-flex items-center gap-1 hover:underline"
                     >
                       <Clock size={14} /> {lang === "en" ? "Reschedule" : "เปลี่ยนเวลา"}
                     </button>
-                    <button onClick={() => cancel(b.id)} className="text-red-600 text-sm inline-flex items-center gap-1">
+                    <button onClick={() => cancel(b.id)} className="text-accent-rose text-sm font-semibold inline-flex items-center gap-1 hover:underline">
                       <XCircle size={14} /> {t("common.cancel")}
                     </button>
                   </div>
@@ -129,13 +136,13 @@ export default function MyBookings() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => rebook(b)}
-                      className="text-brand-600 text-sm inline-flex items-center gap-1"
+                      className="text-brand-600 text-sm font-semibold inline-flex items-center gap-1 hover:underline"
                     >
                       <RotateCcw size={14} /> {lang === "en" ? "Book again" : "จองอีกครั้ง"}
                     </button>
                     <button
                       onClick={() => review(b)}
-                      className="text-amber-600 text-sm inline-flex items-center gap-1"
+                      className="text-accent-amber text-sm font-semibold inline-flex items-center gap-1 hover:underline"
                     >
                       <Star size={14} /> {lang === "en" ? "Review" : "รีวิว"}
                     </button>
@@ -154,9 +161,9 @@ function StatusChip({ status }: { status: string }) {
   const map: Record<string, string> = {
     pending: "bg-amber-100 text-amber-700",
     confirmed: "bg-brand-100 text-brand-700",
-    completed: "bg-neutral-200 text-neutral-700",
-    cancelled: "bg-neutral-100 text-neutral-500",
-    no_show: "bg-red-100 text-red-700"
+    completed: "bg-ink-200 text-ink-600",
+    cancelled: "bg-ink-100 text-ink-500",
+    no_show: "bg-accent-rose/10 text-accent-rose"
   };
   const label: Record<string, string> = {
     pending: "รอยืนยัน", confirmed: "ยืนยันแล้ว", completed: "เสร็จสิ้น", cancelled: "ยกเลิก", no_show: "ไม่มา"
