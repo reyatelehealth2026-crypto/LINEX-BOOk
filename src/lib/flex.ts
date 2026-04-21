@@ -11,6 +11,10 @@ const TEXT_MUTED = "#6b7280";
 const BORDER = "#e5e7eb";
 const PANEL = "#f8fafc";
 const WARNING = "#f59e0b";
+const PREMIUM_DARK = "#221733";
+const PREMIUM_PRIMARY = "#6d3bff";
+const PREMIUM_SOFT = "#f7f2ff";
+const PREMIUM_BORDER = "#e9dff0";
 
 const LIFF_URL = (path = "") => {
   const id = process.env.NEXT_PUBLIC_LIFF_ID ?? "";
@@ -30,57 +34,140 @@ export function textMessage(text: string, quickReply?: object) {
 export function defaultQuickReply() {
   return {
     items: [
-      { type: "action", action: { type: "postback", label: "📅 จองคิว", data: "action=book", displayText: "จองคิว" } },
-      { type: "action", action: { type: "postback", label: "📋 คิวของฉัน", data: "action=my_bookings", displayText: "คิวของฉัน" } },
-      { type: "action", action: { type: "postback", label: "⭐ แต้มสะสม", data: "action=profile", displayText: "แต้มสะสม" } },
+      { type: "action", action: { type: "uri", label: "📅 จองคิว", uri: LIFF_URL("/liff/booking") } },
+      { type: "action", action: { type: "uri", label: "📋 คิวของฉัน", uri: LIFF_URL("/liff/my-bookings") } },
+      { type: "action", action: { type: "uri", label: "⭐ แต้มสะสม", uri: LIFF_URL("/liff/profile") } },
     ],
   };
 }
 
 export function welcomeMessage(displayName: string) {
+  const safeName = displayName.trim() || "คุณลูกค้า";
+  const heroTag = (text: string) => ({
+    type: "box",
+    layout: "vertical",
+    flex: 1,
+    paddingAll: "10px",
+    cornerRadius: "12px",
+    backgroundColor: "#ffffff14",
+    borderWidth: "1px",
+    borderColor: "#ffffff22",
+    contents: [
+      { type: "text", text, size: "xs", weight: "bold", color: "#ffffff", align: "center", wrap: true }
+    ]
+  });
+
   return {
     type: "flex",
-    altText: `สวัสดีคุณ ${displayName}`,
+    altText: `ยินดีต้อนรับคุณ ${safeName} สู่ LINEBOOK`,
     contents: {
       type: "bubble",
       size: "giga",
       hero: {
         type: "box",
         layout: "vertical",
-        backgroundColor: BRAND,
         paddingAll: "20px",
+        background: {
+          type: "linearGradient",
+          angle: "135deg",
+          startColor: PREMIUM_DARK,
+          endColor: PREMIUM_PRIMARY,
+        },
         contents: [
-          { type: "text", text: "LINE BOOKING ASSISTANT", color: "#ffffffcc", size: "xs", weight: "bold" },
-          { type: "text", text: "จองคิวได้เลยในแชท", color: "#ffffff", weight: "bold", size: "xl", margin: "sm" },
-          { type: "text", text: `สวัสดีคุณ ${displayName}` , color: "#ffffff", size: "sm", margin: "sm" },
-          { type: "text", text: "เลือกบริการ, เวลา, หรือเปิด Mini App ได้ทันที", color: "#ffffffcc", size: "xs", margin: "md", wrap: true }
+          { type: "text", text: "LINEBOOK ASSISTANT", color: "#d4c2ff", size: "xs", weight: "bold" },
+          { type: "text", text: "จองคิวได้ง่าย ครบ และเร็วในที่เดียว", color: "#ffffff", weight: "bold", size: "xl", margin: "sm", wrap: true },
+          { type: "text", text: `สวัสดีคุณ ${safeName}`, color: "#fff7fe", size: "md", weight: "bold", margin: "md", wrap: true },
+          { type: "text", text: "ดูคิวเดิม เช็กแต้มสะสม และเปิด Mini App ได้ทันที ทั้งในแชทและหน้าแอป", color: "#f3e8ff", size: "sm", margin: "sm", wrap: true },
+          {
+            type: "box",
+            layout: "horizontal",
+            spacing: "sm",
+            margin: "lg",
+            contents: [
+              heroTag("จองเร็ว"),
+              heroTag("ดูคิว"),
+              heroTag("แต้มสะสม")
+            ]
+          }
         ]
       },
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: "#fcfaff",
         contents: [
-          infoPanel("เริ่มต้นได้ 3 แบบ", [
-            "กดจองคิวแบบทีละขั้น",
-            "พิมพ์ เช่น จองตัดผมพรุ่งนี้ 14:00",
-            "เปิด Mini App เพื่อดูคิวและแก้โปรไฟล์"
+          {
+            type: "box",
+            layout: "vertical",
+            spacing: "sm",
+            paddingAll: "14px",
+            backgroundColor: "#ffffff",
+            cornerRadius: "18px",
+            borderWidth: "1px",
+            borderColor: PREMIUM_BORDER,
+            contents: [
+              { type: "text", text: "พร้อมเริ่มใช้งานแล้ว", size: "sm", weight: "bold", color: PREMIUM_DARK },
+              { type: "text", text: "เลือกวิธีที่สะดวกที่สุดสำหรับคุณ แล้วระบบจะพาไปขั้นตอนถัดไปให้อัตโนมัติ", size: "sm", color: TEXT_MUTED, wrap: true }
+            ]
+          },
+          infoPanel("เริ่มต้นได้ 3 วิธี", [
+            "กดปุ่มจองคิวเพื่อเลือกบริการ ช่าง และเวลาที่ต้องการ",
+            "พิมพ์เป็นประโยคธรรมชาติ เช่น จองตัดผมพรุ่งนี้ 14:00",
+            "เปิด Mini App เมื่อต้องการดูคิว แก้โปรไฟล์ หรือเช็กแต้ม"
           ]),
+          {
+            type: "box",
+            layout: "vertical",
+            spacing: "xs",
+            paddingAll: "14px",
+            backgroundColor: PREMIUM_SOFT,
+            cornerRadius: "14px",
+            borderWidth: "1px",
+            borderColor: PREMIUM_BORDER,
+            contents: [
+              { type: "text", text: "พิมพ์กับผู้ช่วยได้ทันที", size: "sm", weight: "bold", color: PREMIUM_DARK },
+              { type: "text", text: "เช่น จองทำเล็บพรุ่งนี้ 14:00", size: "sm", color: "#6b4e7a", wrap: true },
+              { type: "text", text: "หรือพิมพ์ว่า ดูคิวของฉัน / แต้มสะสม", size: "xs", color: TEXT_MUTED, wrap: true, margin: "xs" }
+            ]
+          }
+        ]
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        paddingAll: "16px",
+        backgroundColor: "#fcfaff",
+        contents: [
           {
             type: "button",
             style: "primary",
-            color: BRAND,
-            action: { type: "uri", label: "📅 จองคิว", uri: LIFF_URL("/liff/booking") }
+            color: PREMIUM_PRIMARY,
+            height: "md",
+            action: { type: "uri", label: "✨ เริ่มจองคิวทันที", uri: LIFF_URL("/liff/booking") }
           },
           {
-            type: "button",
-            style: "secondary",
-            action: { type: "postback", label: "📋 คิวของฉัน", data: "action=my_bookings", displayText: "คิวของฉัน" }
-          },
-          {
-            type: "button",
-            style: "secondary",
-            action: { type: "postback", label: "⭐ โปรไฟล์ / แต้ม", data: "action=profile", displayText: "โปรไฟล์" }
+            type: "box",
+            layout: "horizontal",
+            spacing: "sm",
+            contents: [
+              {
+                type: "button",
+                style: "secondary",
+                flex: 1,
+                height: "md",
+                action: { type: "postback", label: "📋 คิวของฉัน", data: "action=my_bookings", displayText: "คิวของฉัน" }
+              },
+              {
+                type: "button",
+                style: "secondary",
+                flex: 1,
+                height: "md",
+                action: { type: "postback", label: "⭐ โปรไฟล์", data: "action=profile", displayText: "โปรไฟล์ของฉัน" }
+              }
+            ]
           }
         ]
       }

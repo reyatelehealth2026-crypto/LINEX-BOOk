@@ -496,11 +496,10 @@ async function handleEvent(ev: any) {
 
   if (ev.type === "follow") {
     const name = customer.display_name ?? customer.full_name ?? "คุณ";
-    return replyMessage(ev.replyToken, [textMessage(
-      `สวัสดีค่ะ คุณ ${name} 👋
-ยินดีต้อนรับเข้าสู่ร้านนะค่ะ พิมพ์ถามได้เลย หรือเลือกจากเมนูด้านล่างนะค่ะ ✨`,
-      defaultQuickReply()
-    )]);
+    return replyMessage(ev.replyToken, [
+      welcomeMessage(name),
+      textMessage("ถ้าต้องการเริ่มแบบเร็ว แตะเมนูลัดด้านล่างได้เลยค่ะ", defaultQuickReply())
+    ]);
   }
 
   if (ev.type === "postback") {
@@ -965,27 +964,21 @@ async function handleMessage(ev: any, customer: Customer) {
     return handleAIBooking(rt, intent, customer, services ?? [], staff ?? []);
   }
 
-  // ── Keyword shortcuts ──
+  // ── Keyword shortcuts — redirect to LIFF via quick reply URI ──
   if (/คิว|บุ๊ค|queue/i.test(text)) {
-    const list = await fetchMyBookings(customer.id);
-    return replyMessage(rt, [myBookingsMessage(list)]);
+    return replyMessage(rt, [textMessage("กดปุ่มด้านล่างเพื่อดูเวลานัดหมายของคุณได้เลยค่ะ 📅", defaultQuickReply())]);
   }
   if (/แต้ม|point|profile|โปรไฟล์/i.test(text)) {
-    return replyMessage(rt, [profileCard(customer)]);
+    return replyMessage(rt, [textMessage("กดปุ่มด้านล่างเพื่อดูโปรไฟล์และแต้มสะสมได้เลยค่ะ ⭐", defaultQuickReply())]);
   }
   if (/ยกเลิก|cancel/i.test(text)) {
-    const list = await fetchMyBookings(customer.id);
-    if (list.length === 0) return replyMessage(rt, [textMessage("คุณไม่มีคิวที่สามารถยกเลิกได้", defaultQuickReply())]);
-    return replyMessage(rt, [myBookingsMessage(list)]);
+    return replyMessage(rt, [textMessage("เปิดคิวของฉันเพื่อยกเลิกคิวได้เลยค่ะ 📋", defaultQuickReply())]);
   }
   if (/บริการ|ราคา|service|price/i.test(text)) {
-    return replyMessage(rt, [textMessage("ดูรายการบริการได้ที่แอป 👇"), {
-      type: "flex", altText: "บริการทั้งหมด",
-      contents: { type: "bubble", body: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "16px", contents: [
-        { type: "text", text: "ดูบริการและราคาทั้งหมด", weight: "bold" },
-        { type: "button", style: "primary", color: "#06c755", margin: "md", action: { type: "uri", label: "🔍 ดูบริการ/ราคา", uri: `https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID ?? ""}/services` } }
-      ]}}
-    }]);
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID ?? "";
+    return replyMessage(rt, [textMessage("ดูบริการและราคาทั้งหมดได้เลยค่ะ 👇", {
+      items: [{ type: "action", action: { type: "uri", label: "🔍 ดูบริการ/ราคา", uri: `https://liff.line.me/${liffId}/services` } }],
+    })]);
   }
 
   // ── FAQ: Shop hours ──
