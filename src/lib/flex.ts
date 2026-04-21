@@ -3,21 +3,18 @@ import type { BookingWithJoins, Customer, Service, Staff } from "@/types/db";
 import { formatDateTH, formatTimeRange } from "./format";
 import type { Slot } from "./booking";
 
+// Premium design tokens
 const BRAND = "#6d3bff";
 const BRAND_DARK = "#34204d";
 const BRAND_SOFT = "#f7f2ff";
+const PREMIUM_DEEP = "#171220";
+const PREMIUM_MID = "#4d2b73";
+const PREMIUM_KICKER = "#d4c2ff";
 const TEXT_MAIN = "#221733";
 const TEXT_MUTED = "#6b4e7a";
 const BORDER = "#e9dff0";
 const PANEL = "#fcfaff";
 const WARNING = "#ff9b7a";
-const PREMIUM_DARK = "#221733";
-const PREMIUM_PRIMARY = "#6d3bff";
-const PREMIUM_MID = "#4d2b73";
-const PREMIUM_DEEP = "#171220";
-const PREMIUM_SOFT = "#f7f2ff";
-const PREMIUM_BORDER = "#e9dff0";
-const PREMIUM_KICKER = "#d4c2ff";
 const IVORY = "#fff7fe";
 const PEACH_SOFT = "#ffe3d8";
 const DANGER = "#e11d48";
@@ -26,11 +23,6 @@ const LIFF_URL = (path = "") => {
   const id = process.env.NEXT_PUBLIC_LIFF_ID ?? "";
   const normalized = path.startsWith("/liff/") ? path.slice(5) : path;
   return `https://liff.line.me/${id}${normalized}`;
-};
-
-const APP_URL = (path = "") => {
-  const base = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
-  return base ? `${base}${path}` : "https://example.com";
 };
 
 export function textMessage(text: string, quickReply?: object) {
@@ -76,8 +68,8 @@ export function welcomeMessage(displayName: string) {
         background: {
           type: "linearGradient",
           angle: "135deg",
-          startColor: PREMIUM_DARK,
-          endColor: PREMIUM_PRIMARY,
+          startColor: TEXT_MAIN,
+          endColor: BRAND,
         },
         contents: [
           { type: "text", text: "LINEBOOK ASSISTANT", color: "#d4c2ff", size: "xs", weight: "bold" },
@@ -112,9 +104,9 @@ export function welcomeMessage(displayName: string) {
             backgroundColor: "#ffffff",
             cornerRadius: "18px",
             borderWidth: "1px",
-            borderColor: PREMIUM_BORDER,
+            borderColor: BORDER,
             contents: [
-              { type: "text", text: "พร้อมเริ่มใช้งานแล้ว", size: "sm", weight: "bold", color: PREMIUM_DARK },
+              { type: "text", text: "พร้อมเริ่มใช้งานแล้ว", size: "sm", weight: "bold", color: TEXT_MAIN },
               { type: "text", text: "เลือกวิธีที่สะดวกที่สุดสำหรับคุณ แล้วระบบจะพาไปขั้นตอนถัดไปให้อัตโนมัติ", size: "sm", color: TEXT_MUTED, wrap: true }
             ]
           },
@@ -128,12 +120,12 @@ export function welcomeMessage(displayName: string) {
             layout: "vertical",
             spacing: "xs",
             paddingAll: "14px",
-            backgroundColor: PREMIUM_SOFT,
+            backgroundColor: BRAND_SOFT,
             cornerRadius: "14px",
             borderWidth: "1px",
-            borderColor: PREMIUM_BORDER,
+            borderColor: BORDER,
             contents: [
-              { type: "text", text: "พิมพ์กับผู้ช่วยได้ทันที", size: "sm", weight: "bold", color: PREMIUM_DARK },
+              { type: "text", text: "พิมพ์กับผู้ช่วยได้ทันที", size: "sm", weight: "bold", color: TEXT_MAIN },
               { type: "text", text: "เช่น จองทำเล็บพรุ่งนี้ 14:00", size: "sm", color: "#6b4e7a", wrap: true },
               { type: "text", text: "หรือพิมพ์ว่า ดูคิวของฉัน / แต้มสะสม", size: "xs", color: TEXT_MUTED, wrap: true, margin: "xs" }
             ]
@@ -150,7 +142,7 @@ export function welcomeMessage(displayName: string) {
           {
             type: "button",
             style: "primary",
-            color: PREMIUM_PRIMARY,
+            color: BRAND,
             height: "md",
             action: { type: "uri", label: "✨ เริ่มจองคิวทันที", uri: LIFF_URL("/liff/booking") }
           },
@@ -189,33 +181,40 @@ export function profileCard(c: Customer | null, opts: { liffRegisterPath?: strin
       contents: {
         type: "bubble",
         size: "giga",
-        header: {
-          type: "box",
-          layout: "vertical",
-          backgroundColor: BRAND,
-          paddingAll: "18px",
-          contents: [
-            { type: "text", text: "โปรไฟล์สมาชิก", color: "#ffffffcc", size: "xs", weight: "bold" },
-            { type: "text", text: "ยังไม่ได้ลงทะเบียน", color: "#ffffff", weight: "bold", size: "xl", margin: "sm" }
-          ]
-        },
+        hero: brandHeader({
+          kicker: "MEMBER PROFILE",
+          title: "ยังไม่ได้ลงทะเบียน",
+          subtitle: "ลงทะเบียนเพื่อเก็บแต้ม และรับสิทธิพิเศษของสมาชิก",
+          chips: ["เก็บแต้ม", "ดูคิว", "แก้โปรไฟล์"]
+        }),
         body: {
           type: "box",
           layout: "vertical",
           spacing: "md",
+          paddingAll: "18px",
+          backgroundColor: PANEL,
           contents: [
             infoPanel("ลงทะเบียนแล้วได้อะไร", [
               "เก็บแต้มสะสมอัตโนมัติ",
               "ดูจำนวนครั้งที่เคยใช้บริการ",
               "แก้ชื่อ, เบอร์โทร, วันเกิดได้เอง"
-            ]),
+            ])
+          ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          paddingAll: "16px",
+          backgroundColor: PANEL,
+          contents: [
             {
               type: "button",
               style: "primary",
               color: BRAND,
+              height: "md",
               action: {
                 type: "uri",
-                label: "ลงทะเบียน",
+                label: "✏️ ลงทะเบียนทันที",
                 uri: LIFF_URL(opts.liffRegisterPath ?? "/liff/profile")
               }
             }
@@ -231,33 +230,46 @@ export function profileCard(c: Customer | null, opts: { liffRegisterPath?: strin
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: BRAND,
-        paddingAll: "16px",
-        contents: [
-          { type: "text", text: "MEMBER PROFILE", color: "#ffffffcc", size: "xs", weight: "bold" },
-          { type: "text", text: c.full_name ?? c.display_name ?? "ลูกค้า", color: "#ffffff", weight: "bold", size: "xl", margin: "sm" },
-          { type: "text", text: c.phone ?? "ยังไม่ได้ระบุเบอร์", color: "#ffffffcc", size: "sm", margin: "sm" }
-        ]
-      },
+      hero: brandHeader({
+        kicker: "MEMBER PROFILE",
+        title: c.full_name ?? c.display_name ?? "ลูกค้า",
+        subtitle: c.phone ?? "ยังไม่ได้ระบุเบอร์",
+        chips: [`${c.points} แต้ม`, `${c.visit_count} ครั้ง`, "สมาชิก"]
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
           statsRow([
             { label: "แต้มสะสม", value: `${c.points}`, tone: "brand" },
             { label: "จำนวนครั้ง", value: `${c.visit_count}`, tone: "default" }
           ]),
           infoRow("เริ่มเป็นสมาชิก", c.registered_at ? formatDateTH(c.registered_at) : "-", "🗓️"),
-          infoRow("สถานะ", "พร้อมจองและสะสมแต้ม", "✅"),
+          infoRow("สถานะ", "พร้อมจองและสะสมแต้ม", "✅")
+        ]
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        paddingAll: "16px",
+        backgroundColor: PANEL,
+        contents: [
+          {
+            type: "button",
+            style: "primary",
+            color: BRAND,
+            height: "md",
+            action: { type: "uri", label: "📅 จองคิวใหม่", uri: LIFF_URL("/liff/booking") }
+          },
           {
             type: "button",
             style: "secondary",
-            action: { type: "uri", label: "📅 จองคิวใหม่", uri: LIFF_URL("/liff/booking") },
-            margin: "md"
+            height: "md",
+            action: { type: "postback", label: "📋 ดูคิวของฉัน", data: "action=my_bookings" }
           }
         ]
       }
@@ -273,31 +285,38 @@ export function myBookingsMessage(bookings: BookingWithJoins[]) {
       contents: {
         type: "bubble",
         size: "giga",
-        header: {
-          type: "box",
-          layout: "vertical",
-          backgroundColor: BRAND,
-          paddingAll: "18px",
-          contents: [
-            { type: "text", text: "MY BOOKINGS", color: "#ffffffcc", size: "xs", weight: "bold" },
-            { type: "text", text: "ยังไม่มีคิวในตอนนี้", color: "#ffffff", weight: "bold", size: "xl", margin: "sm" }
-          ]
-        },
+        hero: brandHeader({
+          kicker: "MY BOOKINGS",
+          title: "ยังไม่มีคิวในตอนนี้",
+          subtitle: "เริ่มจองครั้งแรกได้ง่าย แค่เลือกบริการและเวลา"
+        }),
         body: {
           type: "box",
           layout: "vertical",
           spacing: "md",
+          paddingAll: "18px",
+          backgroundColor: PANEL,
           contents: [
             infoPanel("เริ่มได้เลย", [
               "เปิดหน้าเลือกบริการ",
               "เลือกเวลาที่สะดวก",
               "ระบบจะยืนยันคิวกลับมาให้ทันที"
             ]),
+            noteCard("เพิ่มทางเลือก", "จะกดปุ่มจองคิวหรือพิมพ์เป็นประโยคธรรมดากับผู้ช่วยก็ได้")
+          ]
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          paddingAll: "16px",
+          backgroundColor: PANEL,
+          contents: [
             {
               type: "button",
               style: "primary",
               color: BRAND,
-              action: { type: "uri", label: "📅 จองคิว", uri: LIFF_URL("/liff/booking") }
+              height: "md",
+              action: { type: "postback", label: "📅 เริ่มจองคิว", data: "action=book" }
             }
           ]
         }
@@ -339,18 +358,27 @@ export function myBookingsMessage(bookings: BookingWithJoins[]) {
       size: "kilo",
       header: {
         type: "box",
-        layout: "vertical",
+        layout: "horizontal",
         backgroundColor: statusColor(b.status),
         paddingAll: "14px",
         contents: [
-          { type: "text", text: statusLabel(b.status), color: "#ffffff", weight: "bold", size: "sm" },
-          { type: "text", text: `Booking #${b.id}`, color: "#ffffffcc", size: "xs", margin: "xs" }
+          {
+            type: "box",
+            layout: "vertical",
+            flex: 1,
+            contents: [
+              { type: "text", text: statusLabel(b.status), color: "#ffffff", weight: "bold", size: "sm" },
+              { type: "text", text: `Booking #${b.id}`, color: "#ffffffcc", size: "xs", margin: "xs" }
+            ]
+          }
         ]
       },
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
+        paddingAll: "16px",
+        backgroundColor: PANEL,
         contents: [
           { type: "text", text: b.service?.name ?? "-", weight: "bold", wrap: true, size: "lg", color: TEXT_MAIN },
           infoRow("วันนัด", formatDateTH(b.starts_at), "📅"),
@@ -377,34 +405,41 @@ export function bookingConfirmedMessage(b: BookingWithJoins) {
     contents: {
       type: "bubble",
       size: "giga",
-      hero: {
-        type: "image",
-        url: APP_URL("/brand/hero-confirmed.png"),
-        size: "full",
-        aspectRatio: "2:1",
-        aspectMode: "cover"
-      },
+      hero: brandHeader({
+        kicker: "BOOKING CONFIRMED",
+        title: "จองคิวสำเร็จ",
+        subtitle: "ขอบคุณที่ไว้วางใจให้เราดูแล",
+        chips: ["เรียบร้อย", "พร้อมเสิร์ฟ", "รอคุณที่ร้าน"],
+        tone: "success"
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
-        paddingAll: "16px",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
-          { type: "text", text: "BOOKING CONFIRMED", color: TEXT_MUTED, size: "xs", weight: "bold" },
-          { type: "text", text: "จองคิวสำเร็จ", color: TEXT_MAIN, weight: "bold", size: "xl", margin: "sm" },
-          { type: "separator", margin: "md" },
           infoRow("บริการ", b.service?.name ?? "-", "✂️"),
           infoRow("วันที่", formatDateTH(b.starts_at), "📅"),
           infoRow("เวลา", formatTimeRange(b.starts_at, b.ends_at), "🕐"),
           infoRow("ช่าง", b.staff?.nickname ?? b.staff?.name ?? "ไม่ระบุ", "💇"),
           totalCard("ยอดรวม", `${b.price.toLocaleString()} บาท`),
           thankYouCard(),
-          { type: "text", text: `หมายเลขจอง #${b.id}`, size: "xs", color: TEXT_MUTED, margin: "md" },
+          { type: "text", text: `หมายเลขจอง #${b.id}`, size: "xs", color: TEXT_MUTED, align: "center" }
+        ]
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        paddingAll: "16px",
+        backgroundColor: PANEL,
+        contents: [
           {
             type: "button",
             style: "secondary",
-            action: { type: "postback", label: "📋 ดูคิวของฉัน", data: "action=my_bookings", displayText: "คิวของฉัน" },
-            margin: "sm"
+            height: "md",
+            action: { type: "postback", label: "📋 ดูคิวของฉัน", data: "action=my_bookings", displayText: "คิวของฉัน" }
           }
         ]
       }
@@ -419,17 +454,19 @@ export function reminderMessage(b: BookingWithJoins) {
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box", layout: "vertical", backgroundColor: WARNING, paddingAll: "16px",
-        contents: [
-          { type: "text", text: "APPOINTMENT REMINDER", color: "#fff7ed", size: "xs", weight: "bold" },
-          { type: "text", text: "เตือนคิวของคุณอีก 1 ชั่วโมง", color: "#fff", weight: "bold", size: "lg", margin: "sm" }
-        ]
-      },
+      hero: brandHeader({
+        kicker: "APPOINTMENT REMINDER",
+        title: "เตือนคิวของคุณอีก 1 ชั่วโมง",
+        subtitle: formatTimeRange(b.starts_at, b.ends_at),
+        chips: ["เตรียมตัว", "เช็กอุปกรณ์", "เดินทางได้"],
+        tone: "warning"
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
           infoRow("บริการ", b.service?.name ?? "-", "✂️"),
           infoRow("วันที่", formatDateTH(b.starts_at), "📅"),
@@ -443,26 +480,6 @@ export function reminderMessage(b: BookingWithJoins) {
 }
 
 // ---------------- helpers ----------------
-function row(label: string, value: string, highlight = false) {
-  return {
-    type: "box",
-    layout: "baseline",
-    spacing: "sm",
-    contents: [
-      { type: "text", text: label, size: "sm", color: "#888888", flex: 3 },
-      {
-        type: "text",
-        text: value,
-        size: highlight ? "md" : "sm",
-        color: highlight ? BRAND : "#111111",
-        weight: highlight ? "bold" : "regular",
-        wrap: true,
-        flex: 5
-      }
-    ]
-  };
-}
-
 function statusLabel(s: string) {
   return { pending: "รอยืนยัน", confirmed: "ยืนยันแล้ว", completed: "เสร็จสิ้น", cancelled: "ยกเลิก", no_show: "ไม่มาตามนัด" }[s] ?? s;
 }
@@ -475,7 +492,7 @@ type FlexTone = "brand" | "dark" | "warning" | "success" | "critical";
 function toneTheme(tone: FlexTone = "brand") {
   switch (tone) {
     case "dark":
-      return { start: PREMIUM_DEEP, end: PREMIUM_DARK, kicker: PREMIUM_KICKER, meta: "#e9dff0", subtitle: "#f3e8ff" };
+      return { start: PREMIUM_DEEP, end: TEXT_MAIN, kicker: PREMIUM_KICKER, meta: "#e9dff0", subtitle: "#f3e8ff" };
     case "warning":
       return { start: "#7c2d12", end: WARNING, kicker: PEACH_SOFT, meta: "#fff1eb", subtitle: "#fff7fe" };
     case "success":
@@ -483,7 +500,7 @@ function toneTheme(tone: FlexTone = "brand") {
     case "critical":
       return { start: "#4c0519", end: DANGER, kicker: "#fecdd3", meta: "#ffe4e6", subtitle: "#fff1f2" };
     default:
-      return { start: PREMIUM_DARK, end: PREMIUM_PRIMARY, kicker: PREMIUM_KICKER, meta: "#eee6ff", subtitle: "#f3e8ff" };
+      return { start: TEXT_MAIN, end: BRAND, kicker: PREMIUM_KICKER, meta: "#eee6ff", subtitle: "#f3e8ff" };
   }
 }
 
@@ -539,8 +556,8 @@ function noteCard(title: string, description: string, tone: FlexTone | "soft" = 
     : tone === "critical"
       ? { bg: "#fff1f2", border: "#fecdd3", title: "#9f1239", body: "#9f1239" }
       : tone === "dark"
-        ? { bg: "#f5f0f7", border: PREMIUM_BORDER, title: PREMIUM_DARK, body: TEXT_MUTED }
-        : { bg: IVORY, border: PREMIUM_BORDER, title: PREMIUM_DARK, body: TEXT_MUTED };
+        ? { bg: "#f5f0f7", border: BORDER, title: TEXT_MAIN, body: TEXT_MUTED }
+        : { bg: IVORY, border: BORDER, title: TEXT_MAIN, body: TEXT_MUTED };
   return {
     type: "box",
     layout: "vertical",
@@ -559,10 +576,10 @@ function noteCard(title: string, description: string, tone: FlexTone | "soft" = 
 
 function miniStat(label: string, value: string, tone: "brand" | "soft" | "warning" = "soft") {
   const palette = tone === "brand"
-    ? { bg: PREMIUM_SOFT, border: PREMIUM_BORDER, value: PREMIUM_PRIMARY }
+    ? { bg: BRAND_SOFT, border: BORDER, value: BRAND }
     : tone === "warning"
       ? { bg: "#fff7f2", border: "#ffd7c7", value: "#c2410c" }
-      : { bg: "#ffffff", border: PREMIUM_BORDER, value: TEXT_MAIN };
+      : { bg: "#ffffff", border: BORDER, value: TEXT_MAIN };
   return {
     type: "box",
     layout: "vertical",
@@ -659,31 +676,34 @@ export function serviceCarouselMessage(
   const bubbles = services.map((s) => ({
     type: "bubble",
     size: "kilo",
-    header: {
-      type: "box",
-      layout: "vertical",
-      backgroundColor: BRAND_SOFT,
-      paddingAll: "14px",
-      contents: [
-        { type: "text", text: "SERVICE", size: "xs", weight: "bold", color: BRAND_DARK },
-        { type: "text", text: `${s.duration_min} นาที`, size: "xs", color: TEXT_MUTED, margin: "xs" }
-      ]
-    },
+    header: brandHeader({
+      kicker: "SERVICE",
+      title: s.name,
+      subtitle: `${s.duration_min} นาที`,
+      compact: true
+    }),
     body: {
       type: "box",
       layout: "vertical",
       spacing: "md",
       paddingAll: "16px",
+      backgroundColor: PANEL,
       contents: [
-        { type: "text", text: s.name, weight: "bold", size: "lg", wrap: true, color: TEXT_MAIN },
         totalCard("ราคาเริ่มต้น", `${s.price.toLocaleString()} บาท`),
-        { type: "text", text: "เหมาะสำหรับกดเลือกเพื่อไปต่อขั้นตอนเลือกช่างและเวลา", size: "xs", color: TEXT_MUTED, wrap: true },
+        noteCard("ขั้นตอนถัดไป", "กดเลือกเพื่อไปต่อที่การเลือกช่างและเวลาที่สะดวก")
+      ]
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      paddingAll: "14px",
+      backgroundColor: PANEL,
+      contents: [
         {
           type: "button",
           style: "primary",
           color: BRAND,
           height: "sm",
-          margin: "md",
           action: { type: "postback", label: "เลือก", data: `action=book_svc&id=${s.id}` }
         }
       ]
@@ -729,22 +749,20 @@ export function staffSelectMessage(
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: BRAND,
-        paddingAll: "16px",
-        contents: [
-          { type: "text", text: "เลือกช่าง", color: "#fff", weight: "bold", size: "xl" },
-          { type: "text", text: `บริการ: ${serviceName}`, color: "#ffffffcc", size: "sm", margin: "sm", wrap: true }
-        ]
-      },
+      hero: brandHeader({
+        kicker: "STEP 2 · เลือกช่าง",
+        title: "เลือกช่างที่ถูกใจ",
+        subtitle: `บริการ: ${serviceName}`,
+        chips: ["ช่างว่าง", "ประสบการณ์", "ลงคิวเร็ว"]
+      }),
       body: {
         type: "box",
         layout: "vertical",
-        spacing: "sm",
+        spacing: "md",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
-          { type: "text", text: "ถ้ายังไม่ได้เลือกคนที่ต้องการ สามารถกด “ช่างคนไหนก็ได้” เพื่อให้ระบบหาเวลาว่างให้เร็วที่สุด", size: "sm", color: TEXT_MUTED, wrap: true },
+          noteCard("เคล็ดลับจองเร็ว", "ถ้ายังไม่ได้เลือกคนที่ต้องการ กด “ช่างคนไหนก็ได้” ให้ระบบหาเวลาว่างให้ทันที"),
           ...buttons
         ]
       }
@@ -769,6 +787,7 @@ export function dateCarouselMessage(
     const dateNum = d.getDate();
     const monthName = THAI_MONTH_SHORT[d.getMonth()];
 
+    const isToday = i === 0;
     bubbles.push({
       type: "bubble",
       size: "micro",
@@ -776,17 +795,21 @@ export function dateCarouselMessage(
         type: "box",
         layout: "vertical",
         spacing: "xs",
-        paddingAll: "12px",
+        paddingAll: "14px",
+        backgroundColor: isToday ? BRAND_SOFT : "#ffffff",
+        cornerRadius: "18px",
+        borderWidth: "1px",
+        borderColor: BORDER,
         contents: [
-          { type: "text", text: dayName, align: "center", size: "xs", color: "#888" },
-          { type: "text", text: String(dateNum), align: "center", size: "xl", weight: "bold" },
-          { type: "text", text: monthName, align: "center", size: "xs", color: "#888" },
+          { type: "text", text: dayName, align: "center", size: "xs", weight: "bold", color: isToday ? BRAND : TEXT_MUTED },
+          { type: "text", text: String(dateNum), align: "center", size: "xxl", weight: "bold", color: TEXT_MAIN },
+          { type: "text", text: monthName, align: "center", size: "xs", color: TEXT_MUTED },
           {
             type: "button",
             style: "primary",
             color: BRAND,
             height: "sm",
-            margin: "sm",
+            margin: "md",
             action: {
               type: "postback",
               label: "เลือก",
@@ -820,28 +843,25 @@ export function timeSlotMessage(
       contents: {
         type: "bubble",
         size: "giga",
-        header: {
-          type: "box",
-          layout: "vertical",
-          backgroundColor: WARNING,
-          paddingAll: "16px",
-          contents: [
-            { type: "text", text: "ไม่มีเวลาว่างในวันนี้", weight: "bold", size: "xl", color: "#fff" },
-            { type: "text", text: `${serviceName} · ${date}`, size: "sm", color: "#fffbeb", margin: "sm" }
-          ]
-        },
+        hero: brandHeader({
+          kicker: "NO SLOTS",
+          title: "ไม่มีเวลาว่างในวันนี้",
+          subtitle: `${serviceName} · ${date}`,
+          tone: "warning"
+        }),
         body: {
           type: "box",
           layout: "vertical",
           spacing: "md",
-          paddingAll: "20px",
+          paddingAll: "18px",
+          backgroundColor: PANEL,
           contents: [
-            { type: "text", text: "ลองเปลี่ยนวัน หรือเปิดแจ้งเตือนเพื่อให้ระบบบอกทันทีเมื่อมีคิวหลุด", size: "sm", color: TEXT_MUTED, wrap: true },
+            noteCard("ทางเลือกสำหรับคุณ", "เลือกเปลี่ยนวัน หรือเปิดแจ้งเตือนเมื่อมีคิวหลุด ระบบจะส่งข้อความทันที", "warning"),
             {
               type: "button",
               style: "primary",
-              color: "#8b5cf6",
-              margin: "md",
+              color: BRAND,
+              height: "md",
               action: {
                 type: "postback",
                 label: "🔔 แจ้งเตือนเมื่อมีคิวว่าง",
@@ -852,7 +872,7 @@ export function timeSlotMessage(
             {
               type: "button",
               style: "secondary",
-              margin: "sm",
+              height: "md",
               action: {
                 type: "postback",
                 label: "← เลือกวันใหม่",
@@ -899,23 +919,20 @@ export function timeSlotMessage(
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: BRAND,
-        paddingAll: "16px",
-        contents: [
-          { type: "text", text: "เลือกเวลาที่สะดวก", color: "#fff", weight: "bold", size: "xl" },
-          { type: "text", text: `${serviceName} · ${date}`, color: "#ffffffcc", size: "sm", margin: "sm" }
-        ]
-      },
+      hero: brandHeader({
+        kicker: "STEP 4 · เลือกเวลา",
+        title: "เลือกเวลาที่สะดวก",
+        subtitle: `${serviceName} · ${date}`,
+        chips: [`ว่าง ${slots.length} ช่วง`, "กดเพื่อจอง", "ยืนยันเร็ว"]
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "sm",
         paddingAll: "16px",
+        backgroundColor: PANEL,
         contents: [
-          { type: "text", text: `มีเวลาว่าง ${slots.length} ช่วง`, size: "sm", color: TEXT_MUTED },
+          noteCard("กดเลือกได้ทันที", `มีเวลาว่าง ${slots.length} ช่วง ระบบจะพาไปหน้ายืนยันหลังจากเลือก`),
           ...rows
         ]
       }
@@ -945,33 +962,37 @@ export function aiBookingConfirmMessage(opts: {
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: BRAND,
-        paddingAll: "20px",
-        contents: [
-          { type: "text", text: "จองตามที่คุณพิมพ์ไว้ได้เลย", color: "#ffffff", weight: "bold", size: "xl" },
-          { type: "text", text: "ตรวจสอบรายละเอียดก่อนยืนยัน", color: "#ffffffcc", size: "sm", margin: "sm" }
-        ]
-      },
+      hero: brandHeader({
+        kicker: "AI BOOKING REVIEW",
+        title: "จองตามที่คุณพิมพ์ไว้",
+        subtitle: "ตรวจสอบรายละเอียดก่อนยืนยัน",
+        chips: ["ตรวจข้อมูล", "กดยืนยัน", "พร้อมไป"]
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
-        paddingAll: "20px",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
           infoRow("บริการ", `${opts.serviceName} · ${opts.durationMin} นาที`, "✂️"),
           infoRow("วันที่", opts.dateDisplay, "📅"),
           infoRow("เวลา", opts.timeRange, "🕐"),
           infoRow("ช่าง", opts.staffName, "💇"),
-          totalCard("ยอดรวม", `${opts.price.toLocaleString()} บาท`),
-          { type: "box", layout: "horizontal", spacing: "sm", margin: "xl", contents: [
-            { type: "button", style: "primary", color: BRAND, flex: 3, height: "md", action: {
-              type: "postback", label: "✅ ยืนยันจอง", data: `action=book_go&svc=${opts.serviceId}&stf=${opts.staffId ?? 0}&d=${opts.date}&t=${opts.timeLabel}`
-            }},
-            { type: "button", style: "secondary", flex: 2, height: "md", action: { type: "postback", label: "เลือกใหม่", data: "action=book" } }
-          ]}
+          totalCard("ยอดรวม", `${opts.price.toLocaleString()} บาท`)
+        ]
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        paddingAll: "16px",
+        backgroundColor: PANEL,
+        contents: [
+          { type: "button", style: "primary", color: BRAND, height: "md", action: {
+            type: "postback", label: "✅ ยืนยันจอง", data: `action=book_go&svc=${opts.serviceId}&stf=${opts.staffId ?? 0}&d=${opts.date}&t=${opts.timeLabel}`
+          }},
+          { type: "button", style: "secondary", height: "md", action: { type: "postback", label: "เลือกใหม่", data: "action=book" } }
         ]
       }
     }
@@ -991,42 +1012,41 @@ export function aiAskTimeMessage(slots: Slot[], serviceId: number, staffId: numb
     });
   }
   return { type: "flex", altText: `เลือกเวลา — ${serviceName}`, contents: { type: "bubble", size: "giga",
-    header: { type: "box", layout: "vertical", backgroundColor: BRAND, paddingAll: "16px",
-      contents: [
-        { type: "text", text: "เลือกเวลาที่ต้องการ", color: "#ffffff", weight: "bold", size: "xl" },
-        { type: "text", text: `${serviceName} · ${dateDisplay}`, color: "#ffffffcc", size: "sm", margin: "sm" }
-      ]
-    },
-    body: { type: "box", layout: "vertical", paddingAll: "16px", contents: slots.length === 0 ? [
-      { type: "text", text: "ไม่มีเวลาว่างในวันที่เลือก ลองเปิดแจ้งเตือนคิวหลุดหรือเปลี่ยนวันได้เลย", align: "center", color: TEXT_MUTED, wrap: true },
-      { type: "button", style: "primary", color: "#8b5cf6", margin: "md", action: { type: "postback", label: "🔔 แจ้งเตือนเมื่อมีคิวว่าง", data: `action=join_waitlist&svc=${serviceId}&stf=${staffId ?? 0}&d=${date}`, displayText: "ขอแจ้งเตือนเมื่อมีคิวว่าง" } },
+    hero: brandHeader({
+      kicker: "AI SUGGESTED TIMES",
+      title: "เลือกเวลาที่ต้องการ",
+      subtitle: `${serviceName} · ${dateDisplay}`,
+      chips: slots.length > 0 ? [`ว่าง ${slots.length} ช่วง`, "กดเพื่อจอง", "ยืนยันเร็ว"] : undefined
+    }),
+    body: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "18px", backgroundColor: PANEL, contents: slots.length === 0 ? [
+      noteCard("วันนี้ไม่มีเวลาว่าง", "ลองเปิดแจ้งเตือนคิวหลุดหรือเปลี่ยนวันใหม่ได้เลย", "warning"),
+      { type: "button", style: "primary", color: BRAND, margin: "md", action: { type: "postback", label: "🔔 แจ้งเตือนเมื่อมีคิวว่าง", data: `action=join_waitlist&svc=${serviceId}&stf=${staffId ?? 0}&d=${date}`, displayText: "ขอแจ้งเตือนเมื่อมีคิวว่าง" } },
       { type: "button", style: "secondary", margin: "sm", action: { type: "postback", label: "← เลือกวันอื่น", data: `action=book_stf&svc=${serviceId}&id=${staffId ?? 0}` } }
-    ] : [{ type: "text", text: `มีเวลาว่าง ${slots.length} ช่วง`, size: "sm", color: TEXT_MUTED, margin: "sm" }, ...rows] }
+    ] : [noteCard("กดเลือกได้ทันที", `มีเวลาว่าง ${slots.length} ช่วง ระบบจะพาไปหน้ายืนยันหลังจากเลือก`), ...rows] }
   }};
 }
 
 /** Admin: queue summary header. */
 export function adminQueueHeader(date: string, total: number, pending: number, confirmed: number, completed: number, revenue: number) {
-  const stat = (label: string, value: number, bg: string) => ({ type: "box", layout: "vertical", flex: 1, paddingAll: "12px", cornerRadius: "12px", backgroundColor: bg,
-    contents: [{ type: "text", text: String(value), weight: "bold", size: "xl", align: "center" }, { type: "text", text: label, size: "xs", color: "#666", align: "center" }]
-  });
-  return { type: "flex", altText: `สรุปคิว ${date}`, contents: { type: "bubble",
-    header: { type: "box", layout: "vertical", background: { type: "linearGradient", angle: "135deg", startColor: "#06c755", endColor: "#049040" }, paddingAll: "18px",
+  return { type: "flex", altText: `สรุปคิว ${date}`, contents: { type: "bubble", size: "giga",
+    hero: brandHeader({
+      kicker: "TODAY\u2019S QUEUE",
+      title: "คิววันนี้",
+      subtitle: date,
+      chips: [`รวม ${total}`, `รอยืนยัน ${pending}`, `เสร็จ ${completed}`],
+      tone: "dark"
+    }),
+    body: { type: "box", layout: "vertical", spacing: "md", paddingAll: "18px", backgroundColor: PANEL,
       contents: [
-        { type: "text", text: "📋 คิววันนี้", color: "#ffffff", weight: "bold", size: "lg" },
-        { type: "text", text: date, color: "#ffffffcc", size: "xs", margin: "xs" }
-      ]
-    },
-    body: { type: "box", layout: "vertical", spacing: "md", paddingAll: "16px",
-      contents: [
-        { type: "box", layout: "horizontal", spacing: "sm", contents: [stat("คิวทั้งหมด", total, "#f0fdf4"), stat("รอยืนยัน", pending, "#fffbeb")] },
-        { type: "box", layout: "horizontal", spacing: "sm", contents: [stat("ยืนยันแล้ว", confirmed, "#f0fdf4"), stat("เสร็จสิ้น", completed, "#f1f5f9")] },
-        { type: "box", layout: "horizontal", paddingAll: "14px", cornerRadius: "12px", backgroundColor: "#1a1a1a", margin: "sm",
-          contents: [
-            { type: "text", text: "💰 ยอดรวม", color: "#ffffffcc", size: "sm", gravity: "center" },
-            { type: "text", text: `${revenue.toLocaleString()} ฿`, color: BRAND, weight: "bold", size: "xl", align: "end", gravity: "center" }
-          ]
-        }
+        statsRow([
+          { label: "คิวทั้งหมด", value: String(total), tone: "brand" },
+          { label: "รอยืนยัน", value: String(pending) }
+        ]),
+        statsRow([
+          { label: "ยืนยันแล้ว", value: String(confirmed) },
+          { label: "เสร็จสิ้น", value: String(completed) }
+        ]),
+        totalCard("💰 ยอดรวม", `${revenue.toLocaleString()} บาท`)
       ]
     }
   }};
@@ -1035,10 +1055,10 @@ export function adminQueueHeader(date: string, total: number, pending: number, c
 /** Admin: single booking card for carousel. */
 export function adminBookingCard(b: BookingWithJoins) {
   const styles: Record<string, { bg: string; label: string }> = {
-    pending: { bg: "#f59e0b", label: "⏳ รอยืนยัน" }, confirmed: { bg: BRAND, label: "✅ ยืนยันแล้ว" },
-    completed: { bg: "#64748b", label: "✅ เสร็จสิ้น" }, cancelled: { bg: "#94a3b8", label: "❌ ยกเลิก" }, no_show: { bg: "#ef4444", label: "🚫 ไม่มา" }
+    pending: { bg: WARNING, label: "⏳ รอยืนยัน" }, confirmed: { bg: BRAND, label: "✅ ยืนยันแล้ว" },
+    completed: { bg: PREMIUM_MID, label: "✅ เสร็จสิ้น" }, cancelled: { bg: "#94a3b8", label: "❌ ยกเลิก" }, no_show: { bg: DANGER, label: "🚫 ไม่มา" }
   };
-  const st = styles[b.status] ?? { bg: "#64748b", label: b.status };
+  const st = styles[b.status] ?? { bg: PREMIUM_MID, label: b.status };
   const time = new Date(b.starts_at).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", timeZone: process.env.SHOP_TIMEZONE || "Asia/Bangkok" });
   const btns: any[] = [];
   if (b.status === "pending") btns.push({ type: "button", style: "primary", color: BRAND, height: "sm", flex: 1, action: { type: "postback", label: "ยืนยัน", data: `action=adm_confirm&id=${b.id}` } });
@@ -1048,15 +1068,15 @@ export function adminBookingCard(b: BookingWithJoins) {
     btns.push({ type: "button", style: "secondary", height: "sm", flex: 1, action: { type: "postback", label: "ไม่มา", data: `action=adm_noshow&id=${b.id}` } });
   }
   return { type: "bubble", size: "micro",
-    header: { type: "box", layout: "horizontal", backgroundColor: st.bg, paddingAll: "10px", contents: [
+    header: { type: "box", layout: "horizontal", backgroundColor: st.bg, paddingAll: "12px", contents: [
       { type: "text", text: st.label, color: "#ffffff", weight: "bold", size: "sm", flex: 1 },
       { type: "text", text: `#${b.id}`, color: "#ffffffaa", size: "xs" }
     ]},
-    body: { type: "box", layout: "vertical", spacing: "xs", paddingAll: "12px", contents: [
-      { type: "text", text: time, weight: "bold", size: "xl" },
-      { type: "text", text: b.service?.name ?? "-", size: "sm", weight: "bold" },
-      { type: "text", text: `💇 ${b.staff?.nickname ?? b.staff?.name ?? "—"} · ฿${b.price.toLocaleString()}`, size: "xs", color: "#666" },
-      { type: "text", text: `👤 ${b.customer?.full_name ?? b.customer?.display_name ?? "ลูกค้า"}${b.customer?.phone ? ` · ${b.customer.phone}` : ""}`, size: "xs", color: "#888" },
+    body: { type: "box", layout: "vertical", spacing: "xs", paddingAll: "14px", backgroundColor: PANEL, contents: [
+      { type: "text", text: time, weight: "bold", size: "xl", color: TEXT_MAIN },
+      { type: "text", text: b.service?.name ?? "-", size: "sm", weight: "bold", color: TEXT_MAIN, wrap: true },
+      { type: "text", text: `💇 ${b.staff?.nickname ?? b.staff?.name ?? "—"} · ฿${b.price.toLocaleString()}`, size: "xs", color: TEXT_MUTED, wrap: true },
+      { type: "text", text: `👤 ${b.customer?.full_name ?? b.customer?.display_name ?? "ลูกค้า"}${b.customer?.phone ? ` · ${b.customer.phone}` : ""}`, size: "xs", color: TEXT_MUTED, wrap: true },
       ...(btns.length > 0 ? [{ type: "box", layout: "horizontal", spacing: "xs", margin: "sm", contents: btns } as any] : [])
     ]}
   };
@@ -1067,27 +1087,39 @@ export function adminRevenueMessage(opts: {
   date: string; totalBookings: number; completed: number; cancelled: number; noShows: number;
   totalRevenue: number; byService: Array<{ name: string; count: number; revenue: number }>;
 }) {
-  const stat = (label: string, value: number, bg: string) => ({ type: "box", layout: "vertical", flex: 1, paddingAll: "12px", cornerRadius: "12px", backgroundColor: bg,
-    contents: [{ type: "text", text: String(value), weight: "bold", size: "xl", align: "center" }, { type: "text", text: label, size: "xs", color: "#666", align: "center" }]
-  });
-  return { type: "flex", altText: `ยอดวันนี้ ${opts.totalRevenue.toLocaleString()}฿`, contents: { type: "bubble",
-    header: { type: "box", layout: "vertical", background: { type: "linearGradient", angle: "135deg", startColor: "#1a1a1a", endColor: "#333333" }, paddingAll: "20px",
+  return { type: "flex", altText: `ยอดวันนี้ ${opts.totalRevenue.toLocaleString()}฿`, contents: { type: "bubble", size: "giga",
+    hero: brandHeader({
+      kicker: "TODAY\u2019S REVENUE",
+      title: `${opts.totalRevenue.toLocaleString()} บาท`,
+      subtitle: opts.date,
+      chips: [`จอง ${opts.totalBookings}`, `เสร็จ ${opts.completed}`, `ยกเลิก ${opts.cancelled}`],
+      tone: "dark"
+    }),
+    body: { type: "box", layout: "vertical", spacing: "md", paddingAll: "18px", backgroundColor: PANEL,
       contents: [
-        { type: "text", text: "💰 สรุปยอดวันนี้", color: "#ffffff", weight: "bold", size: "lg" },
-        { type: "text", text: opts.date, color: "#ffffffaa", size: "xs", margin: "xs" },
-        { type: "text", text: `${opts.totalRevenue.toLocaleString()} บาท`, color: BRAND, weight: "bold", size: "3xl", margin: "md" }
-      ]
-    },
-    body: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "16px",
-      contents: [
-        { type: "box", layout: "horizontal", spacing: "sm", contents: [stat("จอง", opts.totalBookings, "#f0fdf4"), stat("เสร็จ", opts.completed, "#f0fdf4"), stat("ยกเลิก", opts.cancelled, "#fef2f2")] },
-        { type: "separator", margin: "md" },
-        { type: "text", text: "📊 แยกตามบริการ", weight: "bold", size: "sm", margin: "md" },
-        ...opts.byService.slice(0, 5).map((s) => ({ type: "box", layout: "horizontal", margin: "xs", contents: [
-          { type: "text", text: s.name, size: "xs", color: "#666", flex: 3 },
-          { type: "text", text: `${s.count} คิว`, size: "xs", color: "#999", flex: 1, align: "center" },
-          { type: "text", text: `${s.revenue.toLocaleString()}฿`, size: "xs", weight: "bold", color: "#333", flex: 2, align: "end" }
-        ]}))
+        statsRow([
+          { label: "จอง", value: String(opts.totalBookings), tone: "brand" },
+          { label: "เสร็จ", value: String(opts.completed) },
+          { label: "ยกเลิก", value: String(opts.cancelled) }
+        ]),
+        ...(opts.byService.length > 0 ? [
+          { type: "text", text: "📊 แยกตามบริการ", weight: "bold", size: "sm", color: TEXT_MAIN, margin: "sm" } as any,
+          {
+            type: "box" as const,
+            layout: "vertical" as const,
+            spacing: "xs" as const,
+            paddingAll: "14px" as const,
+            backgroundColor: "#ffffff",
+            cornerRadius: "16px" as const,
+            borderWidth: "1px" as const,
+            borderColor: BORDER,
+            contents: opts.byService.slice(0, 5).map((s) => ({ type: "box" as const, layout: "horizontal" as const, contents: [
+              { type: "text", text: s.name, size: "xs", color: TEXT_MAIN, flex: 3, wrap: true } as any,
+              { type: "text", text: `${s.count} คิว`, size: "xs", color: TEXT_MUTED, flex: 1, align: "center" } as any,
+              { type: "text", text: `${s.revenue.toLocaleString()}฿`, size: "xs", weight: "bold", color: BRAND, flex: 2, align: "end" } as any
+            ]}))
+          }
+        ] : [])
       ]
     }
   }};
@@ -1095,16 +1127,24 @@ export function adminRevenueMessage(opts: {
 
 /** Admin: action result. */
 export function adminActionResultMessage(bookingId: number, action: string, customerName: string) {
-  const m: Record<string, { e: string; t: string }> = {
-    confirmed: { e: "✅", t: "ยืนยันแล้ว" }, completed: { e: "🎉", t: "เสร็จสิ้น + บวกแต้ม" },
-    cancelled: { e: "❌", t: "ยกเลิกแล้ว" }, no_show: { e: "🚫", t: "บันทึกไม่มาตามนัด" }
+  const m: Record<string, { e: string; t: string; tone: FlexTone }> = {
+    confirmed: { e: "✅", t: "ยืนยันแล้ว", tone: "success" },
+    completed: { e: "🎉", t: "เสร็จสิ้น + บวกแต้ม", tone: "success" },
+    cancelled: { e: "❌", t: "ยกเลิกแล้ว", tone: "warning" },
+    no_show: { e: "🚫", t: "บันทึกไม่มาตามนัด", tone: "critical" }
   };
-  const info = m[action] ?? { e: "✓", t: action };
-  return { type: "flex", altText: `#${bookingId} ${info.t}`, contents: { type: "bubble",
-    body: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "20px",
+  const info = m[action] ?? { e: "✓", t: action, tone: "brand" as FlexTone };
+  return { type: "flex", altText: `#${bookingId} ${info.t}`, contents: { type: "bubble", size: "kilo",
+    hero: brandHeader({
+      kicker: "ADMIN ACTION",
+      title: `${info.e} ${info.t}`,
+      subtitle: `#${bookingId} · ${customerName}`,
+      tone: info.tone,
+      compact: true
+    }),
+    body: { type: "box", layout: "vertical", spacing: "sm", paddingAll: "16px", backgroundColor: PANEL,
       contents: [
-        { type: "text", text: `${info.e} ${info.t}`, weight: "bold", size: "lg" },
-        { type: "text", text: `#${bookingId} · ${customerName}`, size: "sm", color: "#666" }
+        noteCard("อัปเดตสถานะคิวเรียบร้อย", "ระบบบันทึกและส่งแจ้งไปยังลูกค้าเรียบร้อยแล้ว")
       ]
     }
   }};
@@ -1663,52 +1703,49 @@ export function confirmBookingFlex(opts: {
     contents: {
       type: "bubble",
       size: "giga",
-      header: {
-        type: "box",
-        layout: "vertical",
-        backgroundColor: BRAND,
-        paddingAll: "16px",
-        contents: [
-          { type: "text", text: "BOOKING REVIEW", color: "#ffffffcc", size: "xs", weight: "bold" },
-          { type: "text", text: "ตรวจสอบก่อนยืนยันการจอง", color: "#fff", weight: "bold", size: "xl", margin: "sm" }
-        ]
-      },
+      hero: brandHeader({
+        kicker: "BOOKING REVIEW",
+        title: "ตรวจสอบก่อนยืนยันการจอง",
+        subtitle: "เช็กรายละเอียดให้ครบก่อนยืนยัน",
+        chips: ["ตรวจครบ", "กดยืนยัน", "เสร็จทันที"]
+      }),
       body: {
         type: "box",
         layout: "vertical",
         spacing: "md",
-        paddingAll: "16px",
+        paddingAll: "18px",
+        backgroundColor: PANEL,
         contents: [
           infoRow("บริการ", opts.serviceName, "✂️"),
           infoRow("วัน", opts.dateDisplay, "📅"),
           infoRow("เวลา", opts.timeRange, "🕐"),
           infoRow("ช่าง", opts.staffName, "💇"),
-          totalCard("ราคา", `${opts.price.toLocaleString()} บาท`),
-          { type: "separator", margin: "md" },
+          totalCard("ราคา", `${opts.price.toLocaleString()} บาท`)
+        ]
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        paddingAll: "16px",
+        backgroundColor: PANEL,
+        contents: [
           {
-            type: "box",
-            layout: "horizontal",
-            spacing: "sm",
-            margin: "lg",
-            contents: [
-              {
-                type: "button",
-                style: "primary",
-                color: BRAND,
-                flex: 1,
-                action: {
-                  type: "postback",
-                  label: "✅ ยืนยัน",
-                  data: `action=book_go&svc=${opts.serviceId}&stf=${opts.staffId ?? 0}&d=${opts.date}&t=${opts.timeLabel}`
-                }
-              },
-              {
-                type: "button",
-                style: "secondary",
-                flex: 1,
-                action: { type: "postback", label: "❌ ยกเลิก", data: "action=menu" }
-              }
-            ]
+            type: "button",
+            style: "primary",
+            color: BRAND,
+            height: "md",
+            action: {
+              type: "postback",
+              label: "✅ ยืนยันการจอง",
+              data: `action=book_go&svc=${opts.serviceId}&stf=${opts.staffId ?? 0}&d=${opts.date}&t=${opts.timeLabel}`
+            }
+          },
+          {
+            type: "button",
+            style: "secondary",
+            height: "md",
+            action: { type: "postback", label: "❌ ยกเลิก / กลับเมนู", data: "action=menu" }
           }
         ]
       }
@@ -1725,9 +1762,9 @@ function infoPanel(title: string, items: string[]) {
     backgroundColor: "#ffffff",
     cornerRadius: "16px",
     borderWidth: "1px",
-    borderColor: PREMIUM_BORDER,
+    borderColor: BORDER,
     contents: [
-      { type: "text", text: title, size: "sm", weight: "bold", color: PREMIUM_DARK, wrap: true },
+      { type: "text", text: title, size: "sm", weight: "bold", color: TEXT_MAIN, wrap: true },
       ...items.map((item) => ({ type: "text", text: "• " + item, size: "sm", color: TEXT_MUTED, wrap: true }))
     ]
   };
@@ -1742,7 +1779,7 @@ function infoRow(label: string, value: string, emoji: string) {
     backgroundColor: "#ffffff",
     cornerRadius: "16px",
     borderWidth: "1px",
-    borderColor: PREMIUM_BORDER,
+    borderColor: BORDER,
     contents: [
       {
         type: "box",
@@ -1750,7 +1787,7 @@ function infoRow(label: string, value: string, emoji: string) {
         flex: 0,
         paddingAll: "8px",
         justifyContent: "center",
-        backgroundColor: PREMIUM_SOFT,
+        backgroundColor: BRAND_SOFT,
         cornerRadius: "12px",
         contents: [
           { type: "text", text: emoji, size: "lg", align: "center", gravity: "center" }
@@ -1763,7 +1800,7 @@ function infoRow(label: string, value: string, emoji: string) {
         spacing: "xs",
         contents: [
           { type: "text", text: label, size: "xs", color: TEXT_MUTED },
-          { type: "text", text: value, size: "sm", color: PREMIUM_DARK, weight: "bold", wrap: true }
+          { type: "text", text: value, size: "sm", color: TEXT_MAIN, weight: "bold", wrap: true }
         ]
       }
     ]
@@ -1782,9 +1819,9 @@ function thankYouCard(opts: { title?: string; subtitle?: string } = {}) {
     backgroundColor: IVORY,
     cornerRadius: "16px",
     borderWidth: "1px",
-    borderColor: PREMIUM_BORDER,
+    borderColor: BORDER,
     contents: [
-      { type: "text", text: title, color: PREMIUM_DARK, size: "sm", weight: "bold", align: "center", wrap: true },
+      { type: "text", text: title, color: TEXT_MAIN, size: "sm", weight: "bold", align: "center", wrap: true },
       { type: "text", text: subtitle, color: "#6b4e7a", size: "xs", align: "center", margin: "xs" }
     ]
   };
@@ -1798,8 +1835,8 @@ function totalCard(label: string, value: string) {
     background: {
       type: "linearGradient",
       angle: "135deg",
-      startColor: PREMIUM_DARK,
-      endColor: PREMIUM_PRIMARY,
+      startColor: TEXT_MAIN,
+      endColor: BRAND,
     },
     cornerRadius: "16px",
     contents: [
