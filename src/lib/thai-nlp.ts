@@ -459,6 +459,26 @@ function isBookingIntent(text: string): boolean {
   return /จอง|book|booking|จองคิว|จองนัด|อยากจอง|ขอจอง|จองตั๋ว|นัด|เขียนคิว|จัดคิว|ลงคิว|ลงนัด/i.test(t);
 }
 
+// ───────────────── Human Handoff Intent ─────────────────
+// Detect when a customer wants to speak with a real human / shop owner.
+// Matches common Thai phrasings plus English fallbacks.
+
+const HANDOFF_PATTERNS: RegExp[] = [
+  /คุยกับ(?:คน|พนักงาน|เจ้าของ|แอดมิน|เจ้าหน้าที่|มนุษย์)/,
+  /ขอคุยกับ(?:คน|พนักงาน|เจ้าของร้าน|แอดมิน|เจ้าหน้าที่)/,
+  /ติดต่อ(?:ร้าน|พนักงาน|แอดมิน|เจ้าของร้าน|เจ้าหน้าที่)/,
+  /ให้(?:คน|พนักงาน|แอดมิน|เจ้าหน้าที่)(?:ตอบ|คุย)/,
+  /เรียก(?:พนักงาน|แอดมิน|เจ้าหน้าที่|คน)/,
+  /ไม่(?:อยาก|ต้องการ)คุยกับบอท/,
+  /(?:human|real person|staff|talk to (?:human|someone|staff))/i,
+];
+
+export function detectHandoffIntent(raw: string): boolean {
+  const t = (raw ?? "").trim().toLowerCase();
+  if (!t) return false;
+  return HANDOFF_PATTERNS.some((re) => re.test(t));
+}
+
 // ───────────────── Main: Parse Booking Intent ─────────────────
 
 export function parseBookingIntent(

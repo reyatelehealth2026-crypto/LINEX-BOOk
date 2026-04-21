@@ -3,7 +3,7 @@ import { createRateLimiter } from "@/lib/rate-limit";
 import { verifySignature, replyMessage, getProfile, pushMessage, startLoading } from "@/lib/line";
 import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
 import { availableSlots } from "@/lib/booking";
-import { parseBookingIntent, parseAdminCommand } from "@/lib/thai-nlp";
+import { parseBookingIntent, parseAdminCommand, detectHandoffIntent } from "@/lib/thai-nlp";
 import {
   welcomeMessage,
   profileCard,
@@ -37,6 +37,7 @@ import {
   adminSetupStatusMessage,
 } from "@/lib/flex";
 import { askGLM } from "@/lib/zai";
+import { getOpenHandoff, requestHandoff, takeHandoff, closeHandoff, notifyAdminsOfHandoff } from "@/lib/handoff";
 import type { BookingWithJoins, Customer, LineAdminSession } from "@/types/db";
 import { formatDateTH, formatTimeRange } from "@/lib/format";
 import { fromZonedTime } from "date-fns-tz";
@@ -744,6 +745,32 @@ async function handlePostback(ev: any, customer: Customer) {
     return replyMessage(rt, [bookingConfirmedMessage(result.booking!)]);
   }
 
+  // ── AI Human Handoff ──
+  if (action === "handoff_take") {
+    if (!canAdmin) {
+      return replyMessage(rt, [adminAuthPromptMessage()]);
+    }
+    const id = Number(data.get("id"));
+    if (!id) return replyMessage(rt, [textMessage("ไม่พบเคส handoff")]);
+    const ok = await takeHandoff(id, userId ?? "");
+    if (!ok) return replyMessage(rt, [textMessage("รับเคสไม่สำเร็จ — เคสอาจถูกปิดแล้ว")]);
+    return replyMessage(rt, [textMessage(`✋ รับเคส #${id} แล้ว — บอทหยุดตอบลูกค้าคนนี้จนกว่าจะกด "ปิดเคส"`)]);
+  }
+  if (action === "handoff_close") {
+    if (!canAdmin) {
+      return replyMessage(rt, [adminAuthPromptMessage()]);
+    }
+    const id = Number(data.get("id"));
+    if (!id) return replyMessage(rt, [textMessage("ไม่พบเคส handoff")]);
+    const closed = await closeHandoff(id, userId ?? "");
+    if (!closed) return replyMessage(rt, [textMessage("ปิดเคสไม่สำเร็จ")]);
+    // Notify the customer that the bot is active again
+    try {
+      await pushMessage(closed.line_user_id, [textMessage("ร้านปิดเคสแล้ว หากต้องการความช่วยเหลือเพิ่ม พิมพ์ได้เลยค่ะ 💬")]);
+    } catch {}
+    return replyMessage(rt, [textMessage(`✅ ปิดเคส #${id} แล้ว — บอทกลับมาตอบลูกค้าคนนี้ต่อได้`)]);
+  }
+
   // ── ADMIN POSTBACK ACTIONS (from Flex buttons) ──
 
   if (action === "adm_confirm" || action === "adm_complete" || action === "adm_cancel" || action === "adm_noshow") {
@@ -782,6 +809,19 @@ async function handleMessage(ev: any, customer: Customer) {
       return replyMessage(rt, [adminAuthSuccessMessage(), adminMenuMessage()]);
     }
     return replyMessage(rt, [textMessage("รหัสแอดมินไม่ถูกต้อง ลองใหม่อีกครั้ง")]);
+  }
+
+  // ── AI Human Handoff: pause bot if customer has an open handoff session ──
+  const openHandoff = await getOpenHandoff(userId);
+  if (openHandoff) {
+    // Log the latest message so admin can see context, but do not reply with bot.
+    const db2 = supabaseAdmin();
+    await db2
+      .from("ai_handoff_sessions")
+      .update({ last_message: text })
+      .eq("id", openHandoff.id);
+    // Silent — admin is handling this conversation.
+    return;
   }
 
   // ── Check if admin ──
@@ -860,6 +900,18 @@ async function handleMessage(ev: any, customer: Customer) {
         { type: "button", style: "primary", color: "#06c755", margin: "md", action: { type: "uri", label: "🔍 ดูบริการ/ราคา", uri: `https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID ?? ""}/services` } }
       ]}}
     }]);
+  }
+
+  // ── Human handoff intent (before AI fallback) ──
+  if (detectHandoffIntent(text)) {
+    const session = await requestHandoff(customer.id, userId, text);
+    if (session) {
+      // Fire-and-forget: notify admins so reply to user is not delayed
+      notifyAdminsOfHandoff(session, customer.full_name ?? customer.display_name ?? "ลูกค้า", customer.picture_url ?? null).catch((err) => {
+        console.error("[handoff] notify admins error", err);
+      });
+    }
+    return replyMessage(rt, [textMessage("รับทราบค่ะ 🙏 กำลังแจ้งพนักงานให้มาคุยกับคุณ ระหว่างรอ บอทจะหยุดตอบชั่วคราวนะคะ")]);
   }
 
   // ── Default: AI chat reply via Z.AI GLM ──
