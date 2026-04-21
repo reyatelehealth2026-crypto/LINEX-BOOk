@@ -36,6 +36,7 @@ import {
   adminWizardProgressMessage,
   adminSetupStatusMessage,
   setFlexTheme,
+  bookInLiffMessage,
 } from "@/lib/flex";
 import { getShopThemeId } from "@/lib/shop-theme";
 import { askGLM } from "@/lib/zai";
@@ -772,9 +773,16 @@ async function handlePostback(ev: any, customer: Customer) {
   // ── STEP-BY-STEP BOOKING FLOW ──
 
   if (action === "book") {
-    const { data: services } = await db.from("services").select("id, name, duration_min, price").eq("shop_id", SHOP_ID).eq("active", true).order("sort_order");
+    const { data: services } = await db.from("services").select("id").eq("shop_id", SHOP_ID).eq("active", true).limit(1);
     if (!services?.length) return replyMessage(rt, [textMessage("ยังไม่มีบริการในระบบ")]);
-    return replyMessage(rt, [serviceCarouselMessage(services)]);
+    return replyMessage(rt, [bookInLiffMessage()]);
+  }
+
+  if (action === "chat_prompt") {
+    return replyMessage(rt, [textMessage(
+      "พิมพ์มาได้เลยค่ะ เช่น “อยากจองตัดผมพรุ่งนี้ 14:00” หรือถามเรื่องร้านได้เลยนะ 😊",
+      defaultQuickReply()
+    )]);
   }
 
   if (action === "book_svc") {
@@ -961,11 +969,10 @@ async function handleMessage(ev: any, customer: Customer) {
   const { data: services } = await db.from("services").select("id, name, name_en, duration_min, price").eq("shop_id", SHOP_ID).eq("active", true);
   const { data: staff } = await db.from("staff").select("id, name, nickname").eq("shop_id", SHOP_ID).eq("active", true);
 
-  // ── Direct booking shortcut for simple commands ──
+  // ── Direct booking shortcut — redirect to LIFF for a smooth single-screen flow ──
   if (/^(จอง|จองคิว|book|booking)$/i.test(text.trim())) {
-    const svcList = (services ?? []).map((s: any) => ({ id: s.id, name: s.name, duration_min: s.duration_min, price: s.price }));
-    if (!svcList.length) return replyMessage(rt, [textMessage("ยังไม่มีบริการในระบบ")]);
-    return replyMessage(rt, [serviceCarouselMessage(svcList)]);
+    if (!(services ?? []).length) return replyMessage(rt, [textMessage("ยังไม่มีบริการในระบบ")]);
+    return replyMessage(rt, [bookInLiffMessage()]);
   }
 
   // ── AI Natural Language Booking ──
@@ -1081,21 +1088,19 @@ async function handleAIBooking(
     )]);
   }
 
-  // MEDIUM confidence: have service but missing date → fallback to date carousel
+  // MEDIUM confidence: have service but missing date → push to LIFF with service prefilled
   if (intent.serviceId && !intent.date) {
-    let staffId = intent.staffId ?? null;
-    let staffName = "ช่างคนไหนก็ได้";
-    if (staffId) {
-      const { data: s } = await db.from("staff").select("nickname, name").eq("id", staffId).single();
-      staffName = s?.nickname ?? s?.name ?? "ไม่ระบุ";
-    }
-    return replyMessage(rt, [dateCarouselMessage(intent.serviceId, staffId, staffName)]);
+    const { data: service } = await db.from("services").select("name").eq("id", intent.serviceId).single();
+    return replyMessage(rt, [bookInLiffMessage({
+      variant: "ai-missing-date",
+      serviceId: intent.serviceId,
+      serviceName: service?.name ?? null,
+      staffId: intent.staffId ?? null,
+    })]);
   }
 
-  // LOW → fallback to step-by-step
-  const { data: allServices } = await db.from("services").select("id, name, duration_min, price").eq("shop_id", SHOP_ID).eq("active", true).order("sort_order");
-  if (!allServices?.length) return replyMessage(rt, [textMessage("ยังไม่มีบริการในระบบ")]);
-  return replyMessage(rt, [serviceCarouselMessage(allServices)]);
+  // LOW confidence → short nudge + LIFF CTA (don't spam service carousel)
+  return replyMessage(rt, [bookInLiffMessage({ variant: "ai-low" })]);
 }
 
 // ───────────────── Admin Setup Wizard ─────────────────

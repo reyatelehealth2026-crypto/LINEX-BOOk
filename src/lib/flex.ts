@@ -698,6 +698,144 @@ export function mainMenuMessage(name: string) {
   };
 }
 
+/**
+ * Compact "book in LIFF" CTA — preferred over the 4-step in-chat carousel.
+ * Keeps AI chat unobstructed, directs customer straight to the Mini App.
+ *
+ * Supports optional prefills via query string so LIFF can jump to the right step.
+ */
+export function bookInLiffMessage(opts: {
+  title?: string;
+  subtitle?: string;
+  reasons?: string[];
+  serviceId?: number | null;
+  serviceName?: string | null;
+  staffId?: number | null;
+  date?: string | null;
+  /** Reason to use this bubble — drives tone. "ai-low" = AI couldn't parse intent. */
+  variant?: "default" | "ai-low" | "ai-missing-date" | "ai-missing-service";
+} = {}) {
+  const variant = opts.variant ?? "default";
+
+  // Build LIFF URL with optional deep-link params.
+  const qs = new URLSearchParams();
+  if (opts.serviceId) qs.set("service", String(opts.serviceId));
+  if (opts.staffId) qs.set("staff", String(opts.staffId));
+  if (opts.date) qs.set("date", opts.date);
+  const bookingUrl = LIFF_URL("/liff/booking") + (qs.toString() ? `?${qs}` : "");
+
+  const defaultReasons = [
+    "📱 เลือกเวลาว่างแบบเรียลไทม์",
+    "⚡ ยืนยันทันที ไม่ต้องรอพิมพ์สลับกลับไปมา",
+    "🛠️ แก้ไข/ยกเลิกเองได้ในแอป",
+  ];
+
+  const headerByVariant: Record<
+    NonNullable<typeof opts.variant>,
+    { kicker: string; title: string; subtitle?: string; chips?: string[] }
+  > = {
+    default: {
+      kicker: "BOOK IN APP",
+      title: opts.title ?? "จองคิวในแอปสะดวกที่สุด",
+      subtitle: opts.subtitle ?? "กดปุ่มเดียว เลือกบริการ เวลา และช่างได้เลย",
+      chips: ["ง่าย", "ไว", "ชัดเจน"],
+    },
+    "ai-low": {
+      kicker: "ต้องการจองใช่ไหม?",
+      title: opts.title ?? "ลองจองผ่านแอปสะดวกกว่าน่ะ",
+      subtitle: opts.subtitle ?? "ระบบจะพาเลือกบริการและเวลาให้เสร็จในแอป",
+      chips: ["แนะนำ", "ไม่พลาด", "ครบในที่เดียว"],
+    },
+    "ai-missing-date": {
+      kicker: "เลือกวันในแอป",
+      title: opts.title ?? `เลือกวันสำหรับ${opts.serviceName ?? "บริการ"} ในแอป`,
+      subtitle: opts.subtitle ?? "เห็นตารางว่างจริงแบบเรียลไทม์",
+      chips: ["ง่ายกว่า", "เห็นคิวว่าง", "กดได้เลย"],
+    },
+    "ai-missing-service": {
+      kicker: "เลือกบริการในแอป",
+      title: opts.title ?? "ลองเปิดแอปเพื่อดูบริการทั้งหมด",
+      subtitle: opts.subtitle ?? "พร้อมราคาและรายละเอียดครบ",
+      chips: ["บริการครบ", "ดูราคา", "จองทันที"],
+    },
+  };
+
+  const head = headerByVariant[variant];
+  const reasons = opts.reasons ?? defaultReasons;
+
+  return {
+    type: "flex",
+    altText: head.title,
+    contents: {
+      type: "bubble",
+      size: "kilo",
+      hero: brandHeader({
+        kicker: head.kicker,
+        title: head.title,
+        subtitle: head.subtitle,
+        chips: head.chips,
+      }),
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        paddingAll: "16px",
+        backgroundColor: PANEL,
+        contents: [
+          {
+            type: "box",
+            layout: "vertical",
+            spacing: "xs",
+            paddingAll: "12px",
+            backgroundColor: "#ffffff",
+            cornerRadius: "14px",
+            borderWidth: "1px",
+            borderColor: BORDER,
+            contents: reasons.map((reason) => ({
+              type: "text",
+              text: reason,
+              size: "sm",
+              color: TEXT_MAIN,
+              wrap: true,
+            })),
+          },
+        ],
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        paddingAll: "14px",
+        backgroundColor: PANEL,
+        contents: [
+          {
+            type: "button",
+            style: "primary",
+            color: BRAND,
+            height: "md",
+            action: {
+              type: "uri",
+              label: "📅 จองในแอป",
+              uri: bookingUrl,
+            },
+          },
+          {
+            type: "button",
+            style: "secondary",
+            height: "sm",
+            action: {
+              type: "postback",
+              label: "💬 พิมพ์คุยกับเรา",
+              data: "action=chat_prompt",
+              displayText: "ขอคุยแชท",
+            },
+          },
+        ],
+      },
+    },
+  };
+}
+
 /** Step 1 — Service selection carousel. */
 export function serviceCarouselMessage(
   services: Array<Pick<Service, "id" | "name" | "duration_min" | "price">>
