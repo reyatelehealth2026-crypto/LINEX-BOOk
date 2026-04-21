@@ -22,7 +22,7 @@ import {
   adminBookingCard,
   adminRevenueMessage,
   adminActionResultMessage,
-  smartWelcomeMessage,
+  defaultQuickReply,
   adminAuthPromptMessage,
   adminAuthRecoveryMessage,
   adminAuthSuccessMessage,
@@ -495,7 +495,12 @@ async function handleEvent(ev: any) {
   if (!customer) return;
 
   if (ev.type === "follow") {
-    return replyMessage(ev.replyToken, [smartWelcomeMessage(customer.display_name ?? "คุณลูกค้า")]);
+    const name = customer.display_name ?? customer.full_name ?? "คุณ";
+    return replyMessage(ev.replyToken, [textMessage(
+      `สวัสดีค่ะ คุณ ${name} 👋
+ยินดีต้อนรับเข้าสู่ร้านนะค่ะ พิมพ์ถามได้เลย หรือเลือกจากเมนูด้านล่างนะค่ะ ✨`,
+      defaultQuickReply()
+    )]);
   }
 
   if (ev.type === "postback") {
@@ -970,7 +975,7 @@ async function handleMessage(ev: any, customer: Customer) {
   }
   if (/ยกเลิก|cancel/i.test(text)) {
     const list = await fetchMyBookings(customer.id);
-    if (list.length === 0) return replyMessage(rt, [textMessage("คุณไม่มีคิวที่สามารถยกเลิกได้")]);
+    if (list.length === 0) return replyMessage(rt, [textMessage("คุณไม่มีคิวที่สามารถยกเลิกได้", defaultQuickReply())]);
     return replyMessage(rt, [myBookingsMessage(list)]);
   }
   if (/บริการ|ราคา|service|price/i.test(text)) {
@@ -1000,7 +1005,7 @@ async function handleMessage(ev: any, customer: Customer) {
       : "ยังไม่ได้ตั้งเวลาทำการในระบบ";
     const shopName = shopRes.data?.name ?? "ร้าน";
     const phone = shopRes.data?.phone ? `\n📞 ${shopRes.data.phone}` : "";
-    return replyMessage(rt, [textMessage(`⏰ เวลาทำการ ${shopName}\n${body}${phone}`)]);
+    return replyMessage(rt, [textMessage(`⏰ เวลาทำการ ${shopName}\n${body}${phone}`, defaultQuickReply())]);
   }
 
   // ── Human handoff intent (before AI fallback) ──
@@ -1018,12 +1023,13 @@ async function handleMessage(ev: any, customer: Customer) {
   // ── Default: AI chat reply via Z.AI GLM ──
   const aiReply = await askGLM(userId, text);
   if (aiReply) {
-    return replyMessage(rt, [{ type: "text", text: aiReply }]);
+    return replyMessage(rt, [textMessage(aiReply as string, defaultQuickReply())]);
   }
-  // Fallback: use plain text (not Flex) to guarantee LINE accepts the reply
+  // Fallback: plain text + quick reply to guarantee LINE accepts the reply
   const name = customer.display_name ?? customer.full_name ?? "คุณลูกค้า";
   return replyMessage(rt, [textMessage(
-    `สวัสดีค่ะ ${name} 👋\nพิมพ์ "จอง" เพื่อจองคิว หรือ "คิว" เพื่อดูนัดหมายของคุณนะคะ`
+    `ขอโทษค่ะ คุณ ${name} ลองพิมพ์ใหม่อีกครั้ง หรือเลือกจากเมนูนะค่ะ 🙏`,
+    defaultQuickReply()
   )]);
 }
 

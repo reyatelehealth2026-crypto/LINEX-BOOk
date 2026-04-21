@@ -23,8 +23,18 @@ const APP_URL = (path = "") => {
   return base ? `${base}${path}` : "https://example.com";
 };
 
-export function textMessage(text: string) {
-  return { type: "text", text };
+export function textMessage(text: string, quickReply?: object) {
+  return quickReply ? { type: "text", text, quickReply } : { type: "text", text };
+}
+
+export function defaultQuickReply() {
+  return {
+    items: [
+      { type: "action", action: { type: "postback", label: "📅 จองคิว", data: "action=book", displayText: "จองคิว" } },
+      { type: "action", action: { type: "postback", label: "📋 คิวของฉัน", data: "action=my_bookings", displayText: "คิวของฉัน" } },
+      { type: "action", action: { type: "postback", label: "⭐ แต้มสะสม", data: "action=profile", displayText: "แต้มสะสม" } },
+    ],
+  };
 }
 
 export function welcomeMessage(displayName: string) {
