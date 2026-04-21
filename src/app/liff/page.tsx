@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
 import { useLiff } from "@/components/LiffProvider";
-import { Calendar, ListChecks, UserCircle2, Sparkles, ArrowUpRight } from "lucide-react";
+import { Calendar, ListChecks, UserCircle2, Sparkles, ArrowUpRight, Gift } from "lucide-react";
 
 export default function LiffHome() {
   const { t } = useI18n();
@@ -72,6 +72,12 @@ export default function LiffHome() {
           icon={<UserCircle2 size={20} />}
           title={t("home.profile")}
           subtitle="ข้อมูลและแต้มสะสม"
+        />
+        <Tile
+          href="/liff/loyalty"
+          icon={<Gift size={20} />}
+          title="แต้มสะสม"
+          subtitle="ดูแต้ม / แลกส่วนลด"
         />
       </div>
     </div>

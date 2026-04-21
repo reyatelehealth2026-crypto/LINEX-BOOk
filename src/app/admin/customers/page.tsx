@@ -13,7 +13,10 @@ type CustomerRow = {
   phone: string | null;
   birthday: string | null;
   points: number;
+  lifetime_points: number;
   visit_count: number;
+  no_show_count: number;
+  blocked_until: string | null;
   registered_at: string | null;
   created_at: string;
   latest_booking_at: string | null;
@@ -42,6 +45,7 @@ export default function CustomersPage() {
   const totalCustomers = customers.length;
   const registered = customers.filter((c) => c.registered_at).length;
   const totalPoints = customers.reduce((a, c) => a + c.points, 0);
+  const blockedCount = customers.filter((c) => c.blocked_until && new Date(c.blocked_until) > new Date()).length;
 
   return (
     <div className="space-y-4 sm:space-y-5 animate-fade-up">
@@ -56,7 +60,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div className="bg-brand-50 rounded-2xl px-4 py-3">
           <div className="text-xs opacity-70">ลูกค้าทั้งหมด</div>
           <div className="text-2xl font-bold">{totalCustomers}</div>
@@ -69,6 +73,12 @@ export default function CustomersPage() {
           <div className="text-xs opacity-70">แต้มรวม</div>
           <div className="text-2xl font-bold text-amber-700">{totalPoints}</div>
         </div>
+        {blockedCount > 0 && (
+          <div className="bg-red-50 rounded-2xl px-4 py-3">
+            <div className="text-xs opacity-70">ถูกบล็อก</div>
+            <div className="text-2xl font-bold text-red-600">{blockedCount}</div>
+          </div>
+        )}
       </div>
 
       {/* Search */}
@@ -136,8 +146,14 @@ function CustomerCard({ c }: { c: CustomerRow }) {
           )}
         </div>
       </div>
-      <div className="text-right text-sm shrink-0">
+      <div className="text-right text-sm shrink-0 space-y-0.5">
         <div className="text-neutral-500">{c.visit_count} ครั้ง · {c.points} แต้ม</div>
+        {c.no_show_count > 0 && (
+          <div className="text-xs text-red-500">⚠️ no-show {c.no_show_count} ครั้ง</div>
+        )}
+        {c.blocked_until && new Date(c.blocked_until) > new Date() && (
+          <div className="chip bg-red-100 text-red-700 text-[10px]">🔒 ถูกบล็อก</div>
+        )}
         <div className="text-xs text-neutral-400">คิวล่าสุด {lastBooking}</div>
       </div>
     </Link>

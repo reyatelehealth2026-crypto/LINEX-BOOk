@@ -184,7 +184,7 @@ export async function GET(req: NextRequest) {
 
   const db = supabaseAdmin();
   const now = new Date();
-  const results = { reminded_1h: 0, reminded_2h: 0, reminded_24h: 0, review_requested: 0, errors: 0 };
+  const results = { reminded_1h: 0, reminded_2h: 0, reminded_24h: 0, review_requested: 0, errors: 0, churn_pushed: 0 };
 
   // ── Pass 1: 1-hour reminder (window: 50–70 min from now) ──
   {
@@ -394,6 +394,84 @@ export async function GET(req: NextRequest) {
       }
       await db.from("shops").update({ last_birthday_run: todayYmd }).eq("id", SHOP_ID);
     }
+  }
+
+  // ── Pass 5: Points expiry ──────────────────────────────────────────────
+  {
+    const { data: shopRow } = await db
+      .from("shops")
+      .select("points_expiry_days")
+      .eq("id", SHOP_ID)
+      .maybeSingle();
+    const expiryDays = Number(shopRow?.points_expiry_days ?? 0);
+
+    if (expiryDays > 0) {
+      const cutoff = new Date(now.getTime() - expiryDays * 86_400_000).toISOString();
+      // Warn 7 days before expiry
+      const warnCutoff = new Date(now.getTime() - (expiryDays - 7) * 86_400_000).toISOString();
+      const { data: expiring } = await db
+        .from("customers")
+        .select("id, line_user_id, full_name, display_name, points, last_visit_at")
+        .eq("shop_id", SHOP_ID)
+        .gt("points", 0)
+        .not("last_visit_at", "is", null)
+        .lte("last_visit_at", warnCutoff)
+        .gt("last_visit_at", cutoff);
+
+      for (const c of (expiring ?? []) as any[]) {
+        const name = c.full_name ?? c.display_name ?? "คุณลูกค้า";
+        if (c.line_user_id) {
+          await pushLine(
+            c.line_user_id,
+            `⚠️ แต้มสะสม ${c.points} แต้มของ ${name} ใกล้หมดอายุแล้วค่ะ!\nกรุณาจองบริการหรือแลกแต้มภายใน 7 วัน ก่อนแต้มหมดอายุนะคะ 🏃`
+          ).catch(() => {});
+        }
+      }
+
+      // Zero out truly expired points
+      await db
+        .from("customers")
+        .update({ points: 0 } as any)
+        .eq("shop_id", SHOP_ID)
+        .gt("points", 0)
+        .not("last_visit_at", "is", null)
+        .lte("last_visit_at", cutoff);
+    }
+  }
+
+  // ── Pass 6: Churn risk auto-push (at_risk segment) ────────────────────
+  {
+    const churnCutoffDays = 45;
+    const churnDate = new Date(now.getTime() - churnCutoffDays * 86_400_000).toISOString();
+    const activityDate = new Date(now.getTime() - 90 * 86_400_000).toISOString();
+    const todayYmd = now.toISOString().slice(0, 10);
+
+    // Only push customers who: visited >45 days ago, visited <90 days ago (not lost), visit_count ≥ 2
+    const { data: atRisk } = await db
+      .from("customers")
+      .select("id, line_user_id, full_name, display_name, points, churn_push_at")
+      .eq("shop_id", SHOP_ID)
+      .gte("visit_count", 2)
+      .not("last_visit_at", "is", null)
+      .lte("last_visit_at", churnDate)
+      .gte("last_visit_at", activityDate);
+
+    for (const c of (atRisk ?? []) as any[]) {
+      // Avoid re-pushing within 30 days
+      if (c.churn_push_at && String(c.churn_push_at).slice(0, 10) > new Date(now.getTime() - 30 * 86_400_000).toISOString().slice(0, 10)) continue;
+      if (!c.line_user_id) continue;
+      const name = c.full_name ?? c.display_name ?? "คุณลูกค้า";
+      const pointsText = c.points > 0 ? `\n(คุณมีแต้มสะสม ${c.points} แต้ม รอแลกส่วนลดอยู่นะคะ 🎁)` : "";
+      await pushLine(
+        c.line_user_id,
+        `😢 ไม่ได้เจอ ${name} นานมากเลยค่ะ!\nทางร้านคิดถึงนะคะ ลองจองบริการใหม่ได้เลย มีโปรโมชั่นรอคุณอยู่ค่ะ 💚${pointsText}`
+      ).catch(() => {});
+      await db
+        .from("customers")
+        .update({ churn_push_at: todayYmd } as any)
+        .eq("id", c.id);
+    }
+    results.churn_pushed = (atRisk ?? []).length;
   }
 
   // ── Update cron_last_run in shop settings ──

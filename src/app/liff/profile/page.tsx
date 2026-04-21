@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useLiff } from "@/components/LiffProvider";
 import { useI18n } from "@/lib/i18n";
 import type { Customer } from "@/types/db";
-import { Star, CalendarCheck2 } from "lucide-react";
+import { Star, CalendarCheck2, Gift, ArrowRight } from "lucide-react";
 
 export default function ProfilePage() {
   const { profile } = useLiff();
@@ -61,26 +62,48 @@ export default function ProfilePage() {
       <h1 className="h-display text-2xl">{t("profile.title")}</h1>
 
       {isRegistered && customer && (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="card card-hover p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
-              <Star size={18} />
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="card card-hover p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
+                <Star size={18} />
+              </div>
+              <div>
+                <div className="text-xs text-ink-500">{t("profile.points")}</div>
+                <div className="text-xl font-bold text-ink-900">{customer.points}</div>
+                {(customer as any).lifetime_points > customer.points && (
+                  <div className="text-[10px] text-ink-400">สะสม {(customer as any).lifetime_points} แต้ม</div>
+                )}
+              </div>
             </div>
-            <div>
-              <div className="text-xs text-ink-500">{t("profile.points")}</div>
-              <div className="text-xl font-bold text-ink-900">{customer.points}</div>
+            <div className="card card-hover p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center shrink-0">
+                <CalendarCheck2 size={18} />
+              </div>
+              <div>
+                <div className="text-xs text-ink-500">{t("profile.visit_count")}</div>
+                <div className="text-xl font-bold text-ink-900">{customer.visit_count}</div>
+              </div>
             </div>
           </div>
-          <div className="card card-hover p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center shrink-0">
-              <CalendarCheck2 size={18} />
+
+          {/* Loyalty shortcut */}
+          <Link
+            href="/liff/loyalty"
+            className="card p-4 flex items-center justify-between hover:border-linex-300 transition group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-linex-50 text-linex-600 flex items-center justify-center">
+                <Gift size={18} />
+              </div>
+              <div>
+                <div className="font-semibold text-sm">แต้มสะสม &amp; ส่วนลด</div>
+                <div className="text-xs text-ink-400">ดูระดับ / แลกแต้ม / โค้ดชวนเพื่อน</div>
+              </div>
             </div>
-            <div>
-              <div className="text-xs text-ink-500">{t("profile.visit_count")}</div>
-              <div className="text-xl font-bold text-ink-900">{customer.visit_count}</div>
-            </div>
-          </div>
-        </div>
+            <ArrowRight size={16} className="text-ink-300 group-hover:text-linex-500 transition" />
+          </Link>
+        </>
       )}
 
       <div className="card p-4 space-y-3">

@@ -19,6 +19,9 @@ import {
   X,
   Lock,
   ShieldCheck,
+  BarChart3,
+  Tag,
+  Star,
 } from "lucide-react";
 
 type NavItem = {
@@ -38,6 +41,9 @@ const NAV: NavItem[] = [
   { href: "/admin/customers", label: "ลูกค้า", icon: Users },
   { href: "/admin/templates", label: "เทมเพลตข้อความ", icon: MessageSquareText },
   { href: "/admin/ai-settings", label: "ตั้งค่า AI แชท", icon: Bot },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/admin/coupons", label: "คูปอง", icon: Tag },
+  { href: "/admin/reviews", label: "รีวิว", icon: Star },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

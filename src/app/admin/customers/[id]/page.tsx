@@ -15,6 +15,9 @@ import {
   XCircle,
   UserX,
   StickyNote,
+  ShieldOff,
+  Share2,
+  TrendingUp,
 } from "lucide-react";
 
 type CustomerDetail = {
@@ -26,7 +29,11 @@ type CustomerDetail = {
   phone: string | null;
   birthday: string | null;
   points: number;
+  lifetime_points: number;
   visit_count: number;
+  no_show_count: number;
+  blocked_until: string | null;
+  referral_code: string | null;
   registered_at: string | null;
   created_at: string;
 };
@@ -122,7 +129,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
           <InfoItem
             icon={<Phone size={16} />}
             label="เบอร์โทร"
@@ -139,8 +146,13 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           />
           <InfoItem
             icon={<Gift size={16} />}
-            label="แต้มสะสม"
-            value={`${customer.points} แต้ม`}
+            label="แต้มคงเหลือ"
+            value={`${customer.points.toLocaleString()} แต้ม`}
+          />
+          <InfoItem
+            icon={<TrendingUp size={16} />}
+            label="สะสมตลอดสาย"
+            value={`${(customer.lifetime_points ?? 0).toLocaleString()} แต้ม`}
           />
           <InfoItem
             icon={<UserCheck size={16} />}
@@ -151,7 +163,30 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                 : "ยังไม่ลงทะเบียน"
             }
           />
+          {customer.referral_code && (
+            <InfoItem
+              icon={<Share2 size={16} />}
+              label="โค้ดชวนเพื่อน"
+              value={customer.referral_code}
+            />
+          )}
         </div>
+
+        {/* No-show / Blocked warnings */}
+        {(customer.no_show_count > 0 || (customer.blocked_until && new Date(customer.blocked_until) > new Date())) && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {customer.no_show_count > 0 && (
+              <span className="chip bg-orange-50 text-orange-600">
+                <UserX size={12} /> no-show {customer.no_show_count} ครั้ง
+              </span>
+            )}
+            {customer.blocked_until && new Date(customer.blocked_until) > new Date() && (
+              <span className="chip bg-red-100 text-red-700">
+                <ShieldOff size={12} /> บล็อกจนถึง {new Date(customer.blocked_until).toLocaleDateString("th-TH")}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Quick booking stats */}
