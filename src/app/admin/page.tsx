@@ -135,7 +135,7 @@ export default function AdminHome() {
           <h1 className="h-display text-2xl sm:text-3xl">คิวประจำวัน</h1>
         </div>
 
-        <div className="card p-1.5 flex items-center gap-1 shadow-soft">
+        <div className="card p-1.5 flex items-center gap-1">
           <button
             onClick={() => shiftDate(-1)}
             className="w-9 h-9 rounded-xl hover:bg-ink-100 text-ink-600 flex items-center justify-center"
@@ -159,7 +159,7 @@ export default function AdminHome() {
           {!isToday && (
             <button
               onClick={() => setDate(today)}
-              className="hidden sm:inline-flex px-2.5 h-9 rounded-xl text-xs font-semibold text-brand-600 hover:bg-brand-50 items-center"
+              className="hidden sm:inline-flex px-2.5 h-9 rounded-xl text-xs font-semibold text-ink-700 hover:bg-ink-100 items-center"
             >
               วันนี้
             </button>
@@ -177,8 +177,8 @@ export default function AdminHome() {
 
       {/* Revenue summary card */}
       {isToday && (revenue.actual > 0 || revenue.estimated > 0) && (
-        <div className="card p-4 bg-gradient-to-r from-brand-600 to-brand-700 text-white flex items-center gap-4">
-          <div className="w-10 h-10 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
+        <div className="card-dark p-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-md bg-white/10 flex items-center justify-center shrink-0">
             <TrendingUp size={20} />
           </div>
           <div className="flex-1 min-w-0">
@@ -198,7 +198,7 @@ export default function AdminHome() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
         <Stat label="ทั้งหมด" value={counts.all} tone="neutral" />
         <Stat label="รอยืนยัน" value={counts.pending} tone="amber" />
-        <Stat label="ยืนยันแล้ว" value={counts.confirmed} tone="brand" />
+        <Stat label="ยืนยันแล้ว" value={counts.confirmed} tone="emerald" />
         <Stat label="เสร็จสิ้น" value={counts.done} tone="ink" />
         <Stat label="ยกเลิก" value={counts.lost} tone="rose" />
       </div>
@@ -219,7 +219,7 @@ export default function AdminHome() {
             onClick={() => setFilter("confirmed")}
             label="ยืนยันแล้ว"
             count={counts.confirmed}
-            tone="brand"
+            tone="emerald"
           />
           <FilterPill active={filter === "done"} onClick={() => setFilter("done")} label="เสร็จสิ้น" count={counts.done} />
         </div>
@@ -245,7 +245,7 @@ export default function AdminHome() {
         </div>
       ) : visible.length === 0 ? (
         <div className="card p-10 text-center space-y-3 text-ink-500">
-          <div className="mx-auto w-12 h-12 rounded-2xl bg-ink-100 flex items-center justify-center">
+          <div className="mx-auto w-12 h-12 rounded-md border border-ink-200 bg-ink-50 text-ink-400 flex items-center justify-center">
             <CalendarDays size={22} />
           </div>
           <div className="text-sm">
@@ -270,17 +270,17 @@ function Stat({
 }: {
   label: string;
   value: number;
-  tone: "neutral" | "amber" | "brand" | "ink" | "rose";
+  tone: "neutral" | "amber" | "emerald" | "ink" | "rose";
 }) {
   const toneMap = {
     neutral: "bg-white border border-ink-200 text-ink-700",
     amber: "bg-amber-50 border border-amber-200 text-amber-800",
-    brand: "bg-brand-50 border border-brand-200 text-brand-800",
+    emerald: "bg-emerald-50 border border-emerald-200 text-emerald-800",
     ink: "bg-ink-100 border border-ink-200 text-ink-700",
-    rose: "bg-accent-rose/10 border border-accent-rose/20 text-accent-rose",
+    rose: "bg-red-50 border border-red-200 text-red-700",
   };
   return (
-    <div className={`rounded-2xl px-3 py-2.5 ${toneMap[tone]}`}>
+    <div className={`rounded-xl px-3 py-2.5 ${toneMap[tone]}`}>
       <div className="text-[10px] uppercase tracking-wider font-semibold opacity-80">{label}</div>
       <div className="text-2xl sm:text-3xl font-extrabold leading-none mt-1">{value}</div>
     </div>
@@ -298,10 +298,10 @@ function FilterPill({
   onClick: () => void;
   label: string;
   count: number;
-  tone?: "amber" | "brand";
+  tone?: "amber" | "emerald";
 }) {
   const activeBg =
-    tone === "amber" ? "bg-amber-500 text-white" : tone === "brand" ? "bg-brand-500 text-white" : "bg-ink-900 text-white";
+    tone === "amber" ? "bg-amber-500 text-white" : tone === "emerald" ? "bg-emerald-600 text-white" : "bg-ink-900 text-white";
   return (
     <button
       onClick={onClick}
@@ -353,7 +353,7 @@ function BookingCard({ b, onSet }: { b: Booking; onSet: (id: number, status: str
             </div>
           ) : null}
           {b.note && (
-            <div className="text-[11px] italic text-ink-500 mt-1.5 bg-ink-50 p-2 rounded-xl">📝 {b.note}</div>
+            <div className="text-[11px] italic text-ink-500 mt-1.5 bg-ink-50 p-2 rounded-lg border border-ink-100">{b.note}</div>
           )}
         </div>
         <span className={`chip ${statusMeta.cls} shrink-0`}>{statusMeta.label}</span>
@@ -416,14 +416,14 @@ function ActionButton({
 }) {
   const cls =
     tone === "brand"
-      ? "bg-brand-500 text-white hover:bg-brand-600 shadow-soft"
+      ? "bg-ink-900 text-white hover:bg-ink-800"
       : tone === "rose"
-        ? "bg-accent-rose/10 text-accent-rose hover:bg-accent-rose/15"
+        ? "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
         : "bg-ink-100 text-ink-700 hover:bg-ink-200";
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition active:scale-95 ${cls}`}
+      className={`inline-flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition active:scale-95 ${cls}`}
     >
       {icon} {label}
     </button>
@@ -432,8 +432,8 @@ function ActionButton({
 
 const STATUS_MAP: Record<string, { cls: string; label: string }> = {
   pending: { cls: "bg-amber-100 text-amber-700", label: "รอยืนยัน" },
-  confirmed: { cls: "bg-brand-100 text-brand-700", label: "ยืนยันแล้ว" },
+  confirmed: { cls: "bg-emerald-100 text-emerald-700", label: "ยืนยันแล้ว" },
   completed: { cls: "bg-ink-200 text-ink-700", label: "เสร็จสิ้น" },
   cancelled: { cls: "bg-ink-100 text-ink-500", label: "ยกเลิก" },
-  no_show: { cls: "bg-accent-rose/15 text-accent-rose", label: "ไม่มา" },
+  no_show: { cls: "bg-red-100 text-red-700", label: "ไม่มา" },
 };

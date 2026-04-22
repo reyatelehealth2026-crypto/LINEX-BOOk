@@ -69,9 +69,9 @@ export default function StaffPage() {
       </div>
 
       {loading ? (
-        <div className="card p-8 text-center text-neutral-500">กำลังโหลด...</div>
+        <div className="card p-8 text-center text-ink-500">กำลังโหลด...</div>
       ) : staff.length === 0 && editing !== "new" ? (
-        <div className="card p-8 text-center text-neutral-500">ยังไม่มีพนักงาน กด &quot;เพิ่มพนักงาน&quot เพื่อเริ่มต้น</div>
+        <div className="card p-8 text-center text-ink-500">ยังไม่มีพนักงาน กด &quot;เพิ่มพนักงาน&quot เพื่อเริ่มต้น</div>
       ) : (
         <div className="space-y-2">
           {editing === "new" && (
@@ -96,21 +96,21 @@ export default function StaffPage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={s.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-ink-100 text-ink-700 flex items-center justify-center font-bold flex-shrink-0">
                     {s.name.charAt(0)}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold truncate">{s.name}</span>
-                    {s.nickname && <span className="text-sm text-neutral-500">&quot;{s.nickname}&quot;</span>}
-                    {!s.active && <span className="chip bg-neutral-200 text-neutral-500">ปิด</span>}
+                    {s.nickname && <span className="text-sm text-ink-500">&quot;{s.nickname}&quot;</span>}
+                    {!s.active && <span className="chip bg-ink-200 text-ink-500">ปิด</span>}
                   </div>
-                  {s.bio && <div className="text-sm text-neutral-500 truncate">{s.bio}</div>}
+                  {s.bio && <div className="text-sm text-ink-500 truncate">{s.bio}</div>}
                 </div>
-                <div className="text-sm text-neutral-400">#{s.sort_order}</div>
+                <div className="text-sm text-ink-400">#{s.sort_order}</div>
                 <button onClick={() => toggleActive(s)} className="btn-ghost !p-2" title={s.active ? "ปิดใช้งาน" : "เปิดใช้งาน"}>
-                  {s.active ? <ToggleRight size={24} className="text-brand-500" /> : <ToggleLeft size={24} className="text-neutral-400" />}
+                  {s.active ? <ToggleRight size={24} className="text-ink-900" /> : <ToggleLeft size={24} className="text-ink-400" />}
                 </button>
                 <button onClick={() => setEditing(s.id)} className="btn-ghost !p-2" title="แก้ไข"><Pencil size={18} /></button>
                 <button onClick={() => handleDelete(s.id)} className="btn-ghost !p-2 text-red-500 hover:text-red-600" title="ลบ"><Trash2 size={18} /></button>
@@ -155,7 +155,7 @@ function StaffEditor({
   }
 
   return (
-    <form onSubmit={submit} className="card p-4 space-y-3 border-brand-200 bg-brand-50/30">
+    <form onSubmit={submit} className="card p-4 space-y-3 border-ink-300 bg-ink-50">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="label">ชื่อ-นามสกุล *</label>
@@ -175,7 +175,7 @@ function StaffEditor({
         </div>
         <div className="sm:col-span-2 flex items-center gap-2">
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="w-5 h-5 accent-brand-500" />
+            <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="w-5 h-5 accent-ink-900" />
             <span className="text-sm font-medium">{active ? "เปิดใช้งาน" : "ปิดใช้งาน"}</span>
           </label>
         </div>

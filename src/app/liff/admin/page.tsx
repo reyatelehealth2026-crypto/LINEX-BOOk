@@ -74,10 +74,9 @@ export default function LiffAdminHome() {
   return (
     <div className="space-y-5">
       {/* Hero */}
-      <div className="card-dark p-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-brand-mesh opacity-50 pointer-events-none" />
-        <div className="relative">
-          <div className="eyebrow !text-brand-400 flex items-center gap-2">
+      <div className="card-dark p-6">
+        <div>
+          <div className="eyebrow !text-white/50 flex items-center gap-2">
             <Sparkles size={14} /> แอดมิน · วันนี้
           </div>
           <div className="text-3xl font-extrabold mt-2">สวัสดี {identity?.displayName ?? "คุณแอดมิน"}</div>
@@ -92,7 +91,7 @@ export default function LiffAdminHome() {
 
           <div className="mt-5 grid grid-cols-3 gap-2">
             <HeroStat label="ทั้งหมด" value={counts.total} tone="neutral" />
-            <HeroStat label="ยืนยัน" value={counts.confirmed} tone="brand" />
+            <HeroStat label="ยืนยัน" value={counts.confirmed} tone="neutral" />
             <HeroStat label="รอยืนยัน" value={counts.pending} tone="amber" />
           </div>
         </div>
@@ -141,7 +140,7 @@ export default function LiffAdminHome() {
             </div>
             <div className="flex-1">
               <div className="font-semibold text-ink-900">
-                {setupPct === 100 ? "ร้านพร้อมใช้งานครบถ้วน 🎉" : `${health?.okCount ?? 0}/${health?.total ?? 0} ขั้นตอนเสร็จแล้ว`}
+                {setupPct === 100 ? "ร้านพร้อมใช้งานครบถ้วน" : `${health?.okCount ?? 0}/${health?.total ?? 0} ขั้นตอนเสร็จแล้ว`}
               </div>
               <div className="text-xs text-ink-500 mt-0.5">
                 {issues.length > 0
@@ -159,7 +158,7 @@ export default function LiffAdminHome() {
               {issues.length > 3 && (
                 <Link
                   href="/liff/admin/setup"
-                  className="flex items-center justify-between text-xs text-brand-600 font-semibold pt-1"
+                  className="flex items-center justify-between text-xs text-ink-600 font-semibold pt-1"
                 >
                   <span>ดูทั้งหมด {issues.length} รายการ</span>
                   <ArrowUpRight size={14} />
@@ -176,7 +175,7 @@ export default function LiffAdminHome() {
 
       {/* Upcoming bookings preview */}
       <section>
-        <SectionHeader title="คิวถัดไป" action={<Link href="/liff/admin/queue" className="text-xs font-semibold text-brand-600">ดูทั้งหมด →</Link>} />
+        <SectionHeader title="คิวถัดไป" action={<Link href="/liff/admin/queue" className="text-xs font-semibold text-ink-600">ดูทั้งหมด</Link>} />
         {loading ? (
           <div className="space-y-2">
             {Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton h-16" />)}
@@ -192,7 +191,7 @@ export default function LiffAdminHome() {
                 const t = new Date(b.starts_at);
                 return (
                   <div key={b.id} className="card p-3 flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-700 flex flex-col items-center justify-center shrink-0">
+                    <div className="w-12 h-12 rounded-md border border-ink-200 bg-ink-50 text-ink-700 flex flex-col items-center justify-center shrink-0">
                       <div className="text-[10px] uppercase tracking-wider font-bold opacity-60">
                         {t.toLocaleDateString("th-TH", { day: "numeric" })}
                       </div>
@@ -210,7 +209,7 @@ export default function LiffAdminHome() {
                       className={`chip ${
                         b.status === "pending"
                           ? "bg-amber-100 text-amber-700"
-                          : "bg-brand-100 text-brand-700"
+                          : "bg-emerald-100 text-emerald-700"
                       }`}
                     >
                       {b.status === "pending" ? "รอยืนยัน" : "ยืนยันแล้ว"}
@@ -236,14 +235,13 @@ export default function LiffAdminHome() {
   );
 }
 
-function HeroStat({ label, value, tone }: { label: string; value: number; tone: "neutral" | "brand" | "amber" }) {
+function HeroStat({ label, value, tone }: { label: string; value: number; tone: "neutral" | "amber" }) {
   const toneMap = {
     neutral: "bg-white/10 text-white",
-    brand: "bg-brand-500/25 text-brand-300",
     amber: "bg-amber-400/20 text-amber-300",
   };
   return (
-    <div className={`rounded-2xl px-3 py-2.5 ${toneMap[tone]}`}>
+    <div className={`rounded-xl px-3 py-2.5 ${toneMap[tone]}`}>
       <div className="text-[10px] uppercase tracking-wider font-semibold opacity-80">{label}</div>
       <div className="text-2xl font-extrabold leading-none mt-1">{value}</div>
     </div>
@@ -271,8 +269,8 @@ function QuickAction({
       }`}
     >
       <div
-        className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
-          highlight ? "bg-amber-100 text-amber-600" : "bg-brand-50 text-brand-600"
+        className={`w-10 h-10 rounded-md border flex items-center justify-center ${
+          highlight ? "border-amber-200 bg-amber-50 text-amber-600" : "border-ink-200 bg-ink-50 text-ink-700"
         }`}
       >
         {icon}
@@ -297,7 +295,7 @@ function SectionHeader({ title, action }: { title: string; action?: React.ReactN
 
 function IssueRow({ check }: { check: HealthCheck }) {
   const tone =
-    check.status === "fail" ? "text-accent-rose" : check.status === "warn" ? "text-amber-500" : "text-brand-600";
+    check.status === "fail" ? "text-red-600" : check.status === "warn" ? "text-amber-500" : "text-emerald-600";
   const Icon = check.status === "ok" ? CheckCircle2 : AlertTriangle;
   return (
     <div className="flex items-start gap-2 text-xs">
@@ -313,7 +311,7 @@ function IssueRow({ check }: { check: HealthCheck }) {
 function ShortcutLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
     <Link href={href} className="card p-3 flex items-center gap-3 text-sm hover:border-ink-300 transition">
-      <div className="w-8 h-8 rounded-xl bg-ink-100 text-ink-600 flex items-center justify-center">{icon}</div>
+      <div className="w-8 h-8 rounded-md border border-ink-200 bg-ink-50 text-ink-700 flex items-center justify-center">{icon}</div>
       <span className="font-semibold text-ink-800">{label}</span>
       <ArrowUpRight size={12} className="ml-auto text-ink-400" />
     </Link>

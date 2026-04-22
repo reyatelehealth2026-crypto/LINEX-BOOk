@@ -192,21 +192,21 @@ export default function AiSettingsPage() {
       </div>
 
       {error && (
-        <div className="card p-4 border-accent-rose/30 bg-accent-rose/5 text-accent-rose text-sm">
+        <div className="card p-4 border-red-200 bg-red-50 text-red-700 text-sm">
           {error}
         </div>
       )}
 
       {saved && (
-        <div className="card p-4 border-brand-200 bg-brand-50 text-brand-700 text-sm flex items-center gap-2">
+        <div className="card p-4 border-emerald-200 bg-emerald-50 text-emerald-700 text-sm flex items-center gap-2">
           <ShieldCheck size={15} /> บันทึกการตั้งค่าเรียบร้อยแล้ว
         </div>
       )}
 
       {/* ── Enable / Disable ─────────────────────────── */}
-      <div className={`card p-5 flex items-center justify-between gap-4 transition ${settings.enabled ? "border-brand-200 bg-brand-50/40" : "bg-ink-50/50"}`}>
+      <div className={`card p-5 flex items-center justify-between gap-4 transition ${settings.enabled ? "border-emerald-200 bg-emerald-50" : "bg-ink-50"}`}>
         <div className="flex items-center gap-3">
-          <Bot size={22} className={settings.enabled ? "text-brand-500" : "text-ink-400"} />
+          <Bot size={22} className={settings.enabled ? "text-emerald-600" : "text-ink-400"} />
           <div>
             <div className="font-semibold text-ink-900">AI แชทบอท</div>
             <div className="text-sm text-ink-500">
@@ -220,7 +220,7 @@ export default function AiSettingsPage() {
           aria-label="toggle AI"
         >
           {settings.enabled
-            ? <ToggleRight size={36} className="text-brand-500" />
+            ? <ToggleRight size={36} className="text-emerald-600" />
             : <ToggleLeft size={36} className="text-ink-300" />}
         </button>
       </div>
@@ -303,7 +303,7 @@ export default function AiSettingsPage() {
               step={0.05}
               value={settings.temperature}
               onChange={(e) => set("temperature", parseFloat(e.target.value))}
-              className="w-full accent-brand-500"
+              className="w-full accent-ink-900"
             />
             <div className="flex justify-between text-[11px] text-ink-400 mt-0.5">
               <span>ตามตรง</span><span>สร้างสรรค์</span>
@@ -320,7 +320,7 @@ export default function AiSettingsPage() {
               step={10}
               value={settings.max_tokens}
               onChange={(e) => set("max_tokens", parseInt(e.target.value))}
-              className="w-full accent-brand-500"
+              className="w-full accent-ink-900"
             />
             <div className="flex justify-between text-[11px] text-ink-400 mt-0.5">
               <span>สั้น</span><span>ยาว</span>
@@ -337,7 +337,7 @@ export default function AiSettingsPage() {
               step={2}
               value={settings.history_limit}
               onChange={(e) => set("history_limit", parseInt(e.target.value))}
-              className="w-full accent-brand-500"
+              className="w-full accent-ink-900"
             />
             <div className="flex justify-between text-[11px] text-ink-400 mt-0.5">
               <span>2</span><span>20</span>
@@ -349,7 +349,7 @@ export default function AiSettingsPage() {
 
       {/* ── System Prompt Preview ─────────────────────── */}
       <Section title="ตัวอย่าง System Prompt (Preview)" icon={Bot} open={openSections.main} onToggle={() => toggleSection("main")}>
-        <div className="bg-ink-950 rounded-2xl p-4 text-[12px] font-mono text-ink-200 whitespace-pre-wrap leading-relaxed overflow-auto max-h-80">
+        <div className="bg-ink-950 rounded-xl p-4 text-[12px] font-mono text-ink-200 whitespace-pre-wrap leading-relaxed overflow-auto max-h-80">
           {buildPreviewPrompt(settings)}
         </div>
         <Hint>นี่คือ system prompt ที่ระบบสร้างจากการตั้งค่าข้างต้น ข้อมูลร้าน/บริการ/ช่างจะถูกเพิ่มโดยอัตโนมัติเมื่อบอททำงานจริง</Hint>

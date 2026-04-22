@@ -129,7 +129,7 @@ export default function CouponsPage() {
           <button onClick={reload} className="btn-secondary" disabled={loading}>
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} /> รีเฟรช
           </button>
-          <button onClick={() => setShowForm(true)} className="glow-btn">
+          <button onClick={() => setShowForm(true)} className="btn-primary">
             <Plus size={15} /> สร้างคูปอง
           </button>
         </div>
@@ -191,7 +191,7 @@ export default function CouponsPage() {
             </div>
           </div>
           <div className="flex gap-2 pt-1">
-            <button onClick={create} className="glow-btn" disabled={saving}>
+            <button onClick={create} className="btn-primary" disabled={saving}>
               {saving ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />}
               บันทึก
             </button>
@@ -207,7 +207,7 @@ export default function CouponsPage() {
             type === "active" ? list.filter((c) => c.active && !c.issued_by_redeem).length :
             type === "inactive" ? list.filter((c) => !c.active).length :
             list.filter((c) => c.issued_by_redeem).length;
-          const labels = { active: "🟢 ใช้งานอยู่", inactive: "⛔ ปิด", redeem: "🎫 จากแต้ม" };
+          const labels = { active: "ใช้งานอยู่", inactive: "ปิด", redeem: "จากแต้ม" };
           return (
             <div key={type} className="chip bg-white border border-ink-200 font-semibold">
               {labels[type]}: {count}
@@ -254,7 +254,7 @@ export default function CouponsPage() {
                           {copiedId === c.id ? <Check size={12} className="text-green-600" /> : <Copy size={12} />}
                         </button>
                       </div>
-                      {c.issued_by_redeem && <span className="text-[10px] text-purple-500 ml-1">🎫 จากแต้ม</span>}
+                      {c.issued_by_redeem && <span className="text-[10px] text-purple-500 ml-1">จากแต้ม</span>}
                     </td>
                     <td className="px-3 py-2.5 text-ink-600 hidden sm:table-cell max-w-[12rem] truncate">{c.name}</td>
                     <td className="px-3 py-2.5 text-center">

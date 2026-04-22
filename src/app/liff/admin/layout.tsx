@@ -72,7 +72,7 @@ export default function LiffAdminLayout({ children }: { children: React.ReactNod
   if (state !== "ok") {
     return (
       <div className="card p-6 text-center space-y-4 animate-fade-up">
-        <div className="mx-auto w-14 h-14 rounded-2xl bg-accent-rose/10 text-accent-rose flex items-center justify-center">
+        <div className="mx-auto w-12 h-12 rounded-md border border-red-200 bg-red-50 text-red-600 flex items-center justify-center">
           <ShieldX size={26} />
         </div>
         <div>
@@ -99,8 +99,8 @@ export default function LiffAdminLayout({ children }: { children: React.ReactNod
     <AdminLiffContext.Provider value={ctxValue}>
       <div className="pb-24 animate-fade-up">
         {/* Top identity strip */}
-        <div className="card-glass p-3 px-4 mb-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-brand-500 text-white flex items-center justify-center">
+        <div className="card p-3 px-4 mb-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-md bg-ink-900 text-white flex items-center justify-center">
             <ShieldCheck size={18} />
           </div>
           <div className="flex-1 min-w-0">
@@ -111,7 +111,7 @@ export default function LiffAdminLayout({ children }: { children: React.ReactNod
           </div>
           <Link
             href="/liff"
-            className="shrink-0 w-9 h-9 rounded-xl bg-white border border-ink-200 text-ink-500 flex items-center justify-center hover:text-ink-900"
+            className="shrink-0 w-9 h-9 rounded-md bg-white border border-ink-200 text-ink-500 flex items-center justify-center hover:text-ink-900"
             title="ออกจากโหมดแอดมิน"
           >
             <LogOut size={16} />
@@ -121,7 +121,7 @@ export default function LiffAdminLayout({ children }: { children: React.ReactNod
         {children}
 
         {/* Bottom tab bar */}
-        <nav className="fixed bottom-0 inset-x-0 z-30 border-t border-ink-100 bg-white/80 backdrop-blur-xl">
+        <nav className="fixed bottom-0 inset-x-0 z-30 border-t border-ink-200 bg-white">
           <div className="max-w-lg mx-auto grid grid-cols-3">
             <TabLink
               href="/liff/admin"
@@ -163,12 +163,12 @@ function TabLink({
     <Link
       href={href}
       className={`flex flex-col items-center gap-1 py-3 transition-colors ${
-        active ? "text-brand-600" : "text-ink-400 hover:text-ink-700"
+        active ? "text-ink-900" : "text-ink-400 hover:text-ink-700"
       }`}
     >
       <div className={`${active ? "scale-110" : ""} transition-transform`}>{icon}</div>
       <span className="text-[11px] font-semibold tracking-tight">{label}</span>
-      {active && <span className="w-1 h-1 rounded-full bg-brand-500" />}
+      {active && <span className="w-1 h-1 rounded-full bg-ink-900" />}
     </Link>
   );
 }

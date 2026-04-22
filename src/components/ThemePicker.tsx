@@ -44,17 +44,15 @@ export function ThemePicker({
       onClick={() => setOpen(true)}
       className={
         variant === "icon"
-          ? "w-8 h-8 rounded-full bg-white/80 backdrop-blur border border-ink-100 shadow-soft flex items-center justify-center text-ink-700 hover:text-ink-900 transition"
-          : "inline-flex items-center gap-1.5 rounded-full bg-white/80 backdrop-blur border border-ink-100 shadow-soft px-2.5 py-1 text-xs font-semibold text-ink-700 hover:text-ink-900 transition"
+          ? "w-8 h-8 rounded-full bg-white border border-ink-200 flex items-center justify-center text-ink-700 hover:text-ink-900 transition"
+          : "inline-flex items-center gap-1.5 rounded-full bg-white border border-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-700 hover:text-ink-900 transition"
       }
       aria-label="เปลี่ยนธีม"
       title={`ธีม: ${activeTheme.name.th}`}
     >
       <span
         className="w-4 h-4 rounded-full border-2 border-white"
-        style={{
-          background: `linear-gradient(135deg, ${activeTheme.primary}, ${activeTheme.primaryLight})`,
-        }}
+        style={{ background: activeTheme.primary }}
       />
       {variant === "compact" && <span>{label ?? "ธีม"}</span>}
     </button>
@@ -68,14 +66,14 @@ export function ThemePicker({
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-ink-900/45 backdrop-blur-sm animate-fade-up"
+            className="absolute inset-0 bg-ink-900/45 animate-fade-up"
             onClick={() => setOpen(false)}
           />
 
           {/* Sheet */}
           <div
             ref={sheetRef}
-            className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-linex-panel max-h-[85vh] flex flex-col animate-fade-up"
+            className="relative w-full sm:max-w-lg bg-white rounded-t-xl sm:rounded-xl border border-ink-200 max-h-[85vh] flex flex-col animate-fade-up"
           >
             {/* Grab bar (mobile) */}
             <div className="sm:hidden pt-2">
@@ -118,10 +116,8 @@ export function ThemePicker({
             <footer className="p-4 pt-3 border-t border-ink-100 flex items-center justify-between gap-3">
               <div className="text-xs text-ink-500 flex items-center gap-2">
                 <span
-                  className="w-5 h-5 rounded-full border-2 border-white shadow-soft"
-                  style={{
-                    background: `linear-gradient(135deg, ${activeTheme.primary}, ${activeTheme.primaryLight})`,
-                  }}
+                  className="w-5 h-5 rounded-full border-2 border-white"
+                  style={{ background: activeTheme.primary }}
                 />
                 <span>
                   กำลังใช้: <b className="text-ink-700">{activeTheme.name.th}</b>
@@ -156,10 +152,10 @@ function ThemeTile({
   return (
     <button
       onClick={onSelect}
-      className={`group text-left rounded-2xl overflow-hidden border transition ${
+      className={`group text-left rounded-xl overflow-hidden border transition ${
         active
-          ? "border-transparent ring-2 shadow-lift"
-          : "border-ink-100 hover:-translate-y-0.5 hover:shadow-soft"
+          ? "border-transparent ring-2"
+          : "border-ink-200 hover:border-ink-300"
       }`}
       style={
         active ? ({ "--tw-ring-color": theme.primary } as React.CSSProperties) : undefined
@@ -167,28 +163,21 @@ function ThemeTile({
     >
       <div
         className="relative h-14"
-        style={{ background: theme.mesh }}
+        style={{ background: theme.primary }}
       >
         <div className="absolute inset-0 p-2 flex items-end gap-1">
           <span
-            className="w-4 h-4 rounded-full border-2 border-white shadow-soft"
-            style={{ background: theme.primary }}
-          />
-          <span
-            className="w-4 h-4 rounded-full border-2 border-white shadow-soft"
+            className="w-4 h-4 rounded-full border-2 border-white"
             style={{ background: theme.secondary }}
           />
           <span
-            className="w-4 h-4 rounded-full border-2 border-white shadow-soft"
+            className="w-4 h-4 rounded-full border-2 border-white"
             style={{ background: theme.accent }}
           />
         </div>
         {active && (
-          <div
-            className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow-lift"
-            style={{ background: theme.primary, color: theme.onPrimary }}
-          >
-            <Check size={12} />
+          <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-white flex items-center justify-center">
+            <Check size={12} style={{ color: theme.primary }} />
           </div>
         )}
       </div>

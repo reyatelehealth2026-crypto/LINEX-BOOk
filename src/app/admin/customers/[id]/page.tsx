@@ -80,7 +80,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   }, [reload]);
 
   if (loading) {
-    return <div className="card p-8 text-center text-neutral-500">กำลังโหลด...</div>;
+    return <div className="card p-8 text-center text-ink-500">กำลังโหลด...</div>;
   }
 
   if (!customer) {
@@ -89,7 +89,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
         <Link href="/admin/customers" className="btn-ghost text-sm">
           <ArrowLeft size={16} /> กลับ
         </Link>
-        <div className="card p-8 text-center text-neutral-500">ไม่พบลูกค้า</div>
+        <div className="card p-8 text-center text-ink-500">ไม่พบลูกค้า</div>
       </div>
     );
   }
@@ -117,14 +117,14 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
             // eslint-disable-next-line @next/next/no-img-element
             <img src={customer.picture_url} alt="" className="w-14 h-14 rounded-full" />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 text-xl font-bold">
+            <div className="w-14 h-14 rounded-full bg-ink-200 flex items-center justify-center text-ink-700 text-xl font-bold">
               {name.charAt(0)}
             </div>
           )}
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold truncate">{name}</h2>
             {customer.display_name && customer.full_name && (
-              <div className="text-sm text-neutral-500">LINE: {customer.display_name}</div>
+              <div className="text-sm text-ink-500">LINE: {customer.display_name}</div>
             )}
           </div>
         </div>
@@ -206,7 +206,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       </div>
 
       {bookings.length === 0 ? (
-        <div className="card p-8 text-center text-neutral-500">ยังไม่มีประวัติการจอง</div>
+        <div className="card p-8 text-center text-ink-500">ยังไม่มีประวัติการจอง</div>
       ) : (
         <div className="space-y-3">
           {bookings.map((b) => (
@@ -229,9 +229,9 @@ function InfoItem({
 }) {
   return (
     <div className="flex items-start gap-2">
-      <div className="text-neutral-400 mt-0.5">{icon}</div>
+      <div className="text-ink-400 mt-0.5">{icon}</div>
       <div>
-        <div className="text-xs text-neutral-500">{label}</div>
+        <div className="text-xs text-ink-500">{label}</div>
         <div className="font-medium">{value}</div>
       </div>
     </div>
@@ -240,8 +240,8 @@ function InfoItem({
 
 function MiniStat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="bg-white rounded-2xl border border-neutral-100 px-4 py-3 shadow-sm">
-      <div className="text-xs text-neutral-500">{label}</div>
+    <div className="bg-white rounded-xl border border-ink-200 px-4 py-3">
+      <div className="text-xs text-ink-500">{label}</div>
       <div className="text-lg font-bold">{value}</div>
     </div>
   );
@@ -264,7 +264,7 @@ function BookingTimelineEntry({ b }: { b: BookingEntry }) {
       {/* Timeline dot + line feel */}
       <div className="flex flex-col items-center">
         <StatusIcon status={b.status} />
-        <div className="w-0.5 flex-1 bg-neutral-100 mt-1" />
+        <div className="w-0.5 flex-1 bg-ink-100 mt-1" />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -272,20 +272,20 @@ function BookingTimelineEntry({ b }: { b: BookingEntry }) {
           <span className="font-semibold">{b.service?.name ?? "บริการ"}</span>
           <StatusPill status={b.status} />
         </div>
-        <div className="text-sm text-neutral-600 mt-0.5">
+        <div className="text-sm text-ink-600 mt-0.5">
           {dateStr} เวลา {timeStr} · {b.service?.duration_min ?? "—"} นาที
           {b.staff && (
             <span> · ช่าง {b.staff.nickname ?? b.staff.name}</span>
           )}
         </div>
-        <div className="text-sm text-neutral-500 mt-0.5">
+        <div className="text-sm text-ink-500 mt-0.5">
           {baht(Number(b.price))}
           {b.points_earned > 0 && (
             <span className="text-amber-600 ml-2">+{b.points_earned} แต้ม</span>
           )}
         </div>
         {b.note && (
-          <div className="text-xs text-neutral-500 mt-1 flex items-start gap-1">
+          <div className="text-xs text-ink-500 mt-1 flex items-start gap-1">
             <StickyNote size={12} className="mt-0.5 shrink-0" /> {b.note}
           </div>
         )}
@@ -297,9 +297,9 @@ function BookingTimelineEntry({ b }: { b: BookingEntry }) {
 function StatusPill({ status }: { status: string }) {
   const map: Record<string, { cls: string; label: string }> = {
     pending: { cls: "bg-amber-100 text-amber-700", label: "รอยืนยัน" },
-    confirmed: { cls: "bg-brand-100 text-brand-700", label: "ยืนยันแล้ว" },
-    completed: { cls: "bg-neutral-200 text-neutral-700", label: "เสร็จสิ้น" },
-    cancelled: { cls: "bg-neutral-100 text-neutral-500", label: "ยกเลิก" },
+    confirmed: { cls: "bg-emerald-100 text-emerald-700", label: "ยืนยันแล้ว" },
+    completed: { cls: "bg-ink-200 text-ink-700", label: "เสร็จสิ้น" },
+    cancelled: { cls: "bg-ink-100 text-ink-500", label: "ยกเลิก" },
     no_show: { cls: "bg-red-100 text-red-700", label: "ไม่มา" },
   };
   const m = map[status] ?? { cls: "", label: status };
@@ -317,8 +317,8 @@ function StatusIcon({ status }: { status: string }) {
       );
     case "confirmed":
       return (
-        <div className={`${cls} bg-brand-100`}>
-          <CheckCircle2 size={14} className="text-brand-600" />
+        <div className={`${cls} bg-emerald-100`}>
+          <CheckCircle2 size={14} className="text-emerald-600" />
         </div>
       );
     case "pending":
@@ -329,8 +329,8 @@ function StatusIcon({ status }: { status: string }) {
       );
     case "cancelled":
       return (
-        <div className={`${cls} bg-neutral-200`}>
-          <XCircle size={14} className="text-neutral-500" />
+        <div className={`${cls} bg-ink-200`}>
+          <XCircle size={14} className="text-ink-500" />
         </div>
       );
     case "no_show":
@@ -341,8 +341,8 @@ function StatusIcon({ status }: { status: string }) {
       );
     default:
       return (
-        <div className={`${cls} bg-neutral-200`}>
-          <Clock size={14} className="text-neutral-500" />
+        <div className={`${cls} bg-ink-200`}>
+          <Clock size={14} className="text-ink-500" />
         </div>
       );
   }

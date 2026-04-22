@@ -4,7 +4,7 @@ import { useLiff } from "@/components/LiffProvider";
 import { useI18n } from "@/lib/i18n";
 import { useRouter, useSearchParams } from "next/navigation";
 import { baht } from "@/lib/utils";
-import { CheckCircle2, XCircle, Clock, RotateCcw, Star } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, RotateCcw, Star, BellRing, Inbox } from "lucide-react";
 
 type Booking = {
   id: number;
@@ -77,18 +77,18 @@ export default function MyBookings() {
   return (
     <div className="space-y-4 animate-fade-up">
       {just && (
-        <div className="card p-4 border-brand-300 bg-brand-50 text-brand-700 flex items-center gap-2">
+        <div className="card p-4 border-emerald-200 bg-emerald-50 text-emerald-800 flex items-center gap-2">
           <CheckCircle2 size={18} /> {t("booking.success")} #{just}
         </div>
       )}
       {rescheduled && (
-        <div className="card p-4 border-accent-sky/40 bg-accent-sky/10 text-accent-sky flex items-center gap-2">
+        <div className="card p-4 border-ink-300 bg-ink-50 text-ink-800 flex items-center gap-2">
           <Clock size={18} /> {lang === "en" ? "Rescheduled!" : "เปลี่ยนเวลาสำเร็จ!"} #{rescheduled}
         </div>
       )}
       {waitlisted && (
-        <div className="card p-4 border-linex-300 bg-linex-50 text-linex-700 flex items-center gap-2">
-          🔔 {lang === "en" ? "You're on the waitlist! We'll notify you when a slot opens." : "ลงทะเบียนรอคิวสำเร็จ! เราจะแจ้งเตือนเมื่อมีคิวว่าง"}
+        <div className="card p-4 border-ink-200 bg-ink-50 text-ink-700 flex items-center gap-2">
+          <BellRing size={18} /> {lang === "en" ? "You're on the waitlist! We'll notify you when a slot opens." : "ลงทะเบียนรอคิวสำเร็จ! เราจะแจ้งเตือนเมื่อมีคิวว่าง"}
         </div>
       )}
       <h1 className="h-display text-2xl">{t("my.title")}</h1>
@@ -99,8 +99,10 @@ export default function MyBookings() {
           <div className="skeleton h-16 rounded-2xl" />
         </div>
       ) : list.length === 0 ? (
-        <div className="card p-10 text-center">
-          <div className="text-3xl mb-2">📭</div>
+        <div className="card p-10 text-center flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-md border border-ink-200 bg-ink-50 text-ink-400 flex items-center justify-center">
+            <Inbox size={22} />
+          </div>
           <div className="text-ink-500 text-sm">{t("my.empty")}</div>
         </div>
       ) : (
@@ -123,11 +125,11 @@ export default function MyBookings() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => reschedule(b)}
-                      className="text-accent-sky text-sm font-semibold inline-flex items-center gap-1 hover:underline"
+                      className="text-ink-600 text-sm font-semibold inline-flex items-center gap-1 hover:underline"
                     >
                       <Clock size={14} /> {lang === "en" ? "Reschedule" : "เปลี่ยนเวลา"}
                     </button>
-                    <button onClick={() => cancel(b.id)} className="text-accent-rose text-sm font-semibold inline-flex items-center gap-1 hover:underline">
+                    <button onClick={() => cancel(b.id)} className="text-red-600 text-sm font-semibold inline-flex items-center gap-1 hover:underline">
                       <XCircle size={14} /> {t("common.cancel")}
                     </button>
                   </div>
@@ -136,13 +138,13 @@ export default function MyBookings() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => rebook(b)}
-                      className="text-brand-600 text-sm font-semibold inline-flex items-center gap-1 hover:underline"
+                      className="text-ink-600 text-sm font-semibold inline-flex items-center gap-1 hover:underline"
                     >
                       <RotateCcw size={14} /> {lang === "en" ? "Book again" : "จองอีกครั้ง"}
                     </button>
                     <button
                       onClick={() => review(b)}
-                      className="text-accent-amber text-sm font-semibold inline-flex items-center gap-1 hover:underline"
+                      className="text-amber-600 text-sm font-semibold inline-flex items-center gap-1 hover:underline"
                     >
                       <Star size={14} /> {lang === "en" ? "Review" : "รีวิว"}
                     </button>
@@ -160,10 +162,10 @@ export default function MyBookings() {
 function StatusChip({ status }: { status: string }) {
   const map: Record<string, string> = {
     pending: "bg-amber-100 text-amber-700",
-    confirmed: "bg-brand-100 text-brand-700",
+    confirmed: "bg-emerald-100 text-emerald-700",
     completed: "bg-ink-200 text-ink-600",
     cancelled: "bg-ink-100 text-ink-500",
-    no_show: "bg-accent-rose/10 text-accent-rose"
+    no_show: "bg-red-100 text-red-700"
   };
   const label: Record<string, string> = {
     pending: "รอยืนยัน", confirmed: "ยืนยันแล้ว", completed: "เสร็จสิ้น", cancelled: "ยกเลิก", no_show: "ไม่มา"

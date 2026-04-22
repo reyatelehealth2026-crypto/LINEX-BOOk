@@ -4,22 +4,22 @@ import { useAdmin } from "../_ctx";
 import {
   Plus, Pencil, Trash2, Check, X, RefreshCw,
   ToggleLeft, ToggleRight, Eye, Tag, Send, Database, Copy,
-  MessageSquareText,
+  MessageSquareText, AlertTriangle,
 } from "lucide-react";
 import type { MessageTemplate, TemplateCategory } from "@/types/db";
 
 const CATEGORY_LABELS: Record<TemplateCategory, { label: string; color: string }> = {
-  reminder: { label: "⏰ เตือน", color: "bg-amber-100 text-amber-700" },
-  promo: { label: "🎉 โปรโมชั่น", color: "bg-violet-100 text-violet-700" },
-  follow_up: { label: "💬 ติดตาม", color: "bg-sky-100 text-sky-700" },
-  custom: { label: "📝 อื่นๆ", color: "bg-ink-100 text-ink-700" },
+  reminder: { label: "เตือน", color: "bg-amber-100 text-amber-700" },
+  promo: { label: "โปรโมชั่น", color: "bg-violet-100 text-violet-700" },
+  follow_up: { label: "ติดตาม", color: "bg-sky-100 text-sky-700" },
+  custom: { label: "อื่นๆ", color: "bg-ink-100 text-ink-700" },
 };
 
 const CATEGORY_OPTIONS: { value: TemplateCategory; label: string }[] = [
-  { value: "reminder", label: "⏰ เตือน (Reminder)" },
-  { value: "promo", label: "🎉 โปรโมชั่น (Promo)" },
-  { value: "follow_up", label: "💬 ติดตาม (Follow-up)" },
-  { value: "custom", label: "📝 อื่นๆ (Custom)" },
+  { value: "reminder", label: "เตือน (Reminder)" },
+  { value: "promo", label: "โปรโมชั่น (Promo)" },
+  { value: "follow_up", label: "ติดตาม (Follow-up)" },
+  { value: "custom", label: "อื่นๆ (Custom)" },
 ];
 
 const KNOWN_VARS = [
@@ -134,13 +134,13 @@ export default function TemplatesPage() {
       {tableMissing ? (
         <TableMissingBanner info={tableMissing} onRetry={reload} />
       ) : (
-        <div className="card p-4 bg-brand-50/50 border-brand-200">
+        <div className="card p-4 border-ink-300 bg-ink-50">
           <div className="flex items-start gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-brand-500 text-white flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-md bg-ink-900 text-white flex items-center justify-center shrink-0">
               <Tag size={16} />
             </div>
             <div className="text-sm text-ink-700">
-              <span className="font-semibold text-brand-700">ตัวแปรที่ใช้ได้:</span>{" "}
+              <span className="font-semibold text-ink-900">ตัวแปรที่ใช้ได้:</span>{" "}
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {KNOWN_VARS.map((v) => (
                   <code key={v} className="bg-white px-2 py-0.5 rounded-lg text-xs border border-ink-200 font-mono">
@@ -164,7 +164,7 @@ export default function TemplatesPage() {
         </div>
       ) : templates.length === 0 && editing !== "new" ? (
         <div className="card p-10 text-center space-y-3">
-          <div className="mx-auto w-12 h-12 rounded-2xl bg-ink-100 text-ink-400 flex items-center justify-center">
+          <div className="mx-auto w-12 h-12 rounded-md border border-ink-200 bg-ink-50 text-ink-400 flex items-center justify-center">
             <MessageSquareText size={22} />
           </div>
           <div className="text-sm text-ink-500">ยังไม่มีเทมเพลต</div>
@@ -199,35 +199,35 @@ export default function TemplatesPage() {
                         <span className={`chip ${CATEGORY_LABELS[t.category]?.color ?? "bg-neutral-100"}`}>
                           {CATEGORY_LABELS[t.category]?.label ?? t.category}
                         </span>
-                        {!t.active && <span className="chip bg-neutral-200 text-neutral-500">ปิด</span>}
+                        {!t.active && <span className="chip bg-ink-200 text-ink-500">ปิด</span>}
                       </div>
-                      {t.subject && <div className="text-sm font-medium text-neutral-700 mt-1">{t.subject}</div>}
-                      <div className="text-sm text-neutral-600 mt-1 whitespace-pre-line line-clamp-3">{t.body}</div>
+                      {t.subject && <div className="text-sm font-medium text-ink-700 mt-1">{t.subject}</div>}
+                      <div className="text-sm text-ink-600 mt-1 whitespace-pre-line line-clamp-3">{t.body}</div>
                     </div>
-                    <div className="text-sm text-neutral-400">#{t.sort_order}</div>
+                    <div className="text-sm text-ink-400">#{t.sort_order}</div>
                   </div>
                   <div className="flex flex-wrap gap-1 justify-end">
                     <button onClick={() => showPreview(t.id)} className="btn-ghost !py-1 !px-2 text-xs" title="ดูตัวอย่าง">
                       <Eye size={14} /> {previewId === t.id ? "ซ่อนตัวอย่าง" : "ดูตัวอย่าง"}
                     </button>
                     <button onClick={() => toggleActive(t)} className="btn-ghost !p-2" title={t.active ? "ปิดใช้งาน" : "เปิดใช้งาน"}>
-                      {t.active ? <ToggleRight size={24} className="text-brand-500" /> : <ToggleLeft size={24} className="text-neutral-400" />}
+                      {t.active ? <ToggleRight size={24} className="text-ink-900" /> : <ToggleLeft size={24} className="text-ink-400" />}
                     </button>
                     <button onClick={() => setEditing(t.id)} className="btn-ghost !p-2" title="แก้ไข"><Pencil size={18} /></button>
                     <button onClick={() => handleDelete(t.id)} className="btn-ghost !p-2 text-red-500 hover:text-red-600" title="ลบ"><Trash2 size={18} /></button>
                   </div>
                   {previewId === t.id && previewResult && (
-                    <div className="border-t border-neutral-200 pt-3 mt-1">
-                      <div className="text-xs font-semibold text-neutral-500 mb-1 flex items-center gap-1"><Send size={12} /> ตัวอย่างข้อความ</div>
+                    <div className="border-t border-ink-200 pt-3 mt-1">
+                      <div className="text-xs font-semibold text-ink-500 mb-1 flex items-center gap-1"><Send size={12} /> ตัวอย่างข้อความ</div>
                       {previewResult.subject && (
-                        <div className="text-sm font-bold text-neutral-800 mb-1">{previewResult.subject}</div>
+                        <div className="text-sm font-bold text-ink-800 mb-1">{previewResult.subject}</div>
                       )}
-                      <div className="bg-white border border-neutral-200 rounded-xl p-3 text-sm whitespace-pre-line">
+                      <div className="bg-white border border-ink-200 rounded-xl p-3 text-sm whitespace-pre-line">
                         {previewResult.body}
                       </div>
                       {previewResult.missing_vars.length > 0 && (
-                        <div className="text-xs text-amber-600 mt-1">
-                          ⚠️ ตัวแปรไม่รู้จัก: {previewResult.missing_vars.map((v) => `{{${v}}}`).join(", ")}
+                        <div className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                          <AlertTriangle size={12} /> ตัวแปรไม่รู้จัก: {previewResult.missing_vars.map((v) => `{{${v}}}`).join(", ")}
                         </div>
                       )}
                     </div>
@@ -279,7 +279,7 @@ function TemplateEditor({
   }
 
   return (
-    <form onSubmit={submit} className="card p-4 space-y-3 border-brand-200 bg-brand-50/30">
+    <form onSubmit={submit} className="card p-4 space-y-3 border-ink-300 bg-ink-50">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="label">ชื่อเทมเพลต *</label>
@@ -303,7 +303,7 @@ function TemplateEditor({
         </div>
         <div className="flex items-end gap-2 pb-1">
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="w-5 h-5 accent-brand-500" />
+            <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="w-5 h-5 accent-ink-900" />
             <span className="text-sm font-medium">{active ? "เปิดใช้งาน" : "ปิดใช้งาน"}</span>
           </label>
         </div>
@@ -318,7 +318,7 @@ function TemplateEditor({
                 key={v}
                 type="button"
                 onClick={() => insertVar(v)}
-                className="text-xs bg-white border border-neutral-200 rounded px-1.5 py-0.5 hover:bg-brand-50 text-neutral-600"
+                className="text-xs bg-white border border-ink-200 rounded px-1.5 py-0.5 hover:bg-ink-50 text-ink-600"
               >
                 {v}
               </button>
@@ -353,7 +353,7 @@ function TableMissingBanner({ info, onRetry }: { info: TableMissingInfo; onRetry
   return (
     <div className="card p-5 border-amber-200 bg-amber-50/60 animate-fade-up">
       <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+        <div className="w-11 h-11 rounded-md bg-amber-500 text-white flex items-center justify-center shrink-0">
           <Database size={20} />
         </div>
         <div className="flex-1 min-w-0">

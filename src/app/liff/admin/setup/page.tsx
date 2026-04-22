@@ -59,35 +59,31 @@ export default function LiffAdminSetup() {
   return (
     <div className="space-y-5">
       {/* Progress hero */}
-      <div
-        className={`card p-5 relative overflow-hidden ${
-          allDone ? "bg-gradient-to-br from-brand-50 to-emerald-50 border-brand-200" : ""
-        }`}
-      >
+      <div className={`card p-5 ${allDone ? "border-emerald-200 bg-emerald-50" : ""}`}>
         {allDone && (
-          <div className="absolute right-4 top-4 text-brand-500">
+          <div className="float-right text-emerald-600">
             <Sparkles size={18} />
           </div>
         )}
         <div className="eyebrow">ความพร้อม</div>
         <div className="flex items-end gap-3 mt-1">
-          <div className="h-display text-4xl grad-text">{pct}%</div>
+          <div className="h-display text-4xl text-ink-900">{pct}%</div>
           <div className="text-sm text-ink-500 pb-1.5">
             {done}/{total} ขั้นตอน
           </div>
         </div>
         <div className="w-full h-2 bg-ink-100 rounded-full overflow-hidden mt-3">
           <div
-            className="h-full bg-brand-500 rounded-full transition-all duration-700"
+            className="h-full bg-ink-900 rounded-full transition-all duration-700"
             style={{ width: `${pct}%` }}
           />
         </div>
 
         <div className="mt-4 flex items-center justify-between">
           <div className="text-xs text-ink-500">
-            {allDone ? "🎉 ร้านพร้อมใช้งานครบ!" : "ลองตั้งค่าที่ยังไม่พร้อมด้านล่าง"}
+            {allDone ? "ร้านพร้อมใช้งานครบ" : "ลองตั้งค่าที่ยังไม่พร้อมด้านล่าง"}
           </div>
-          <button onClick={reload} disabled={loading} className="text-xs font-semibold text-brand-600 inline-flex items-center gap-1.5">
+          <button onClick={reload} disabled={loading} className="text-xs font-semibold text-ink-700 inline-flex items-center gap-1.5">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> ตรวจใหม่
           </button>
         </div>
@@ -208,17 +204,17 @@ function SetupGroupCard({
   const Icon = group.status === "ok" ? CheckCircle2 : group.status === "warn" ? AlertTriangle : XCircle;
   const ring =
     group.status === "ok"
-      ? "bg-brand-500 text-white"
+      ? "bg-emerald-100 text-emerald-700"
       : group.status === "warn"
         ? "bg-amber-100 text-amber-700"
-        : "bg-accent-rose/15 text-accent-rose";
+        : "bg-red-100 text-red-600";
 
   const copyVal = group.showCopyValue ? setupValues?.[group.showCopyValue] ?? "" : "";
 
   return (
     <div className="card overflow-hidden">
       <button onClick={onToggle} className="w-full p-4 text-left flex items-center gap-3">
-        <div className={`shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center ${ring}`}>
+        <div className={`shrink-0 w-10 h-10 rounded-md border flex items-center justify-center ${ring}`}>
           <Icon size={18} />
         </div>
         <div className="flex-1 min-w-0">
@@ -248,7 +244,7 @@ function SetupGroupCard({
               href={group.helpLink}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 mt-1"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-700 mt-1"
             >
               <ExternalLink size={12} /> เปิดหน้าจัดการ
             </a>
@@ -261,7 +257,7 @@ function SetupGroupCard({
 
 function CheckRow({ check }: { check: CheckItem }) {
   const tone =
-    check.status === "ok" ? "text-brand-600" : check.status === "warn" ? "text-amber-500" : "text-accent-rose";
+    check.status === "ok" ? "text-emerald-600" : check.status === "warn" ? "text-amber-500" : "text-red-600";
   const Icon = check.status === "ok" ? CheckCircle2 : check.status === "warn" ? AlertTriangle : XCircle;
   return (
     <div className="flex items-start gap-2.5 py-1.5">
@@ -277,7 +273,7 @@ function CheckRow({ check }: { check: CheckItem }) {
 function CopyBox({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <div className="bg-ink-900 text-white rounded-2xl p-3 flex items-center gap-2">
+    <div className="bg-ink-900 text-white rounded-xl p-3 flex items-center gap-2">
       <div className="flex-1 min-w-0">
         <div className="text-[10px] uppercase tracking-wider text-white/50 font-semibold">{label}</div>
         <div className="text-xs font-mono break-all">{value}</div>
@@ -288,9 +284,9 @@ function CopyBox({ label, value }: { label: string; value: string }) {
           setCopied(true);
           setTimeout(() => setCopied(false), 1500);
         }}
-        className="shrink-0 w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center"
+        className="shrink-0 w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center"
       >
-        {copied ? <Check size={14} className="text-brand-400" /> : <Copy size={14} />}
+        {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
       </button>
     </div>
   );
@@ -300,7 +296,7 @@ function ExternalLinkItem({ href, label }: { href: string; label: string }) {
   return (
     <a
       href={href}
-      className="flex items-center justify-between px-3 py-2.5 rounded-2xl border border-ink-200 text-sm font-semibold text-ink-800 hover:border-ink-300 transition"
+      className="flex items-center justify-between px-3 py-2.5 rounded-xl border border-ink-200 text-sm font-semibold text-ink-800 hover:border-ink-300 transition"
     >
       <span>{label}</span>
       <ExternalLink size={12} className="text-ink-400" />

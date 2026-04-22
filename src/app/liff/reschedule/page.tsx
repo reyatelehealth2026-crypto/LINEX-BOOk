@@ -129,12 +129,12 @@ export default function ReschedulePage() {
         >
           <ChevronLeft size={18} />
         </button>
-        <h1 className="text-xl font-bold">🔄 {lang === "en" ? "Reschedule" : "เปลี่ยนเวลา"}</h1>
+        <h1 className="h-display text-xl">{lang === "en" ? "Reschedule" : "เปลี่ยนเวลา"}</h1>
       </div>
 
       {/* Current booking info */}
-      <div className="card p-3 bg-amber-50 border-amber-300 text-sm">
-        <div className="font-semibold text-amber-700">
+      <div className="card p-3 bg-amber-50 border-amber-200 text-sm">
+        <div className="font-semibold text-amber-800">
           {lang === "en" ? "Current booking" : "คิวปัจจุบัน"}
         </div>
         <div>
@@ -160,10 +160,10 @@ export default function ReschedulePage() {
                     setSelDate(d.ymd);
                     loadSlots(d.ymd);
                   }}
-                  className={`flex-shrink-0 w-16 h-20 rounded-2xl border flex flex-col items-center justify-center ${
+                  className={`flex-shrink-0 w-16 h-20 rounded-xl border flex flex-col items-center justify-center ${
                     selDate === d.ymd
-                      ? "bg-brand-500 text-white border-brand-500"
-                      : "bg-white border-neutral-200"
+                      ? "bg-ink-900 text-white border-ink-900"
+                      : "bg-white border-ink-200"
                   }`}
                 >
                   <div className="text-xs">{d.dayLabel}</div>
@@ -193,8 +193,8 @@ export default function ReschedulePage() {
                       }}
                       className={`py-2 rounded-xl text-sm border ${
                         selSlot?.startIso === s.startIso
-                          ? "bg-brand-500 text-white border-brand-500"
-                          : "bg-white border-neutral-200 hover:border-brand-500"
+                          ? "bg-ink-900 text-white border-ink-900"
+                          : "bg-white border-ink-200 hover:border-ink-400"
                       }`}
                     >
                       {s.label}
@@ -217,7 +217,7 @@ export default function ReschedulePage() {
               v={`${selDate} ${selSlot.label}`}
             />
           </div>
-          {err && <div className="text-red-600 text-sm mt-2">{err}</div>}
+          {err && <div className="card p-3 border-red-200 bg-red-50 text-red-700 text-sm mt-2">{err}</div>}
           <div className="flex gap-2 mt-4">
             <button
               className="btn-ghost flex-1"
@@ -246,7 +246,7 @@ export default function ReschedulePage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="text-lg font-bold mb-3">{title}</h2>
+      <h2 className="h-display text-xl mb-3">{title}</h2>
       {children}
     </div>
   );

@@ -85,24 +85,24 @@ export default function ShopInfoPage() {
     return <div className="flex items-center justify-center p-10"><Loader2 className="animate-spin" /></div>;
   }
   if (err && !info) {
-    return <div className="p-6 text-accent-rose">{err}</div>;
+    return <div className="p-6 text-red-600">{err}</div>;
   }
   if (!info) return null;
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-5">
       <div>
-        <div className="linex-kicker">ตั้งค่าร้าน</div>
-        <h1 className="linex-title text-2xl mt-1">ข้อมูลร้าน</h1>
+        <div className="eyebrow">ตั้งค่าร้าน</div>
+        <h1 className="h-display text-2xl mt-1">ข้อมูลร้าน</h1>
         <p className="text-sm text-ink-500 mt-1">
           URL: <code className="bg-ink-100 px-1.5 py-0.5 rounded">{info.slug}.linebook.app</code> · ประเภท: <strong>{info.business_type ?? "-"}</strong>
         </p>
       </div>
 
-      {err && <div className="p-3 rounded-lg bg-accent-rose/10 text-accent-rose text-sm">{err}</div>}
-      {ok && <div className="p-3 rounded-lg bg-accent-green/10 text-accent-green text-sm flex items-center gap-2"><Check size={16} /> บันทึกเรียบร้อย</div>}
+      {err && <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm">{err}</div>}
+      {ok && <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm flex items-center gap-2"><Check size={16} /> บันทึกเรียบร้อย</div>}
 
-      <div className="linex-panel p-5 space-y-4">
+      <div className="card p-5 space-y-4">
         <h2 className="font-semibold">ข้อมูลพื้นฐาน</h2>
         <Field label="ชื่อร้าน"><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></Field>
         <Field label="เบอร์โทร"><input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
@@ -110,9 +110,9 @@ export default function ShopInfoPage() {
         <Field label="Timezone"><input className="input" value={timezone} onChange={(e) => setTimezone(e.target.value)} /></Field>
       </div>
 
-      <div className="linex-panel p-5 space-y-4">
+      <div className="card p-5 space-y-4">
         <div className="flex items-center gap-2">
-          <KeyRound size={18} className="text-linex-600" />
+          <KeyRound size={18} className="text-ink-700" />
           <h2 className="font-semibold">LINE OA Credentials</h2>
         </div>
         <div className="text-xs text-ink-500 space-y-0.5">
@@ -133,7 +133,7 @@ export default function ShopInfoPage() {
         </Field>
       </div>
 
-      <button onClick={save} disabled={saving} className="glow-btn w-full justify-center">
+      <button onClick={save} disabled={saving} className="btn-primary w-full justify-center">
         {saving ? <><Loader2 className="animate-spin inline mr-1" size={16} /> กำลังบันทึก...</> : <><Save className="inline mr-1" size={16} /> บันทึกการเปลี่ยนแปลง</>}
       </button>
     </div>

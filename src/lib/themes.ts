@@ -443,8 +443,6 @@ export function themeCssVars(theme: ThemePreset): Record<string, string> {
     "--accent": theme.accent,
     "--surface": theme.surface,
     "--surface-dark": theme.surfaceDark,
-    "--glow": theme.glow,
-    "--mesh": theme.mesh,
     "--primary-rgb": hexToRgbString(theme.primary),
   };
 }

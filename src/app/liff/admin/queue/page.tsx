@@ -162,7 +162,7 @@ export default function LiffAdminQueue() {
           onClick={() => setFilter("confirmed")}
           label="ยืนยันแล้ว"
           count={counts.confirmed}
-          tone="brand"
+          tone="emerald"
         />
         <FilterPill active={filter === "done"} onClick={() => setFilter("done")} label="เสร็จสิ้น" count={counts.done} />
       </div>
@@ -176,7 +176,7 @@ export default function LiffAdminQueue() {
         </div>
       ) : visible.length === 0 ? (
         <div className="card p-10 text-center space-y-3 text-ink-500">
-          <div className="mx-auto w-12 h-12 rounded-2xl bg-ink-100 flex items-center justify-center">
+          <div className="mx-auto w-12 h-12 rounded-md border border-ink-200 bg-ink-50 text-ink-400 flex items-center justify-center">
             <CalendarDays size={22} />
           </div>
           <div className="text-sm">ไม่มีรายการในช่วงที่เลือก</div>
@@ -201,10 +201,10 @@ function FilterPill({
   onClick: () => void;
   label: string;
   count: number;
-  tone?: "amber" | "brand";
+  tone?: "amber" | "emerald";
 }) {
   const activeBg =
-    tone === "amber" ? "bg-amber-500 text-white" : tone === "brand" ? "bg-brand-500 text-white" : "bg-ink-900 text-white";
+    tone === "amber" ? "bg-amber-500 text-white" : tone === "emerald" ? "bg-emerald-600 text-white" : "bg-ink-900 text-white";
   return (
     <button
       onClick={onClick}
@@ -256,7 +256,7 @@ function BookingCard({ b, onSet }: { b: Booking; onSet: (id: number, status: str
             </div>
           ) : null}
           {b.note && (
-            <div className="text-[11px] italic text-ink-500 mt-1.5 bg-ink-50 p-2 rounded-xl">📝 {b.note}</div>
+            <div className="text-[11px] italic text-ink-500 mt-1.5 bg-ink-50 p-2 rounded-lg border border-ink-100">{b.note}</div>
           )}
         </div>
         <span className={`chip ${statusMeta.cls} shrink-0`}>{statusMeta.label}</span>
@@ -313,14 +313,14 @@ function ActionButton({
 }) {
   const cls =
     tone === "brand"
-      ? "bg-brand-500 text-white hover:bg-brand-600 shadow-soft"
+      ? "bg-ink-900 text-white hover:bg-ink-800"
       : tone === "rose"
-        ? "bg-accent-rose/10 text-accent-rose hover:bg-accent-rose/15"
+        ? "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
         : "bg-ink-100 text-ink-700 hover:bg-ink-200";
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition active:scale-95 ${cls}`}
+      className={`inline-flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition active:scale-95 ${cls}`}
     >
       {icon} {label}
     </button>
@@ -329,8 +329,8 @@ function ActionButton({
 
 const STATUS_MAP: Record<string, { cls: string; label: string }> = {
   pending: { cls: "bg-amber-100 text-amber-700", label: "รอยืนยัน" },
-  confirmed: { cls: "bg-brand-100 text-brand-700", label: "ยืนยันแล้ว" },
+  confirmed: { cls: "bg-emerald-100 text-emerald-700", label: "ยืนยันแล้ว" },
   completed: { cls: "bg-ink-200 text-ink-700", label: "เสร็จสิ้น" },
   cancelled: { cls: "bg-ink-100 text-ink-500", label: "ยกเลิก" },
-  no_show: { cls: "bg-accent-rose/15 text-accent-rose", label: "ไม่มา" },
+  no_show: { cls: "bg-red-100 text-red-700", label: "ไม่มา" },
 };

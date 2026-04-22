@@ -4,6 +4,7 @@ import { useI18n } from "@/lib/i18n";
 import type { Service } from "@/types/db";
 import { baht } from "@/lib/utils";
 import Link from "next/link";
+import { Star } from "lucide-react";
 
 type ServiceRating = { service_id: number; avg: number; count: number };
 
@@ -33,9 +34,9 @@ export default function ServicesPage() {
       <div className="grid gap-2.5">
         {list.length === 0 ? (
           <>
-            <div className="skeleton h-16 rounded-2xl" />
-            <div className="skeleton h-16 rounded-2xl" />
-            <div className="skeleton h-16 rounded-2xl" />
+            <div className="skeleton h-16" />
+            <div className="skeleton h-16" />
+            <div className="skeleton h-16" />
           </>
         ) : list.map((s) => {
           const r = ratings.get(s.id);
@@ -47,19 +48,19 @@ export default function ServicesPage() {
                   <span>{s.duration_min} {t("common.minutes")}</span>
                   {r && r.count > 0 ? (
                     <span className="inline-flex items-center gap-0.5 text-amber-500">
-                      <span aria-hidden>★</span>
+                      <Star size={11} fill="currentColor" />
                       <span className="font-medium tabular-nums">{r.avg.toFixed(1)}</span>
                       <span className="text-ink-400">({r.count})</span>
                     </span>
                   ) : null}
                 </div>
               </div>
-              <div className="font-bold text-linex-600 ml-3 shrink-0">{baht(s.price)}</div>
+              <div className="font-bold text-ink-900 ml-3 shrink-0">{baht(s.price)}</div>
             </div>
           );
         })}
       </div>
-      <Link href="/liff/booking" className="glow-btn w-full justify-center">{t("home.book_now")}</Link>
+      <Link href="/liff/booking" className="btn-primary w-full justify-center">{t("home.book_now")}</Link>
     </div>
   );
 }

@@ -194,9 +194,9 @@ export default function WorkingHoursPage() {
 
       {/* Loading */}
       {loading ? (
-        <div className="card p-8 text-center text-neutral-500">กำลังโหลด...</div>
+        <div className="card p-8 text-center text-ink-500">กำลังโหลด...</div>
       ) : rows.length === 0 && !showAdd ? (
-        <div className="card p-8 text-center text-neutral-500">
+        <div className="card p-8 text-center text-ink-500">
           ยังไม่มีข้อมูลเวลาทำการ กดปุ่ม &ldquo;เพิ่มเวลาทำการ&rdquo; เพื่อเริ่มต้น
         </div>
       ) : (
@@ -207,16 +207,16 @@ export default function WorkingHoursPage() {
             if (!dayRows?.length) return null;
             return (
               <div key={dow} className="card overflow-hidden">
-                <div className="bg-neutral-50 px-4 py-2 border-b border-neutral-100">
+                <div className="bg-ink-50 px-4 py-2 border-b border-ink-100">
                   <span className="font-semibold">วัน{dayName}</span>
-                  <span className="text-xs text-neutral-500 ml-2">({DAY_SHORT[dow]})</span>
+                  <span className="text-xs text-ink-500 ml-2">({DAY_SHORT[dow]})</span>
                 </div>
-                <div className="divide-y divide-neutral-50">
+                <div className="divide-y divide-ink-100">
                   {dayRows.map((r) => (
                     <div key={r.id} className="flex items-center gap-3 px-4 py-3 flex-wrap">
                       {/* Staff */}
                       <div className="w-36 shrink-0">
-                        <label className="text-xs text-neutral-500">ช่าง</label>
+                        <label className="text-xs text-ink-500">ช่าง</label>
                         <select
                           className="input !py-2 text-sm"
                           value={getEdit(r.id, "staff_id") ?? ""}
@@ -230,7 +230,7 @@ export default function WorkingHoursPage() {
                       </div>
                       {/* Open time */}
                       <div className="w-28">
-                        <label className="text-xs text-neutral-500">เปิด</label>
+                        <label className="text-xs text-ink-500">เปิด</label>
                         <input
                           type="time"
                           className="input !py-2 text-sm"
@@ -238,10 +238,10 @@ export default function WorkingHoursPage() {
                           onChange={(e) => setField(r.id, "open_time", e.target.value + ":00")}
                         />
                       </div>
-                      <div className="text-neutral-400 pt-4">—</div>
+                      <div className="text-ink-400 pt-4">—</div>
                       {/* Close time */}
                       <div className="w-28">
-                        <label className="text-xs text-neutral-500">ปิด</label>
+                        <label className="text-xs text-ink-500">ปิด</label>
                         <input
                           type="time"
                           className="input !py-2 text-sm"
@@ -280,10 +280,10 @@ export default function WorkingHoursPage() {
       {/* ─── Add modal ─── */}
       {showAdd && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md space-y-4 p-6">
+          <div className="bg-white rounded-xl border border-ink-200 w-full max-w-md space-y-4 p-6">
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-lg">เพิ่มเวลาทำการ</h2>
-              <button onClick={() => setShowAdd(false)} className="text-neutral-400 hover:text-neutral-600"><X size={20} /></button>
+              <button onClick={() => setShowAdd(false)} className="text-ink-400 hover:text-ink-600"><X size={20} /></button>
             </div>
 
             {addError && (

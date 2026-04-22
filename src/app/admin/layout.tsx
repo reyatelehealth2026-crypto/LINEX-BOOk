@@ -77,11 +77,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!authed) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6 bg-ink-50 relative">
-        <div className="absolute inset-0 mesh-bg opacity-70 pointer-events-none" />
-        <form onSubmit={login} className="linex-panel p-7 w-full max-w-sm space-y-4 relative animate-fade-up">
+      <main className="min-h-screen flex items-center justify-center p-6 bg-ink-50">
+        <form onSubmit={login} className="card p-7 w-full max-w-sm space-y-4 animate-fade-up">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-linex-600 text-white flex items-center justify-center shadow-linex-glow">
+            <div className="w-11 h-11 rounded-md bg-ink-900 text-white flex items-center justify-center">
               <Lock size={20} />
             </div>
             <div>
@@ -103,12 +102,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               autoFocus
             />
           </div>
-          <button className="glow-btn w-full justify-center">
+          <button className="btn-primary w-full justify-center">
             <ShieldCheck size={16} /> เข้าสู่ระบบ
           </button>
           <div className="text-[11px] text-ink-400 text-center pt-1">
-            💡 แอดมินผ่าน LINE (ไม่ต้องใช้รหัส) เปิด{" "}
-            <Link href="/liff/admin" className="text-brand-600 font-semibold">/liff/admin</Link>
+            แอดมินผ่าน LINE (ไม่ต้องใช้รหัส) เปิด{" "}
+            <Link href="/liff/admin" className="text-ink-700 font-semibold">/liff/admin</Link>
           </div>
         </form>
       </main>
@@ -117,11 +116,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <AdminContext.Provider value={{ pw }}>
-      <div className="min-h-screen bg-ink-50 relative">
-        <div className="absolute inset-x-0 top-0 h-64 mesh-bg opacity-40 pointer-events-none" />
+      <div className="min-h-screen bg-ink-50">
 
         {/* ── Header (mobile + desktop) ───────────────────────── */}
-        <header className="sticky top-0 z-30 bg-white/75 backdrop-blur-xl border-b border-white/50">
+        <header className="sticky top-0 z-30 bg-white border-b border-ink-200">
           <div className="max-w-6xl mx-auto px-3 sm:px-5 h-14 flex items-center gap-3">
             <button
               onClick={() => setDrawerOpen(true)}
@@ -132,10 +130,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
 
             <Link href="/admin" className="flex items-center gap-2 font-bold shrink-0">
-              <span className="w-8 h-8 rounded-xl bg-linex-600 text-white flex items-center justify-center text-xs shadow-linex-glow">
-                🛠
+              <span className="w-8 h-8 rounded-md bg-ink-900 text-white flex items-center justify-center">
+                <Settings size={14} />
               </span>
-              <span className="gradient-text tracking-tight hidden sm:inline">LineBook Admin</span>
+              <span className="text-ink-900 tracking-tight hidden sm:inline font-bold">LineBook Admin</span>
             </Link>
 
             {/* Desktop nav */}
@@ -149,8 +147,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     href={item.href}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition ${
                       active
-                        ? "bg-linex-600 text-white shadow-linex-glow"
-                        : "text-ink-600 hover:bg-linex-50 hover:text-linex-700"
+                        ? "bg-ink-900 text-white"
+                        : "text-ink-600 hover:bg-ink-100 hover:text-ink-900"
                     }`}
                   >
                     <Icon size={14} />
@@ -167,7 +165,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 sessionStorage.removeItem("adminPw");
                 setAuthed(false);
               }}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl text-ink-500 hover:text-accent-rose hover:bg-accent-rose/10 transition"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl text-ink-500 hover:text-red-600 hover:bg-red-50 transition"
               title="ออกจากระบบ"
             >
               <LogOut size={14} />
@@ -180,16 +178,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {drawerOpen && (
           <div className="fixed inset-0 z-40 lg:hidden">
             <div
-              className="absolute inset-0 bg-ink-900/40 backdrop-blur-sm animate-fade-up"
+              className="absolute inset-0 bg-ink-900/40 animate-fade-up"
               onClick={() => setDrawerOpen(false)}
             />
-            <aside className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-white/95 backdrop-blur-xl shadow-linex-panel p-4 flex flex-col animate-fade-up">
+            <aside className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-white border-r border-ink-200 p-4 flex flex-col animate-fade-up">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 font-bold">
-                  <span className="w-8 h-8 rounded-xl bg-linex-600 text-white flex items-center justify-center text-xs">
-                    🛠
+                  <span className="w-8 h-8 rounded-md bg-ink-900 text-white flex items-center justify-center">
+                    <Settings size={14} />
                   </span>
-                  <span className="gradient-text tracking-tight">Admin</span>
+                  <span className="text-ink-900 tracking-tight">Admin</span>
                 </div>
                 <button
                   onClick={() => setDrawerOpen(false)}
@@ -206,13 +204,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition ${
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition ${
                         active
-                          ? "bg-linex-600 text-white shadow-linex-glow"
-                          : "text-ink-700 hover:bg-linex-50 hover:text-linex-700"
+                          ? "bg-ink-900 text-white"
+                          : "text-ink-700 hover:bg-ink-100 hover:text-ink-900"
                       }`}
                     >
-                      <Icon size={16} className={active ? "text-linex-200" : "text-ink-400"} />
+                      <Icon size={16} className={active ? "text-white/70" : "text-ink-400"} />
                       {item.label}
                     </Link>
                   );
@@ -222,7 +220,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 แอดมินผ่าน LINE: เปิด{" "}
                 <Link
                   href="/liff/admin"
-                  className="text-brand-600 font-semibold"
+                  className="text-ink-700 font-semibold"
                   onClick={() => setDrawerOpen(false)}
                 >
                   /liff/admin

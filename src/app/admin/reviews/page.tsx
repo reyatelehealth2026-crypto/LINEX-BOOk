@@ -87,7 +87,7 @@ export default function ReviewsPage() {
         </div>
         <div className="chip bg-white border border-ink-200">รีวิวทั้งหมด: {reviews.length}</div>
         {pendingCount > 0 && (
-          <div className="chip bg-accent-rose/10 text-accent-rose font-semibold">⏳ รอตอบ: {pendingCount}</div>
+          <div className="chip bg-red-50 border border-red-200 text-red-600 font-semibold">รอตอบ: {pendingCount}</div>
         )}
       </div>
 
@@ -99,7 +99,7 @@ export default function ReviewsPage() {
             <button
               key={r ?? "all"}
               onClick={() => setFilterRating(r)}
-              className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition ${filterRating === r ? "bg-amber-500 text-white" : "bg-ink-100 text-ink-600 hover:bg-ink-200"}`}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${filterRating === r ? "bg-amber-500 text-white" : "bg-ink-100 text-ink-600 hover:bg-ink-200"}`}
             >
               {r === null ? "ทั้งหมด" : `${r} ★`}
             </button>
@@ -110,7 +110,7 @@ export default function ReviewsPage() {
             <button
               key={f}
               onClick={() => setFilterReply(f)}
-              className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition ${filterReply === f ? "bg-linex-600 text-white" : "bg-ink-100 text-ink-600 hover:bg-ink-200"}`}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${filterReply === f ? "bg-ink-900 text-white" : "bg-ink-100 text-ink-600 hover:bg-ink-200"}`}
             >
               {{ all: "ทุกรายการ", pending: "รอตอบ", replied: "ตอบแล้ว" }[f]}
             </button>
@@ -139,9 +139,9 @@ export default function ReviewsPage() {
                   {/* Avatar */}
                   {rv.customer?.picture_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={rv.customer.picture_url} alt="" className="w-9 h-9 rounded-full ring-2 ring-white shadow-soft shrink-0" />
+                    <img src={rv.customer.picture_url} alt="" className="w-9 h-9 rounded-full ring-2 ring-white shrink-0" />
                   ) : (
-                    <div className="w-9 h-9 rounded-full bg-linex-100 text-linex-600 font-bold flex items-center justify-center shrink-0 text-sm">
+                    <div className="w-9 h-9 rounded-full bg-ink-100 text-ink-700 font-bold flex items-center justify-center shrink-0 text-sm">
                       {customerName[0]}
                     </div>
                   )}
@@ -160,8 +160,8 @@ export default function ReviewsPage() {
                       <p className="text-sm text-ink-700 mt-1.5 line-clamp-2">{rv.comment}</p>
                     )}
                     {rv.reply && (
-                      <p className="text-xs text-green-700 mt-1.5 bg-green-50 px-2.5 py-1.5 rounded-xl">
-                        💬 <strong>ตอบ:</strong> {rv.reply}
+                      <p className="text-xs text-green-700 mt-1.5 bg-green-50 px-2.5 py-1.5 rounded-lg border border-green-100">
+                        <strong>ตอบ:</strong> {rv.reply}
                       </p>
                     )}
                   </div>
@@ -189,7 +189,7 @@ export default function ReviewsPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => sendReply(rv.id)}
-                        className="glow-btn text-sm"
+                        className="btn-primary text-sm"
                         disabled={sending === rv.id}
                       >
                         {sending === rv.id ? <RefreshCw size={13} className="animate-spin" /> : <Send size={13} />}

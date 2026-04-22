@@ -69,19 +69,8 @@ const config: Config = {
         "5xl": "2.5rem"
       },
       boxShadow: {
-        soft: "0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px -1px rgb(15 23 42 / 0.06)",
-        lift: "0 10px 30px -12px rgb(15 23 42 / 0.18), 0 4px 12px -4px rgb(15 23 42 / 0.08)",
-        glow: "0 10px 40px -10px rgb(6 199 85 / 0.45)",
-        "linex-glow": "0 18px 50px -18px rgb(109 59 255 / 0.42)",
-        "linex-panel": "0 24px 60px -24px rgb(34 23 51 / 0.35), 0 12px 28px -14px rgb(34 23 51 / 0.18)"
-      },
-      backgroundImage: {
-        "grid-fade":
-          "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 80%), radial-gradient(circle at 1px 1px, rgba(15,23,42,0.08) 1px, transparent 0)",
-        "brand-mesh":
-          "radial-gradient(at 20% 10%, rgba(6,199,85,0.20) 0, transparent 40%), radial-gradient(at 80% 0%, rgba(34,211,238,0.15) 0, transparent 40%), radial-gradient(at 80% 80%, rgba(139,92,246,0.12) 0, transparent 40%)",
-        "linex-mesh":
-          "radial-gradient(at 18% 12%, rgba(109,59,255,0.22) 0, transparent 42%), radial-gradient(at 82% 8%, rgba(255,155,122,0.18) 0, transparent 38%), radial-gradient(at 76% 78%, rgba(184,156,255,0.18) 0, transparent 42%), linear-gradient(180deg, #fcfaff 0%, #f7f2ff 100%)"
+        soft: "0 1px 2px 0 rgb(15 23 42 / 0.04)",
+        lift: "0 4px 12px -4px rgb(15 23 42 / 0.08)"
       },
       keyframes: {
         "fade-up": {
@@ -107,36 +96,14 @@ const config: Config = {
         "caret-blink": {
           "0%,70%,100%": { opacity: "1" },
           "20%,50%": { opacity: "0" }
-        },
-        float: {
-          "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-8px)" }
-        },
-        "float-slow": {
-          "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-6px)" }
-        },
-        "gradient-shift": {
-          "0%": { backgroundPosition: "0% 50%" },
-          "50%": { backgroundPosition: "100% 50%" },
-          "100%": { backgroundPosition: "0% 50%" }
-        },
-        "pulse-glow": {
-          "0%, 100%": { boxShadow: "0 0 20px rgba(109,59,255,0.3)" },
-          "50%": { boxShadow: "0 0 40px rgba(109,59,255,0.6)" }
         }
       },
       animation: {
         "fade-up": "fade-up 380ms cubic-bezier(0.22, 1, 0.36, 1) both",
-        shimmer: "shimmer 2.2s linear infinite",
         "pulse-soft": "pulseSoft 2.4s ease-in-out infinite",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "caret-blink": "caret-blink 1.25s ease-out infinite",
-        float: "float 4s ease-in-out infinite",
-        "float-slow": "float-slow 5s ease-in-out infinite",
-        "gradient-shift": "gradient-shift 6s ease infinite",
-        "pulse-glow": "pulse-glow 3s ease-in-out infinite"
+        "caret-blink": "caret-blink 1.25s ease-out infinite"
       }
     }
   },

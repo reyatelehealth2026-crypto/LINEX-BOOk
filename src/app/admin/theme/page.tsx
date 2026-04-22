@@ -94,9 +94,8 @@ export default function AdminThemePage() {
   return (
     <div className="space-y-5">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="linex-panel p-5 relative overflow-hidden">
-        <div className="absolute inset-0 mesh-bg opacity-40 pointer-events-none" />
-        <div className="relative flex items-center justify-between gap-3 flex-wrap">
+      <div className="card p-5">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <div className="eyebrow flex items-center gap-2">
               <Palette size={14} />
@@ -122,10 +121,10 @@ export default function AdminThemePage() {
 
       {/* ── Alerts ─────────────────────────────────────── */}
       {!migrated && (
-        <div className="card border border-accent-rose/30 bg-accent-rose/5 p-4 flex items-start gap-3">
-          <AlertTriangle className="text-accent-rose shrink-0 mt-0.5" size={18} />
+        <div className="card border-red-200 bg-red-50 p-4 flex items-start gap-3">
+          <AlertTriangle className="text-red-600 shrink-0 mt-0.5" size={18} />
           <div className="text-sm text-ink-700">
-            <div className="font-semibold text-accent-rose">ต้องรัน migration ก่อน</div>
+            <div className="font-semibold text-red-700">ต้องรัน migration ก่อน</div>
             <p className="mt-1">
               รัน{" "}
               <code className="bg-ink-100 px-1.5 py-0.5 rounded text-xs">
@@ -138,10 +137,10 @@ export default function AdminThemePage() {
       )}
 
       {errorMsg && saveState !== "saving" && (
-        <div className="card border border-accent-rose/30 bg-accent-rose/5 p-4 flex items-start gap-3">
-          <AlertTriangle className="text-accent-rose shrink-0 mt-0.5" size={18} />
+        <div className="card border-red-200 bg-red-50 p-4 flex items-start gap-3">
+          <AlertTriangle className="text-red-600 shrink-0 mt-0.5" size={18} />
           <div className="text-sm text-ink-700">
-            <div className="font-semibold text-accent-rose">เกิดข้อผิดพลาด</div>
+            <div className="font-semibold text-red-700">เกิดข้อผิดพลาด</div>
             <p className="mt-1 font-mono text-xs">{errorMsg}</p>
           </div>
         </div>
@@ -150,7 +149,7 @@ export default function AdminThemePage() {
       {/* ── Save bar ───────────────────────────────────── */}
       <div
         className={`sticky top-14 z-20 card p-3 flex items-center justify-between gap-3 transition ${
-          hasUnsaved ? "border-linex-400 shadow-linex-glow" : "border-ink-100"
+          hasUnsaved ? "border-ink-400" : "border-ink-100"
         }`}
       >
         <div className="text-sm">
@@ -165,7 +164,7 @@ export default function AdminThemePage() {
           <button
             onClick={handleSave}
             disabled={saveState === "saving" || !migrated}
-            className="glow-btn gap-1.5 disabled:opacity-50"
+            className="btn-primary gap-1.5 disabled:opacity-50"
           >
             {saveState === "saving" ? (
               <Loader2 size={14} className="animate-spin" />
@@ -205,7 +204,7 @@ export default function AdminThemePage() {
           <li>กดที่ธีมเพื่อ <b>พรีวิว</b> (ไม่บันทึก) — ระบบเปลี่ยนสีหน้า UI ทันที</li>
           <li>กด <b>บันทึก</b> เพื่อให้ร้านใช้ธีมนั้นเป็นค่าตั้งต้น (LIFF + Flex + Admin)</li>
           <li>ลูกค้าเปลี่ยนธีมได้ใน LIFF แค่เพื่อพรีวิว ไม่กระทบร้าน</li>
-          <li>ค่า WCAG AA ✅ = อ่านง่ายทุกที่ / AA-large ⚠️ = ใช้ได้เฉพาะหัวข้อใหญ่ / Fail 🔴 = ห้ามใช้กับ body</li>
+          <li>ค่า WCAG AA = อ่านง่ายทุกที่ / AA-large = ใช้ได้เฉพาะหัวข้อใหญ่ / Fail = ห้ามใช้กับ body</li>
         </ul>
       </div>
     </div>
@@ -241,43 +240,35 @@ function ThemeCard({
     <button
       type="button"
       onClick={onSelect}
-      className={`card text-left p-0 overflow-hidden relative transition hover:-translate-y-0.5 hover:shadow-lift ${
+      className={`card text-left p-0 overflow-hidden relative transition ${
         active ? "ring-2 ring-offset-2 ring-offset-ink-50" : ""
       }`}
       style={active ? ({ "--tw-ring-color": theme.primary } as React.CSSProperties) : undefined}
     >
-      {/* Mesh + swatches */}
+      {/* Color preview */}
       <div
         className="relative h-24 overflow-hidden"
-        style={{ background: theme.mesh }}
+        style={{ background: theme.primary }}
       >
         <div className="absolute inset-0 p-3 flex flex-col justify-between">
           <div className="flex items-center gap-1.5">
             <span
-              className="w-5 h-5 rounded-full border-2 border-white shadow-soft"
-              style={{ background: theme.primary }}
-            />
-            <span
-              className="w-5 h-5 rounded-full border-2 border-white shadow-soft"
+              className="w-5 h-5 rounded-full border-2 border-white/50"
               style={{ background: theme.secondary }}
             />
             <span
-              className="w-5 h-5 rounded-full border-2 border-white shadow-soft"
+              className="w-5 h-5 rounded-full border-2 border-white/50"
               style={{ background: theme.accent }}
             />
           </div>
           <div className="flex items-center justify-between">
             <span
-              className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full"
-              style={{
-                background: theme.primary,
-                color: theme.onPrimary,
-              }}
+              className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-black/20 text-white"
             >
               {theme.id}
             </span>
             {isDbSaved && (
-              <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-white/80 text-ink-700 backdrop-blur">
+              <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-white text-ink-700">
                 SAVED
               </span>
             )}
@@ -285,8 +276,8 @@ function ThemeCard({
         </div>
         {active && (
           <div
-            className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-lift"
-            style={{ background: theme.primary, color: theme.onPrimary }}
+            className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center bg-white"
+            style={{ color: theme.primary }}
           >
             <Check size={14} />
           </div>
@@ -304,8 +295,8 @@ function ThemeCard({
           <WcagBadge label="Button" ratio={whiteOnPrimary} />
           <WcagBadge label="Text" ratio={primaryOnSurface} />
           {level === "Fail" && (
-            <span className="text-[10px] font-bold text-accent-rose">
-              ⚠ onPrimary auto-corrected
+            <span className="text-[10px] font-bold text-red-600">
+              onPrimary auto-corrected
             </span>
           )}
         </div>
@@ -337,11 +328,11 @@ function WcagBadge({ label, ratio }: { label: string; ratio: number }) {
 function ThemeSwatch({ theme, size = 16 }: { theme: ThemePreset; size?: number }) {
   return (
     <span
-      className="inline-block rounded-full border-2 border-white shadow-soft"
+      className="inline-block rounded-full border-2 border-white"
       style={{
         width: size,
         height: size,
-        background: `linear-gradient(135deg, ${theme.primary}, ${theme.primaryLight})`,
+        background: theme.primary,
       }}
     />
   );

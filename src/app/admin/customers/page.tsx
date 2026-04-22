@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAdmin } from "../_ctx";
 import { baht } from "@/lib/utils";
-import { RefreshCw, Search, Users } from "lucide-react";
+import { AlertTriangle, Lock, RefreshCw, Search, Users } from "lucide-react";
 
 type CustomerRow = {
   id: number;
@@ -61,20 +61,20 @@ export default function CustomersPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <div className="bg-brand-50 rounded-2xl px-4 py-3">
+        <div className="bg-ink-50 rounded-xl border border-ink-200 px-4 py-3">
           <div className="text-xs opacity-70">ลูกค้าทั้งหมด</div>
           <div className="text-2xl font-bold">{totalCustomers}</div>
         </div>
-        <div className="bg-emerald-50 rounded-2xl px-4 py-3">
+        <div className="bg-emerald-50 rounded-xl border border-emerald-200 px-4 py-3">
           <div className="text-xs opacity-70">ลงทะเบียนแล้ว</div>
           <div className="text-2xl font-bold text-emerald-700">{registered}</div>
         </div>
-        <div className="bg-amber-50 rounded-2xl px-4 py-3">
+        <div className="bg-amber-50 rounded-xl border border-amber-200 px-4 py-3">
           <div className="text-xs opacity-70">แต้มรวม</div>
           <div className="text-2xl font-bold text-amber-700">{totalPoints}</div>
         </div>
         {blockedCount > 0 && (
-          <div className="bg-red-50 rounded-2xl px-4 py-3">
+          <div className="bg-red-50 rounded-xl border border-red-200 px-4 py-3">
             <div className="text-xs opacity-70">ถูกบล็อก</div>
             <div className="text-2xl font-bold text-red-600">{blockedCount}</div>
           </div>
@@ -83,7 +83,7 @@ export default function CustomersPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
         <input
           type="text"
           className="input !pl-10"
@@ -95,9 +95,9 @@ export default function CustomersPage() {
 
       {/* List */}
       {loading ? (
-        <div className="card p-8 text-center text-neutral-500">กำลังโหลด...</div>
+        <div className="card p-8 text-center text-ink-500">กำลังโหลด...</div>
       ) : customers.length === 0 ? (
-        <div className="card p-8 text-center text-neutral-500">
+        <div className="card p-8 text-center text-ink-500">
           <Users size={40} className="mx-auto mb-2 opacity-40" />
           {search ? `ไม่พบลูกค้า "${search}"` : "ยังไม่มีลูกค้าในระบบ"}
         </div>
@@ -123,12 +123,12 @@ function CustomerCard({ c }: { c: CustomerRow }) {
     : "—";
 
   return (
-    <Link href={`/admin/customers/${c.id}`} className="card p-4 flex items-center gap-3 hover:border-brand-200 transition-colors">
+    <Link href={`/admin/customers/${c.id}`} className="card p-4 flex items-center gap-3 hover:border-ink-300 transition-colors">
       {c.picture_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={c.picture_url} alt="" className="w-10 h-10 rounded-full shrink-0" />
       ) : (
-        <div className="w-10 h-10 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-500 text-sm font-bold shrink-0">
+        <div className="w-10 h-10 rounded-full bg-ink-200 flex items-center justify-center text-ink-700 text-sm font-bold shrink-0">
           {name.charAt(0)}
         </div>
       )}
@@ -139,7 +139,7 @@ function CustomerCard({ c }: { c: CustomerRow }) {
             <span className="chip bg-emerald-100 text-emerald-700 ml-2">ลงทะเบียน</span>
           )}
         </div>
-        <div className="text-sm text-neutral-500">
+        <div className="text-sm text-ink-500">
           {c.phone ?? "ไม่มีเบอร์โทร"}
           {c.phone && c.birthday && (
             <span className="ml-2">· เกิด {new Date(c.birthday).toLocaleDateString("th-TH")}</span>
@@ -147,14 +147,14 @@ function CustomerCard({ c }: { c: CustomerRow }) {
         </div>
       </div>
       <div className="text-right text-sm shrink-0 space-y-0.5">
-        <div className="text-neutral-500">{c.visit_count} ครั้ง · {c.points} แต้ม</div>
+        <div className="text-ink-500">{c.visit_count} ครั้ง · {c.points} แต้ม</div>
         {c.no_show_count > 0 && (
-          <div className="text-xs text-red-500">⚠️ no-show {c.no_show_count} ครั้ง</div>
+          <div className="text-xs text-red-500 flex items-center gap-0.5"><AlertTriangle size={10} /> no-show {c.no_show_count} ครั้ง</div>
         )}
         {c.blocked_until && new Date(c.blocked_until) > new Date() && (
-          <div className="chip bg-red-100 text-red-700 text-[10px]">🔒 ถูกบล็อก</div>
+          <div className="chip bg-red-100 text-red-700 text-[10px] flex items-center gap-0.5"><Lock size={9} /> ถูกบล็อก</div>
         )}
-        <div className="text-xs text-neutral-400">คิวล่าสุด {lastBooking}</div>
+        <div className="text-xs text-ink-400">คิวล่าสุด {lastBooking}</div>
       </div>
     </Link>
   );

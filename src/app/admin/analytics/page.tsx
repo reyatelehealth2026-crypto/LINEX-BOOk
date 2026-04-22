@@ -112,12 +112,12 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-ink-100 p-1 rounded-2xl w-fit">
+      <div className="flex gap-1 bg-ink-100 p-1 rounded-xl w-fit">
         {(["overview", "segments", "forecast"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition ${tab === t ? "bg-white shadow text-linex-700" : "text-ink-500 hover:text-ink-700"}`}
+            className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition ${tab === t ? "bg-white text-ink-900" : "text-ink-500 hover:text-ink-700"}`}
           >
             {{ overview: "ภาพรวม", segments: "ลูกค้า", forecast: "พยากรณ์" }[t]}
           </button>
@@ -199,7 +199,7 @@ export default function AnalyticsPage() {
 
           {/* By day-of-week bar */}
           <div className="card p-4 space-y-3">
-            <h3 className="font-semibold">📅 คิวตามวันในสัปดาห์</h3>
+            <h3 className="font-semibold">คิวตามวันในสัปดาห์</h3>
             <div className="flex items-end gap-2 h-20">
               {Array.from({ length: 7 }, (_, i) => {
                 const count = kpi.by_day_of_week[i] ?? 0;
@@ -210,7 +210,7 @@ export default function AnalyticsPage() {
                     <div className="text-[10px] font-semibold text-ink-500">{count}</div>
                     <div className="w-full bg-ink-100 rounded-t-lg relative overflow-hidden" style={{ height: "48px" }}>
                       <div
-                        className="absolute bottom-0 w-full bg-linex-400 rounded-t-lg transition-all"
+                        className="absolute bottom-0 w-full bg-ink-700 rounded-t-lg transition-all"
                         style={{ height: `${pct}%` }}
                       />
                     </div>
@@ -286,7 +286,7 @@ export default function AnalyticsPage() {
       {tab === "forecast" && forecast && (
         <div className="space-y-4 animate-fade-up">
           <div className="card p-4 space-y-3">
-            <h3 className="font-semibold">🔮 พยากรณ์ 7 วันถัดไป</h3>
+            <h3 className="font-semibold">พยากรณ์ 7 วันถัดไป</h3>
             <p className="text-xs text-ink-400">อ้างอิงจากค่าเฉลี่ย {forecast.lookback_days} วันย้อนหลัง</p>
             <div className="space-y-2">
               {forecast.next_7_days.map((d) => {
@@ -301,13 +301,13 @@ export default function AnalyticsPage() {
                     <div className="w-28 text-xs text-ink-600 shrink-0">{dateLabel}</div>
                     <div className="flex-1 h-5 bg-ink-100 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all ${isBusy ? "bg-accent-rose" : "bg-linex-400"}`}
+                        className={`h-full rounded-full transition-all ${isBusy ? "bg-red-500" : "bg-ink-700"}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
                     <div className="w-16 text-right text-xs font-semibold text-ink-600 shrink-0">
                       ~{d.expected} คิว
-                      {isBusy && <span className="ml-1 text-accent-rose">🔥</span>}
+                      {isBusy && <span className="ml-1 text-red-500">!</span>}
                     </div>
                   </div>
                 );
@@ -316,7 +316,7 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="card p-4 space-y-3">
-            <h3 className="font-semibold">📊 ค่าเฉลี่ยตามวัน</h3>
+            <h3 className="font-semibold">ค่าเฉลี่ยตามวัน</h3>
             <div className="flex items-end gap-2 h-20">
               {Array.from({ length: 7 }, (_, i) => {
                 const avg = forecast.avg_by_dow[i] ?? 0;
@@ -326,7 +326,7 @@ export default function AnalyticsPage() {
                     <div className="text-[10px] font-semibold text-ink-500">{avg}</div>
                     <div className="w-full bg-ink-100 rounded-t-lg relative overflow-hidden" style={{ height: "48px" }}>
                       <div
-                        className="absolute bottom-0 w-full bg-linex-400 rounded-t-lg"
+                        className="absolute bottom-0 w-full bg-ink-700 rounded-t-lg"
                         style={{ height: `${(avg / max) * 100}%` }}
                       />
                     </div>
@@ -337,10 +337,10 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="linex-panel p-4 flex items-start gap-3">
-            <ArrowRight size={16} className="text-linex-500 mt-0.5 shrink-0" />
+          <div className="card p-4 flex items-start gap-3 border-ink-200 bg-ink-50">
+            <ArrowRight size={16} className="text-ink-500 mt-0.5 shrink-0" />
             <p className="text-sm text-ink-600">
-              วันที่ขีด <span className="text-accent-rose font-semibold">🔥</span> คาดว่าคิวจะเยอะ — พิจารณาเพิ่มพนักงาน หรือจำกัด slot ล่วงหน้า
+              วันที่ขีด <span className="text-red-500 font-semibold">!</span> คาดว่าคิวจะเยอะ — พิจารณาเพิ่มพนักงาน หรือจำกัด slot ล่วงหน้า
             </p>
           </div>
         </div>
@@ -352,7 +352,7 @@ export default function AnalyticsPage() {
 /* ─── Sub-components ─────────────────────────────────────────── */
 function KpiCard({ label, value, sub, icon, color }: { label: string; value: string | number; sub: string; icon: React.ReactNode; color: string }) {
   return (
-    <div className={`${color} rounded-2xl p-4 space-y-1`}>
+    <div className={`${color} rounded-xl p-4 space-y-1`}>
       <div className="flex items-center gap-1.5 text-xs opacity-70">
         {icon} {label}
       </div>

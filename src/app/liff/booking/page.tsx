@@ -177,7 +177,7 @@ export default function BookingPage() {
       <div className="flex items-center gap-3">
         {step > 1 ? (
           <button
-            className="shrink-0 w-10 h-10 rounded-2xl bg-white border border-ink-200 flex items-center justify-center text-ink-700 hover:border-ink-300 transition"
+            className="shrink-0 w-10 h-10 rounded-lg bg-white border border-ink-200 flex items-center justify-center text-ink-700 hover:border-ink-300 transition"
             onClick={() => setStep((s) => (s - 1) as any)}
             aria-label={t("common.back")}
           >
@@ -199,10 +199,10 @@ export default function BookingPage() {
                 <button
                   key={s.id}
                   onClick={() => { setSelService(s); setStep(2); }}
-                  className={`card p-4 text-left flex items-center justify-between transition-all ${selected ? "!border-brand-500 ring-4 ring-brand-500/15 shadow-glow" : "hover:border-ink-300"}`}
+                  className={`card p-4 text-left flex items-center justify-between transition-all ${selected ? "!border-ink-900 ring-2 ring-ink-900/10" : "hover:border-ink-300"}`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${selected ? "bg-brand-500 text-white" : "bg-brand-50 text-brand-600"}`}>
+                    <div className={`w-11 h-11 rounded-md flex items-center justify-center ${selected ? "bg-ink-900 text-white" : "bg-ink-50 text-ink-700 border border-ink-200"}`}>
                       <Sparkles size={18} />
                     </div>
                     <div>
@@ -229,7 +229,7 @@ export default function BookingPage() {
             <StaffCard
               selected={selStaff === null}
               onClick={() => { setSelStaff(null); setStep(3); }}
-              icon={<Users size={20} className="text-brand-600" />}
+              icon={<Users size={20} className="text-ink-700" />}
               title={t("booking.any_staff")}
               subtitle="ระบบจะจัดให้"
             />
@@ -239,7 +239,7 @@ export default function BookingPage() {
                 selected={selStaff?.id === m.id}
                 onClick={() => { setSelStaff(m); setStep(3); }}
                 avatar={m.avatar_url}
-                icon={<UserIcon size={20} className="text-brand-600" />}
+                icon={<UserIcon size={20} className="text-ink-700" />}
                 title={m.nickname ?? m.name}
                 subtitle={m.nickname ? m.name : undefined}
               />
@@ -259,9 +259,9 @@ export default function BookingPage() {
                 <button
                   key={d.ymd}
                   onClick={() => { setSelDate(d.ymd); loadSlots(d.ymd); }}
-                  className={`flex-shrink-0 w-16 h-20 rounded-3xl flex flex-col items-center justify-center transition-all active:scale-95 ${selected ? "bg-ink-900 text-white shadow-lift" : "bg-white border border-ink-200 text-ink-700"}`}
+                  className={`flex-shrink-0 w-16 h-20 rounded-xl flex flex-col items-center justify-center transition-all active:scale-95 ${selected ? "bg-ink-900 text-white" : "bg-white border border-ink-200 text-ink-700"}`}
                 >
-                  <div className={`text-[11px] font-semibold uppercase tracking-wider ${selected ? "text-brand-300" : "text-ink-400"}`}>{d.dayLabel}</div>
+                  <div className={`text-[11px] font-semibold uppercase tracking-wider ${selected ? "text-white/60" : "text-ink-400"}`}>{d.dayLabel}</div>
                   <div className="text-2xl font-extrabold leading-none mt-1">{d.label}</div>
                 </button>
               );
@@ -280,7 +280,7 @@ export default function BookingPage() {
               </div>
             ) : !hasAnyAvailable ? (
               <div className="card p-6 text-center space-y-3">
-                <div className="mx-auto w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                <div className="mx-auto w-12 h-12 rounded-md bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center">
                   <BellRing size={22} />
                 </div>
                 <div>
@@ -309,12 +309,12 @@ export default function BookingPage() {
                               key={b.hour}
                               disabled={!b.available}
                               onClick={() => { setSelSlot(b); setStep(4); }}
-                              className={`relative py-3.5 rounded-2xl text-[15px] font-semibold transition-all active:scale-95 ${
+                              className={`relative py-3.5 rounded-xl text-[15px] font-semibold transition-all active:scale-95 ${
                                 !b.available
                                   ? "bg-ink-100 text-ink-300 line-through cursor-not-allowed"
                                   : selected
-                                    ? "bg-brand-500 text-white shadow-glow"
-                                    : "bg-white border border-ink-200 text-ink-800 hover:border-brand-500 hover:text-brand-600"
+                                    ? "bg-ink-900 text-white"
+                                    : "bg-white border border-ink-200 text-ink-800 hover:border-ink-400"
                               }`}
                             >
                               {b.label}
@@ -337,14 +337,13 @@ export default function BookingPage() {
       {/* Step 4: Summary */}
       {step === 4 && selService && selSlot && (
         <Section eyebrow="04 · ยืนยัน" title={t("booking.summary")} subtitle="ตรวจสอบแล้วกดยืนยัน">
-          <div className="card-dark p-5 relative overflow-hidden">
-            <div className="absolute inset-0 bg-brand-mesh opacity-60 pointer-events-none" />
-            <div className="relative">
-              <div className="eyebrow !text-brand-400">นัดหมาย</div>
+          <div className="card-dark p-5">
+            <div>
+              <div className="eyebrow !text-white/50">นัดหมาย</div>
               <div className="text-2xl font-extrabold mt-1">
                 {new Date(selDate).toLocaleDateString("th-TH", { weekday: "long", day: "numeric", month: "long" })}
               </div>
-              <div className="text-3xl font-black text-brand-400 mt-1">{selSlot.label}</div>
+              <div className="text-3xl font-black text-white/80 mt-1">{selSlot.label}</div>
               <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 gap-3 text-sm">
                 <SummaryCell k="บริการ" v={lang === "en" && selService.name_en ? selService.name_en : selService.name} />
                 <SummaryCell k="ระยะเวลา" v={`${selService.duration_min} นาที`} />
@@ -361,7 +360,7 @@ export default function BookingPage() {
             onChange={(e) => setNote(e.target.value)}
             rows={2}
           />
-          {err && <div className="text-accent-rose text-sm mt-2 text-center">{err}</div>}
+          {err && <div className="text-red-600 text-sm mt-2 text-center">{err}</div>}
           <button disabled={submitting} onClick={submit} className="btn-primary w-full mt-4 text-base py-4">
             <Check size={20} /> {submitting ? t("common.loading") : t("common.confirm")}
           </button>
@@ -411,9 +410,9 @@ function StaffCard({
   return (
     <button
       onClick={onClick}
-      className={`card p-4 text-left transition-all ${selected ? "!border-brand-500 ring-4 ring-brand-500/15 shadow-glow" : "hover:border-ink-300"}`}
+      className={`card p-4 text-left transition-all ${selected ? "!border-ink-900 ring-2 ring-ink-900/10" : "hover:border-ink-300"}`}
     >
-      <div className="w-12 h-12 rounded-2xl bg-brand-50 flex items-center justify-center overflow-hidden">
+      <div className={`w-12 h-12 rounded-md flex items-center justify-center overflow-hidden ${selected ? "bg-ink-900" : "bg-ink-50 border border-ink-200"}`}>
         {avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={avatar} alt="" className="w-full h-full object-cover" />
@@ -439,7 +438,7 @@ function SummaryCell({ k, v }: { k: string; v: string }) {
 function EmptyState({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <div className="card p-8 text-center flex flex-col items-center gap-3">
-      <div className="w-12 h-12 rounded-2xl bg-ink-100 text-ink-400 flex items-center justify-center">{icon}</div>
+      <div className="w-12 h-12 rounded-md border border-ink-200 bg-ink-50 text-ink-400 flex items-center justify-center">{icon}</div>
       <div className="text-sm text-ink-500">{text}</div>
     </div>
   );
@@ -452,7 +451,7 @@ function Stepper({ step }: { step: number }) {
         <div
           key={n}
           className={`h-1.5 flex-1 rounded-full transition-all ${
-            n < step ? "bg-brand-500" : n === step ? "bg-brand-500 animate-pulse-soft" : "bg-ink-200"
+            n < step ? "bg-ink-900" : n === step ? "bg-ink-900 animate-pulse-soft" : "bg-ink-200"
           }`}
         />
       ))}

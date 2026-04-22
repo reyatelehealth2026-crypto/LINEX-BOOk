@@ -68,12 +68,12 @@ export default function ReviewPage() {
   }
 
   if (loading) {
-    return <div className="text-center text-neutral-500 py-8">{t("common.loading")}</div>;
+    return <div className="text-center text-ink-500 py-8">{t("common.loading")}</div>;
   }
 
   if (!bookingId) {
     return (
-      <div className="card p-8 text-center text-neutral-500">
+      <div className="card p-8 text-center text-ink-500">
         {lang === "en" ? "No booking specified." : "ไม่พบข้อมูลการจอง"}
       </div>
     );
@@ -86,14 +86,16 @@ export default function ReviewPage() {
           <ArrowLeft size={16} /> {t("common.back")}
         </button>
         <div className="card p-6 text-center space-y-3">
-          <CheckCircle2 size={48} className="mx-auto text-brand-500" />
-          <h2 className="text-lg font-bold">{lang === "en" ? "Already reviewed" : "รีวิวแล้ว"}</h2>
+          <div className="mx-auto w-12 h-12 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <CheckCircle2 size={24} />
+          </div>
+          <h2 className="h-display text-lg">{lang === "en" ? "Already reviewed" : "รีวิวแล้ว"}</h2>
           <div className="flex justify-center gap-1">
             {[1, 2, 3, 4, 5].map(i => (
-              <Star key={i} size={24} className={i <= existingReview.rating ? "fill-yellow-400 text-yellow-400" : "text-neutral-300"} />
+              <Star key={i} size={24} className={i <= existingReview.rating ? "fill-amber-400 text-amber-400" : "text-ink-200"} />
             ))}
           </div>
-          {existingReview.comment && <p className="text-neutral-600 text-sm">"{existingReview.comment}"</p>}
+          {existingReview.comment && <p className="text-ink-600 text-sm">"{existingReview.comment}"</p>}
         </div>
       </div>
     );
@@ -103,18 +105,20 @@ export default function ReviewPage() {
     return (
       <div className="space-y-4">
         <div className="card p-6 text-center space-y-3">
-          <CheckCircle2 size={48} className="mx-auto text-brand-500" />
-          <h2 className="text-lg font-bold">{lang === "en" ? "Thank you for your review!" : "ขอบคุณสำหรับรีวิว!"}</h2>
+          <div className="mx-auto w-12 h-12 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <CheckCircle2 size={24} />
+          </div>
+          <h2 className="h-display text-lg">{lang === "en" ? "Thank you for your review!" : "ขอบคุณสำหรับรีวิว!"}</h2>
           <div className="flex justify-center gap-1">
             {[1, 2, 3, 4, 5].map(i => (
-              <Star key={i} size={24} className={i <= rating ? "fill-yellow-400 text-yellow-400" : "text-neutral-300"} />
+              <Star key={i} size={24} className={i <= rating ? "fill-amber-400 text-amber-400" : "text-ink-200"} />
             ))}
           </div>
           <button
             onClick={() => router.push("/liff/booking")}
             className="btn-primary mt-4"
           >
-            📅 {lang === "en" ? "Book again" : "จองคิวอีกครั้ง"}
+            {lang === "en" ? "Book again" : "จองคิวอีกครั้ง"}
           </button>
         </div>
       </div>
@@ -127,12 +131,12 @@ export default function ReviewPage() {
         <ArrowLeft size={16} /> {t("common.back")}
       </button>
 
-      <h1 className="text-xl font-bold">{lang === "en" ? "Rate your experience" : "ให้คะแนนประสบการณ์"}</h1>
+      <h1 className="h-display text-xl">{lang === "en" ? "Rate your experience" : "ให้คะแนนประสบการณ์"}</h1>
 
       <div className="card p-6 space-y-6">
         {/* Star Rating */}
         <div className="text-center space-y-2">
-          <p className="text-sm text-neutral-500">{lang === "en" ? "How was your visit?" : "บริการเป็นอย่างไรบ้าง?"}</p>
+          <p className="text-sm text-ink-500">{lang === "en" ? "How was your visit?" : "บริการเป็นอย่างไรบ้าง?"}</p>
           <div className="flex justify-center gap-2">
             {[1, 2, 3, 4, 5].map(i => (
               <button

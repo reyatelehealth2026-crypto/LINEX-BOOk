@@ -46,12 +46,12 @@ export default function ProfilePage() {
 
   if (loading) return (
     <div className="space-y-4 animate-fade-up">
-      <div className="skeleton h-8 w-40 rounded-xl" />
+      <div className="skeleton h-8 w-40" />
       <div className="grid grid-cols-2 gap-3">
-        <div className="skeleton h-20 rounded-2xl" />
-        <div className="skeleton h-20 rounded-2xl" />
+        <div className="skeleton h-20" />
+        <div className="skeleton h-20" />
       </div>
-      <div className="skeleton h-48 rounded-2xl" />
+      <div className="skeleton h-48" />
     </div>
   );
 
@@ -65,7 +65,7 @@ export default function ProfilePage() {
         <>
           <div className="grid grid-cols-2 gap-3">
             <div className="card card-hover p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-md border border-amber-200 bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                 <Star size={18} />
               </div>
               <div>
@@ -77,7 +77,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <div className="card card-hover p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-md border border-ink-200 bg-ink-50 text-ink-700 flex items-center justify-center shrink-0">
                 <CalendarCheck2 size={18} />
               </div>
               <div>
@@ -90,10 +90,10 @@ export default function ProfilePage() {
           {/* Loyalty shortcut */}
           <Link
             href="/liff/loyalty"
-            className="card p-4 flex items-center justify-between hover:border-linex-300 transition group"
+            className="card p-4 flex items-center justify-between hover:border-ink-300 transition group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-linex-50 text-linex-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-md border border-ink-200 bg-ink-50 text-ink-700 flex items-center justify-center">
                 <Gift size={18} />
               </div>
               <div>
@@ -101,7 +101,7 @@ export default function ProfilePage() {
                 <div className="text-xs text-ink-400">ดูระดับ / แลกแต้ม / โค้ดชวนเพื่อน</div>
               </div>
             </div>
-            <ArrowRight size={16} className="text-ink-300 group-hover:text-linex-500 transition" />
+            <ArrowRight size={16} className="text-ink-300 group-hover:text-ink-700 transition" />
           </Link>
         </>
       )}
@@ -123,7 +123,7 @@ export default function ProfilePage() {
         <button disabled={saving || !fullName || !phone} onClick={save} className="btn-primary w-full">
           {saving ? t("common.loading") : (isRegistered ? t("common.save") : t("profile.register_submit"))}
         </button>
-        {!isRegistered && <p className="text-xs text-ink-500">ลงทะเบียนครั้งแรกรับฟรี 50 แต้ม 🎉</p>}
+        {!isRegistered && <p className="text-xs text-ink-500">ลงทะเบียนครั้งแรกรับฟรี 50 แต้ม</p>}
       </div>
     </div>
   );
