@@ -42,6 +42,7 @@ import {
 import { getShopThemeId } from "@/lib/shop-theme";
 import { askGLM } from "@/lib/zai";
 import { getOpenHandoff, requestHandoff, takeHandoff, closeHandoff, notifyAdminsOfHandoff } from "@/lib/handoff";
+import { verifyPassword } from "@/lib/admin-auth";
 import type { BookingWithJoins, Customer, LineAdminSession } from "@/types/db";
 import { formatDateTH, formatTimeRange } from "@/lib/format";
 import { fromZonedTime } from "date-fns-tz";
@@ -117,8 +118,21 @@ const ADMIN_RECOVERY_ACTIONS: Record<string, string> = {
   adm_help_staff_hours: "ตัวอย่างตั้งเวลารายช่าง",
 };
 
-function getAdminIds(): Set<string> {
-  const raw = process.env.ADMIN_LINE_IDS ?? "";
+async function getAdminIds(): Promise<Set<string>> {
+  // Per-shop admin LINE IDs from admin_users (falls back to legacy env var
+  // only when the shop has no linked admin rows yet).
+  const db = supabaseAdmin();
+  const { data } = await db
+    .from("admin_users")
+    .select("line_user_id")
+    .eq("shop_id", SHOP_ID)
+    .eq("active", true)
+    .not("line_user_id", "is", null);
+  const ids = new Set<string>(
+    (data ?? []).map((a) => a.line_user_id as string).filter(Boolean)
+  );
+  if (ids.size > 0) return ids;
+  const raw = process.env.ADMIN_LINE_IDS ?? process.env.ADMIN_LINE_USER_IDS ?? "";
   return new Set(raw.split(",").map((s) => s.trim()).filter(Boolean));
 }
 
@@ -166,7 +180,8 @@ async function hasActiveAdminSession(lineUserId: string) {
 }
 
 async function isAdminAuthorized(lineUserId: string) {
-  return getAdminIds().has(lineUserId) || await hasActiveAdminSession(lineUserId);
+  const ids = await getAdminIds();
+  return ids.has(lineUserId) || await hasActiveAdminSession(lineUserId);
 }
 
 async function grantAdminSession(lineUserId: string) {
@@ -414,7 +429,11 @@ export async function POST(req: NextRequest) {
   const destination = body.destination;
   let shop =
     destination ? await getShopByLineOaId(destination) : null;
-  if (!shop) {
+  // Legacy single-tenant fallback: only kicks in when there's NO destination
+  // field (older LINE API payloads). A destination that simply doesn't match
+  // any shop row is rejected outright — otherwise a stray/forged webhook would
+  // silently write to shop 1.
+  if (!shop && !destination) {
     shop = await getShopById(Number(process.env.DEFAULT_SHOP_ID ?? 1));
   }
   if (!shop) {
@@ -917,9 +936,29 @@ async function handleMessage(ev: any, customer: Customer) {
 
   const suppliedPassword = extractAdminPassword(text);
   if (suppliedPassword !== null) {
-    const expected = process.env.ADMIN_PASSWORD ?? "";
-    if (!expected) return replyMessage(rt, [textMessage("ยังไม่ได้ตั้ง ADMIN_PASSWORD ในระบบ")]);
-    if (suppliedPassword === expected) {
+    // Check password against the current shop's admin_users rows first.
+    // Fall back to the global ADMIN_PASSWORD env var only when the shop has
+    // no admin rows yet (legacy single-tenant mode).
+    const { data: adminRows } = await db
+      .from("admin_users")
+      .select("password_hash")
+      .eq("shop_id", SHOP_ID)
+      .eq("active", true)
+      .not("password_hash", "is", null);
+    let ok = false;
+    if (adminRows && adminRows.length > 0) {
+      for (const u of adminRows) {
+        if (u.password_hash && verifyPassword(suppliedPassword, u.password_hash)) {
+          ok = true;
+          break;
+        }
+      }
+    } else {
+      const expected = process.env.ADMIN_PASSWORD ?? "";
+      if (!expected) return replyMessage(rt, [textMessage("ยังไม่ได้ตั้งรหัสผ่านแอดมินของร้าน — สร้าง admin_users แถวแรกก่อนนะคะ")]);
+      ok = suppliedPassword === expected;
+    }
+    if (ok) {
       try {
         await grantAdminSession(userId);
       } catch (error: any) {

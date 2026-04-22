@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 import { pushMessage, getProfile } from "@/lib/line";
 import { bookingConfirmedMessage } from "@/lib/flex";
 import { verifyAdmin } from "@/lib/admin-auth";
@@ -18,13 +18,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "lineUserId, serviceId, startIso required" }, { status: 400 });
   }
 
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
 
   // ensure customer
   let { data: customer } = await db
     .from("customers")
     .select("*")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .maybeSingle();
   if (!customer) {
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
     const { data: inserted } = await db
       .from("customers")
       .insert({
-        shop_id: SHOP_ID,
+        shop_id: shopId,
         line_user_id: lineUserId,
         display_name: p?.displayName ?? null,
         picture_url: p?.pictureUrl ?? null
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
     .from("services")
     .select("id, duration_min, price")
     .eq("id", serviceId)
+    .eq("shop_id", shopId)
     .single();
   if (svcErr || !service) {
     return NextResponse.json({ error: "service not found" }, { status: 404 });
@@ -97,7 +99,7 @@ export async function POST(req: NextRequest) {
   const { data: booking, error } = await db
     .from("bookings")
     .insert({
-      shop_id: SHOP_ID,
+      shop_id: shopId,
       customer_id: customer!.id,
       service_id: serviceId,
       staff_id: effectiveStaffId,
@@ -153,7 +155,7 @@ export async function GET(req: NextRequest) {
     .select(
       "*, service:services(id,name,name_en,duration_min,price), staff:staff(id,name,nickname), customer:customers(id,display_name,full_name,phone,picture_url,line_user_id,points,visit_count)"
     )
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .order("starts_at", { ascending: true });
   if (date) {
     const start = new Date(`${date}T00:00:00+07:00`).toISOString();

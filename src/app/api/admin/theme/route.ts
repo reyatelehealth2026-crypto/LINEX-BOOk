@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { verifyAdmin, unauthorized } from "@/lib/admin-auth";
 import { DEFAULT_THEME_ID, getTheme, isValidThemeId, THEME_PRESETS } from "@/lib/themes";
 import { invalidateShopThemeCache } from "@/lib/shop-theme";
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabaseAdmin()
     .from("shops")
     .select("theme_id")
-    .eq("id", SHOP_ID)
+    .eq("id", auth.shopId)
     .maybeSingle();
 
   if (error && !/column .* does not exist|schema cache/i.test(error.message)) {
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   const { error } = await supabaseAdmin()
     .from("shops")
     .update({ theme_id: themeId })
-    .eq("id", SHOP_ID);
+    .eq("id", auth.shopId);
 
   if (error) {
     if (/column .* does not exist|schema cache/i.test(error.message)) {

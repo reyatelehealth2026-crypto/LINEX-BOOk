@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,13 +17,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
 
   // Ensure customer exists
   const { data: customer } = await db
     .from("customers")
     .select("id")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .maybeSingle();
   if (!customer) {
@@ -45,7 +47,7 @@ export async function POST(req: NextRequest) {
   const { data: entry, error } = await db
     .from("waitlist_entries")
     .insert({
-      shop_id: SHOP_ID,
+      shop_id: shopId,
       customer_id: customer.id,
       service_id: serviceId,
       staff_id: staffId ?? null,
@@ -64,14 +66,14 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ entry });
 }
 
-// GET — list waitlist (admin)
+// GET — list waitlist (admin, per-shop scoped)
 export async function GET(req: NextRequest) {
-  const sp = req.nextUrl.searchParams;
-  const pw = req.headers.get("x-admin-password") ?? sp.get("pw");
-  if (pw !== process.env.ADMIN_PASSWORD) {
+  const identity = await verifyAdmin(req);
+  if (!identity) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  const sp = req.nextUrl.searchParams;
   const date = sp.get("date"); // YYYY-MM-DD
   const status = sp.get("status"); // waiting, notified, etc.
   const db = supabaseAdmin();
@@ -81,7 +83,7 @@ export async function GET(req: NextRequest) {
     .select(
       "*, service:services(id,name,name_en,duration_min), staff:staff(id,name,nickname), customer:customers(id,display_name,full_name,phone,line_user_id)"
     )
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .order("created_at", { ascending: true });
 
   if (date) q = q.eq("desired_date", date);

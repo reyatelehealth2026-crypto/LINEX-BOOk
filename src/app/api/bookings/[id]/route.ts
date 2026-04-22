@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 import { pushMessage } from "@/lib/line";
 import { textMessage, bookingConfirmedMessage } from "@/lib/flex";
 import type { BookingWithJoins } from "@/types/db";
@@ -15,11 +15,12 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
   if (!id || !lineUserId) {
     return NextResponse.json({ error: "missing id or x-line-user-id" }, { status: 400 });
   }
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const { data: customer } = await db
     .from("customers")
     .select("id")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .maybeSingle();
   if (!customer) return NextResponse.json({ error: "customer not found" }, { status: 404 });
@@ -28,6 +29,7 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
     .from("bookings")
     .select("id, status")
     .eq("id", id)
+    .eq("shop_id", shopId)
     .eq("customer_id", customer.id)
     .in("status", ["pending", "confirmed"])
     .maybeSingle();
@@ -39,12 +41,13 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
     .from("bookings")
     .update({ status: "cancelled" })
     .eq("id", id)
+    .eq("shop_id", shopId)
     .eq("customer_id", customer.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // After cancellation, check for waitlist entries that might be fulfillable (best-effort notification)
   try {
-    await notifyWaitlistOnSlotFreed(db, bookingBefore.id);
+    await notifyWaitlistOnSlotFreed(db, shopId, bookingBefore.id);
   } catch (e) {
     console.error("waitlist notify err:", e);
   }
@@ -67,13 +70,14 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     return NextResponse.json({ error: "startIso required" }, { status: 400 });
   }
 
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
 
   // Verify customer owns this booking
   const { data: customer } = await db
     .from("customers")
     .select("id, line_user_id")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .maybeSingle();
   if (!customer) return NextResponse.json({ error: "customer not found" }, { status: 404 });
@@ -82,6 +86,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     .from("bookings")
     .select("*, service:services(id, name, name_en, duration_min, price), staff:staff(id, name, nickname)")
     .eq("id", id)
+    .eq("shop_id", shopId)
     .eq("customer_id", customer.id)
     .in("status", ["pending", "confirmed"])
     .maybeSingle();
@@ -102,6 +107,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       ends_at: newEnd.toISOString(),
     })
     .eq("id", id)
+    .eq("shop_id", shopId)
     .eq("customer_id", customer.id)
     .select(
       "*, service:services(id,name,name_en,duration_min,price), staff:staff(id,name,nickname), customer:customers(id,display_name,full_name,phone,picture_url,line_user_id)"
@@ -127,7 +133,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
   // After reschedule, old slot is freed → check waitlist (best-effort)
   try {
-    await notifyWaitlistOnSlotFreed(db, id);
+    await notifyWaitlistOnSlotFreed(db, shopId, id);
   } catch (e) {
     console.error("waitlist notify err:", e);
   }
@@ -141,13 +147,13 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
  * left for a future enhancement — for now we just send a LINE push message
  * telling the customer that a slot opened.
  */
-async function notifyWaitlistOnSlotFreed(db: ReturnType<typeof supabaseAdmin>, _freedBookingId: number) {
+async function notifyWaitlistOnSlotFreed(db: ReturnType<typeof supabaseAdmin>, shopId: number, _freedBookingId: number) {
   // Find waiting entries that might now be fulfillable (simplified: just find
   // entries in 'waiting' status ordered by created_at and notify the first few)
   const { data: waiting } = await db
     .from("waitlist_entries")
     .select("id, customer_id, desired_date, desired_time, service_id, customer:customers(line_user_id)")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("status", "waiting")
     .order("created_at", { ascending: true })
     .limit(3);
@@ -161,6 +167,7 @@ async function notifyWaitlistOnSlotFreed(db: ReturnType<typeof supabaseAdmin>, _
       .from("services")
       .select("duration_min")
       .eq("id", entry.service_id)
+      .eq("shop_id", shopId)
       .single();
     if (!service) continue;
 
