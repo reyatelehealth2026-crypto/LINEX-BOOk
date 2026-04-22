@@ -135,8 +135,10 @@ export async function getShopByLineOaId(oaId: string): Promise<Shop | null> {
  * Resolve the current shop from the incoming request context.
  * Resolution order:
  *   1. AsyncLocalStorage (webhook / cron set this via runWithShopContext)
- *   2. Middleware-injected `x-shop-slug` header (subdomain request)
- *   3. DEFAULT_SHOP_ID env (legacy single-tenant fallback)
+ *   2. `x-shop-id` request header — only honored when proxy also set
+ *      `x-super-admin: 1` (verified super-admin session on root domain).
+ *   3. Middleware-injected `x-shop-slug` header (subdomain request)
+ *   4. DEFAULT_SHOP_ID env (legacy single-tenant fallback)
  * Throws if nothing can be resolved.
  */
 export async function getCurrentShop(): Promise<Shop> {
@@ -146,19 +148,32 @@ export async function getCurrentShop(): Promise<Shop> {
     const s = await getShopById(ctxId);
     if (s) return s;
   }
-  // 2) Subdomain slug
+  // 2/3) Header-based — from proxy or super-admin session
   try {
     const h = await headers();
+    // Super-admin-supplied shop id (only trusted when proxy validated the session)
+    if (h.get("x-super-admin") === "1") {
+      const rawId = h.get("x-shop-id");
+      if (rawId) {
+        const id = Number(rawId);
+        if (Number.isFinite(id)) {
+          const shop = await getShopById(id);
+          if (shop) return shop;
+          throw new Error(`shop not found for id ${id}`);
+        }
+      }
+    }
     const slug = h.get("x-shop-slug");
     if (slug) {
       const shop = await getShopBySlug(slug);
       if (shop) return shop;
       throw new Error(`shop not found for slug '${slug}'`);
     }
-  } catch {
-    // headers() throws outside of a request scope.
+  } catch (err) {
+    // headers() throws outside a request scope; rethrow explicit "shop not found".
+    if (err instanceof Error && err.message.startsWith("shop not found")) throw err;
   }
-  // 3) Legacy fallback
+  // 4) Legacy fallback
   const fallbackId = Number(process.env.DEFAULT_SHOP_ID ?? 1);
   const shop = await getShopById(fallbackId);
   if (!shop) throw new Error("no shop context (no slug, no DEFAULT_SHOP_ID row)");

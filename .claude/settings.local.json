@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(npx next *)",
+      "Bash(npx eslint *)",
+      "Bash(node *)",
+      "WebFetch(domain:likesms.net)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" https://likesms.net/signup)",
+      "Bash(curl -s \"https://likesms.net/api/signup/check-slug?slug=hairx\")",
+      "Bash(curl -s \"https://likesms.net/api/signup/check-slug?slug=testshop99\")",
+      "Bash(curl -sI https://likesms.net/signup)",
+      "Bash(curl -sI \"https://likesms.net/api/signup/check-slug?slug=hairx\")",
+      "Bash(curl -sI https://hairx.likesms.net/)",
+      "Bash(curl -sI https://www.likesms.net/)",
+      "Bash(curl -s \"https://www.likesms.net/api/signup/check-slug?slug=hairx\")",
+      "Bash(curl -sv https://hairx.likesms.net/)",
+      "Bash(nslookup hairx.likesms.net)"
+    ]
+  }
+}

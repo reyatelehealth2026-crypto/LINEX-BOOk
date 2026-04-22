@@ -22,6 +22,7 @@ const RESERVED_FIRST_SEG = new Set([
   "signup", "login", "signin", "auth",
   "api", "_next",
   "admin", "liff", "booking", "profile", "services", "my-bookings",
+  "super",
   "favicon.ico", "robots.txt", "sitemap.xml", "assets", "images",
   "www",
 ]);
@@ -37,7 +38,8 @@ const TENANT_WHITELIST_PATHS = [
   "/services",
   "/my-bookings",
 ];
-const ROOT_ONLY_PATHS = ["/signup", "/api/signup"];
+const ROOT_ONLY_PATHS = ["/signup", "/api/signup", "/super", "/api/super"];
+const SUPER_SESSION_COOKIE = "super_admin_session";
 
 function extractSubdomainSlug(host: string): string | null {
   const bare = host.split(":")[0].toLowerCase();
@@ -81,6 +83,30 @@ export function proxy(req: NextRequest) {
   }
 
   // On the root domain from here down.
+
+  // ---- /super/* paths: root-only, super-admin session required for non-login ----
+  if (pathname === "/super" || pathname.startsWith("/super/") || pathname.startsWith("/api/super/")) {
+    const hasSession = !!req.cookies.get(SUPER_SESSION_COOKIE)?.value;
+    const isPublic =
+      pathname === "/super/login" ||
+      pathname === "/api/super/login" ||
+      pathname === "/api/super/logout";
+    if (!hasSession && !isPublic) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+      }
+      const url = req.nextUrl.clone();
+      url.pathname = "/super/login";
+      return NextResponse.redirect(url);
+    }
+    // Forward a marker so getCurrentShop() may trust x-shop-id.
+    if (hasSession) {
+      const h = new Headers(req.headers);
+      h.set("x-super-admin", "1");
+      return NextResponse.next({ request: { headers: h } });
+    }
+    return NextResponse.next();
+  }
 
   // ---- Strategy 2: path prefix /<slug>/... (one-shot entry) ----
   const segs = pathname.split("/").filter(Boolean);

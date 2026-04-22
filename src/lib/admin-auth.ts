@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import { supabaseAdmin, getCurrentShop } from "@/lib/supabase";
+import { verifyImpersonationToken } from "@/lib/impersonation-token";
 
 const _pwLimiter = createRateLimiter(5, 15 * 60 * 1000);
 
@@ -63,6 +64,20 @@ export async function verifyAdmin(req: NextRequest): Promise<AdminIdentity | nul
   }
 
   const db = supabaseAdmin();
+
+  // ── 0) Super-admin impersonation mode ──
+  // Header set by the admin console when redeeming a /admin/impersonate token,
+  // or the subdomain cookie planted by that redeem handler.
+  const impToken =
+    req.headers.get("x-impersonation-token") ||
+    req.cookies.get("super_admin_impersonation")?.value ||
+    null;
+  if (impToken) {
+    const imp = verifyImpersonationToken(impToken);
+    if (imp && imp.shopId === shopId) {
+      return { mode: "password", shopId, role: "owner" };
+    }
+  }
 
   // ── 1) Password mode ──
   const pw = req.headers.get("x-admin-password");
