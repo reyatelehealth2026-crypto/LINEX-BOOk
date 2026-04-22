@@ -102,11 +102,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <div>
               <div className="eyebrow">Admin Console</div>
-              <h1 className="h-display text-xl">เข้าสู่ระบบ</h1>
+              <h1 className="h-display text-xl">เข้าสู่ระบบร้าน</h1>
             </div>
           </div>
           <p className="text-xs text-ink-500">
-            ใส่ <code className="bg-ink-100 px-1.5 py-0.5 rounded">ADMIN_PASSWORD</code> ที่ตั้งไว้ใน <code className="bg-ink-100 px-1.5 py-0.5 rounded">.env</code>
+            ใช้รหัสผ่านที่ตั้งไว้ตอนสมัครร้าน (เจ้าของร้าน)
           </p>
           <div>
             <label className="label">รหัสผ่าน</label>
@@ -122,9 +122,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button className="btn-primary w-full justify-center">
             <ShieldCheck size={16} /> เข้าสู่ระบบ
           </button>
-          <div className="text-[11px] text-ink-400 text-center pt-1">
-            แอดมินผ่าน LINE (ไม่ต้องใช้รหัส) เปิด{" "}
-            <Link href="/liff/admin" className="text-ink-700 font-semibold">/liff/admin</Link>
+          <div className="text-[11px] text-ink-400 text-center pt-1 space-y-1">
+            <div>
+              หรือเข้าผ่าน LINE (ไม่ต้องใช้รหัส){" "}
+              <Link href="/liff/admin" className="text-ink-700 font-semibold">/liff/admin</Link>
+            </div>
+            <div>
+              มาผิดร้าน?{" "}
+              <a
+                href={`${typeof window !== "undefined" ? window.location.protocol : "https:"}//${(typeof window !== "undefined" ? window.location.host : "likesms.net").split(".").slice(1).join(".") || "likesms.net"}/login`}
+                className="text-ink-700 font-semibold"
+              >
+                เปลี่ยนร้าน
+              </a>
+            </div>
           </div>
         </form>
       </main>

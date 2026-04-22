@@ -38,7 +38,11 @@ const TENANT_WHITELIST_PATHS = [
   "/services",
   "/my-bookings",
 ];
-const ROOT_ONLY_PATHS = ["/signup", "/api/signup", "/super", "/api/super"];
+const ROOT_ONLY_PATHS = [
+  "/signup", "/api/signup",
+  "/login", "/api/lookup-shop-by-email",
+  "/super", "/api/super",
+];
 const SUPER_SESSION_COOKIE = "super_admin_session";
 
 function extractSubdomainSlug(host: string): string | null {

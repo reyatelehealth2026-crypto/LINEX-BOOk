@@ -27,6 +27,7 @@ export default function Home() {
           <nav className="flex items-center gap-1">
             <Link href="#features" className="text-sm text-ink-600 hover:text-ink-900 px-3 py-1.5 hidden sm:inline">ฟีเจอร์</Link>
             <Link href="#presets" className="text-sm text-ink-600 hover:text-ink-900 px-3 py-1.5 hidden sm:inline">พรีเซท</Link>
+            <Link href="/login" className="text-sm font-semibold text-ink-700 hover:text-ink-900 px-3 py-1.5">เข้าสู่ระบบ</Link>
             <Link href="/signup" className="btn-primary text-sm">เริ่มฟรี</Link>
           </nav>
         </div>
