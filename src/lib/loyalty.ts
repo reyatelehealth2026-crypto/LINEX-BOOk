@@ -1,5 +1,5 @@
 // loyalty.ts — Points tiers, birthday bonus, referral codes, and redemption helpers.
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 
 export type Tier = "bronze" | "silver" | "gold" | "platinum";
 
@@ -10,11 +10,12 @@ export interface TierThresholds {
 }
 
 export async function getTierThresholds(): Promise<TierThresholds> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const { data } = await db
     .from("shops")
     .select("tier_silver_points, tier_gold_points, tier_platinum_points")
-    .eq("id", SHOP_ID)
+    .eq("id", shopId)
     .maybeSingle();
   return {
     silver: data?.tier_silver_points ?? 500,
@@ -91,6 +92,7 @@ export async function ensureReferralCode(customerId: number): Promise<string> {
  * Returns true if applied, false if invalid/self-referral/already-referred.
  */
 export async function applyReferral(newCustomerId: number, referralCode: string): Promise<boolean> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const normalized = referralCode.trim().toUpperCase();
   if (!normalized) return false;
@@ -98,7 +100,7 @@ export async function applyReferral(newCustomerId: number, referralCode: string)
   const { data: referrer } = await db
     .from("customers")
     .select("id")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("referral_code", normalized)
     .maybeSingle();
   if (!referrer || referrer.id === newCustomerId) return false;
@@ -113,7 +115,7 @@ export async function applyReferral(newCustomerId: number, referralCode: string)
   const { data: shop } = await db
     .from("shops")
     .select("referral_bonus_points")
-    .eq("id", SHOP_ID)
+    .eq("id", shopId)
     .maybeSingle();
   const bonus = Number(shop?.referral_bonus_points ?? 100);
 
@@ -177,6 +179,7 @@ function randomCouponCode(prefix = "PT"): string {
  * Redeem points for a coupon. Returns the created coupon row or throws.
  */
 export async function redeemPoints(customerId: number, optionId: string): Promise<{ couponCode: string; coupon: any }> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const opt = defaultRedeemOptions().find((o) => o.id === optionId);
   if (!opt) throw new Error("invalid_option");
@@ -203,7 +206,7 @@ export async function redeemPoints(customerId: number, optionId: string): Promis
   const { data: coupon, error: couponErr } = await db
     .from("coupons")
     .insert({
-      shop_id: SHOP_ID,
+      shop_id: shopId,
       code,
       name: opt.label,
       kind: opt.kind,
@@ -223,7 +226,7 @@ export async function redeemPoints(customerId: number, optionId: string): Promis
   }
 
   await db.from("point_redemptions").insert({
-    shop_id: SHOP_ID,
+    shop_id: shopId,
     customer_id: customerId,
     points_spent: opt.pointsCost,
     coupon_id: coupon.id,

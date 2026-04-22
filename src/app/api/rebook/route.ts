@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 import type { RebookInfo } from "@/types/db";
 
 export const runtime = "nodejs";
@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
   const lineUserId = req.nextUrl.searchParams.get("line_user_id");
   if (!lineUserId) return NextResponse.json({ rebook_options: [] });
 
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
 
   type RebookBookingRow = {
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
   const { data: customer } = await db
     .from("customers")
     .select("id")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .maybeSingle();
   if (!customer) return NextResponse.json({ rebook_options: [] });

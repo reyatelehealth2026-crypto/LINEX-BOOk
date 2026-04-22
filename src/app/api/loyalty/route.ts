@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 import {
   getTierThresholds,
   tierProgress,
@@ -20,11 +20,12 @@ export async function GET(req: NextRequest) {
   const lineUserId = req.nextUrl.searchParams.get("lineUserId");
   if (!lineUserId) return NextResponse.json({ error: "lineUserId required" }, { status: 400 });
 
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const { data: customer } = await db
     .from("customers")
     .select("id, points, lifetime_points, referral_code, referred_by, birthday, full_name, display_name")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .maybeSingle();
   if (!customer) return NextResponse.json({ error: "customer_not_found" }, { status: 404 });
@@ -50,11 +51,12 @@ export async function POST(req: NextRequest) {
   if (!lineUserId || !action) {
     return NextResponse.json({ error: "lineUserId and action required" }, { status: 400 });
   }
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const { data: customer } = await db
     .from("customers")
     .select("id, points")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .maybeSingle();
   if (!customer) return NextResponse.json({ error: "customer_not_found" }, { status: 404 });

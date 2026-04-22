@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { pushMessage } from "@/lib/line";
 import { textMessage } from "@/lib/flex";
 import { verifyAdmin } from "@/lib/admin-auth";
@@ -24,6 +24,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     .from("bookings")
     .select("*, customer:customers(id,line_user_id,points,visit_count), service:services(name,price)")
     .eq("id", id)
+    .eq("shop_id", identity.shopId)
     .single();
   if (!current) return NextResponse.json({ error: "not found" }, { status: 404 });
 
@@ -31,7 +32,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
   // On completion: add points + increment visit count
   if (status === "completed" && current.status !== "completed") {
-    const { data: shop } = await db.from("shops").select("points_per_baht").eq("id", SHOP_ID).single();
+    const { data: shop } = await db.from("shops").select("points_per_baht").eq("id", identity.shopId).single();
     const earned = Math.round(Number(current.price) * Number(shop?.points_per_baht ?? 0));
     updates.points_earned = earned;
     await db
@@ -44,7 +45,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       .eq("id", current.customer_id);
   }
 
-  const { data, error } = await db.from("bookings").update(updates).eq("id", id).select("*").single();
+  const { data, error } = await db.from("bookings").update(updates).eq("id", id).eq("shop_id", identity.shopId).select("*").single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Notify customer

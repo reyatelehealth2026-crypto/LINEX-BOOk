@@ -1,7 +1,7 @@
 // handoff.ts — Human handoff for AI Receptionist.
 // When a customer asks for a real human, we pause the bot and notify admins.
 
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 import { pushMessage } from "@/lib/line";
 
 export type HandoffStatus = "pending" | "active" | "resolved" | "cancelled";
@@ -21,11 +21,12 @@ export interface HandoffSession {
 }
 
 export async function getOpenHandoff(lineUserId: string): Promise<HandoffSession | null> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const { data } = await db
     .from("ai_handoff_sessions")
     .select("*")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .in("status", ["pending", "active"])
     .order("requested_at", { ascending: false })
@@ -39,6 +40,7 @@ export async function requestHandoff(
   lineUserId: string,
   lastMessage: string
 ): Promise<HandoffSession | null> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const existing = await getOpenHandoff(lineUserId);
   if (existing) {
@@ -52,7 +54,7 @@ export async function requestHandoff(
   const { data, error } = await db
     .from("ai_handoff_sessions")
     .insert({
-      shop_id: SHOP_ID,
+      shop_id: shopId,
       customer_id: customerId,
       line_user_id: lineUserId,
       status: "pending",
@@ -97,11 +99,12 @@ export async function closeHandoff(id: number, adminLineUserId: string): Promise
 }
 
 export async function cancelHandoff(lineUserId: string): Promise<void> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   await db
     .from("ai_handoff_sessions")
     .update({ status: "cancelled", resolved_at: new Date().toISOString() })
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .in("status", ["pending", "active"]);
 }
@@ -206,12 +209,29 @@ export function handoffNotifyFlex(params: {
 }
 
 export async function notifyAdminsOfHandoff(session: HandoffSession, customerName: string, pictureUrl: string | null) {
-  const raw = process.env.ADMIN_LINE_IDS ?? "";
-  const adminIds = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  const db = supabaseAdmin();
+  // Per-shop admin LINE IDs (scoped to the handoff session's shop)
+  const { data: admins } = await db
+    .from("admin_users")
+    .select("line_user_id")
+    .eq("shop_id", session.shop_id)
+    .eq("active", true)
+    .not("line_user_id", "is", null);
+  let adminIds = (admins ?? [])
+    .map((a) => a.line_user_id as string)
+    .filter(Boolean);
+
+  // Legacy single-tenant fallback — only used if the shop has no linked admins yet.
+  if (adminIds.length === 0) {
+    const raw = process.env.ADMIN_LINE_IDS ?? process.env.ADMIN_LINE_USER_IDS ?? "";
+    adminIds = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+
   if (!adminIds.length) {
-    console.warn("[handoff] ADMIN_LINE_IDS not set — cannot notify admins");
+    console.warn(`[handoff] no admin line_user_id registered for shop ${session.shop_id} — cannot notify`);
     return;
   }
+
   const flex = handoffNotifyFlex({
     sessionId: session.id,
     customerName,

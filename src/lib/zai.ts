@@ -1,4 +1,4 @@
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 
 const ZAI_API_URL = "https://api.z.ai/api/coding/paas/v4/chat/completions";
 
@@ -29,11 +29,12 @@ const DEFAULT_SETTINGS: AiSettings = {
 // ─── Load AI settings from DB ────────────────────────────────────────────────
 
 export async function getAiSettings(): Promise<AiSettings> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const { data } = await db
     .from("ai_settings")
     .select("*")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .maybeSingle();
   if (!data) return DEFAULT_SETTINGS;
   return {
@@ -52,12 +53,13 @@ export async function getAiSettings(): Promise<AiSettings> {
 // ─── Shop context (system prompt) ───────────────────────────────────────────
 
 async function buildShopSystemPrompt(settings: AiSettings): Promise<string> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
 
   const [shopRes, servicesRes, staffRes] = await Promise.all([
-    db.from("shops").select("name, phone, address").eq("id", SHOP_ID).maybeSingle(),
-    db.from("services").select("name, price, duration_min").eq("shop_id", SHOP_ID).eq("active", true).order("sort_order"),
-    db.from("staff").select("name, nickname").eq("shop_id", SHOP_ID).eq("active", true).order("sort_order"),
+    db.from("shops").select("name, phone, address").eq("id", shopId).maybeSingle(),
+    db.from("services").select("name, price, duration_min").eq("shop_id", shopId).eq("active", true).order("sort_order"),
+    db.from("staff").select("name, nickname").eq("shop_id", shopId).eq("active", true).order("sort_order"),
   ]);
 
   const shop = shopRes.data;
@@ -101,11 +103,12 @@ ${staffLines || "ยังไม่มีข้อมูลช่าง"}
 // ─── Chat history ────────────────────────────────────────────────────────────
 
 async function getLastMessages(lineUserId: string, historyLimit: number): Promise<Array<{ role: string; content: string }>> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const { data } = await db
     .from("chat_history")
     .select("role, content")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .order("created_at", { ascending: false })
     .limit(historyLimit);
@@ -119,10 +122,11 @@ async function saveMessages(
   userText: string,
   assistantText: string
 ): Promise<void> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   await db.from("chat_history").insert([
-    { shop_id: SHOP_ID, line_user_id: lineUserId, role: "user", content: userText },
-    { shop_id: SHOP_ID, line_user_id: lineUserId, role: "assistant", content: assistantText },
+    { shop_id: shopId, line_user_id: lineUserId, role: "user", content: userText },
+    { shop_id: shopId, line_user_id: lineUserId, role: "assistant", content: assistantText },
   ]);
 }
 

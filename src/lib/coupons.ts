@@ -1,5 +1,5 @@
 // coupons.ts — Validate + apply promo codes at booking time.
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 
 export interface Coupon {
   id: number;
@@ -39,6 +39,7 @@ export async function validateCoupon(args: {
   serviceId: number;
   price: number;
 }): Promise<CouponValidation> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const code = args.code.trim();
   if (!code) return { valid: false, reason: "code_required" };
@@ -46,7 +47,7 @@ export async function validateCoupon(args: {
   const { data: c } = await db
     .from("coupons")
     .select("*")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .ilike("code", code)
     .maybeSingle();
   if (!c) return { valid: false, reason: "not_found" };

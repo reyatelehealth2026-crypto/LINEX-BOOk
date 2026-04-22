@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 import { getProfile } from "@/lib/line";
 
 export const runtime = "nodejs";
@@ -11,20 +11,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "lineUserId, fullName, phone required" }, { status: 400 });
   }
 
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
 
   // ensure row
   const { data: existing } = await db
     .from("customers")
     .select("id")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .maybeSingle();
 
   if (!existing) {
     const p = await getProfile(lineUserId);
     await db.from("customers").insert({
-      shop_id: SHOP_ID,
+      shop_id: shopId,
       line_user_id: lineUserId,
       display_name: p?.displayName ?? null,
       picture_url: p?.pictureUrl ?? null
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
       registered_at: new Date().toISOString(),
       points: existing ? undefined : 50 // welcome bonus on first registration
     })
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .select("*")
     .single();
@@ -52,11 +53,12 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const lineUserId = req.nextUrl.searchParams.get("line_user_id");
   if (!lineUserId) return NextResponse.json({ customer: null });
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const { data } = await db
     .from("customers")
     .select("*")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .maybeSingle();
   return NextResponse.json({ customer: data ?? null });
