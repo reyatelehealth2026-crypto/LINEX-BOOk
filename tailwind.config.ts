@@ -62,6 +62,7 @@ const config: Config = {
       fontFamily: {
         sans: ["'Inter'", "ui-sans-serif", "system-ui", "'Noto Sans Thai'", "'IBM Plex Sans Thai'", "sans-serif"],
         display: ["'Inter'", "ui-sans-serif", "system-ui", "'Noto Sans Thai'", "sans-serif"],
+        serif: ["'Fraunces'", "'Cormorant Garamond'", "Georgia", "'IBM Plex Serif Thai Looped'", "'IBM Plex Sans Thai'", "serif"],
         mono: ["'JetBrains Mono'", "'Fira Code'", "ui-monospace", "monospace"]
       },
       borderRadius: {

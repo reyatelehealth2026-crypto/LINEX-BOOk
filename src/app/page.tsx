@@ -1,217 +1,249 @@
 import Link from "next/link";
 import {
-  ArrowRight,
+  ArrowUpRight,
   CalendarClock,
   Users,
   Bell,
   BarChart3,
   ShieldCheck,
   LayoutGrid,
-  Scissors,
-  Sparkle,
-  Leaf,
-  Check,
 } from "lucide-react";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-white text-slate-900">
+    <main className="min-h-screen text-[#0a0a0a]" style={{ backgroundColor: "#faf9f5" }}>
       {/* ── Nav ─────────────────────────────────────────────── */}
-      <header className="border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-[11px] font-bold tracking-tight">
+      <header className="border-b border-[#e8e6df]">
+        <div className="max-w-[1280px] mx-auto px-8 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#0a0a0a] text-[#faf9f5] flex items-center justify-center text-[10px] font-semibold tracking-wider">
               LB
             </div>
-            <span className="font-semibold tracking-tight text-[15px]">LineBook</span>
+            <div className="flex items-baseline gap-2">
+              <span className="font-serif text-[17px] font-semibold tracking-tight">LineBook</span>
+            </div>
           </Link>
-          <nav className="hidden sm:flex items-center gap-7 text-sm text-slate-600">
-            <a href="#features" className="hover:text-slate-900 transition">ฟีเจอร์</a>
-            <a href="#presets" className="hover:text-slate-900 transition">ประเภทร้าน</a>
-            <a href="#how" className="hover:text-slate-900 transition">การใช้งาน</a>
+          <nav className="hidden md:flex items-center gap-9 text-[13px] text-[#4a4a4a]">
+            <a href="#capabilities" className="hover:text-[#0a0a0a] transition">Capabilities</a>
+            <a href="#industries" className="hover:text-[#0a0a0a] transition">Industries</a>
+            <a href="#process" className="hover:text-[#0a0a0a] transition">Process</a>
           </nav>
-          <div className="flex items-center gap-3">
-            <Link href="/admin" className="text-sm text-slate-600 hover:text-slate-900 hidden sm:inline transition">
-              เข้าสู่ระบบ
+          <div className="flex items-center gap-5">
+            <Link href="/admin" className="text-[13px] text-[#4a4a4a] hover:text-[#0a0a0a] transition hidden sm:inline">
+              Sign in
             </Link>
             <Link
               href="/signup"
-              className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md text-sm font-medium transition"
+              className="group inline-flex items-center gap-1.5 bg-[#0a0a0a] hover:bg-[#2a2a2a] text-[#faf9f5] px-4 py-2 text-[13px] font-medium tracking-tight transition"
             >
               เริ่มใช้งาน
-              <ArrowRight size={14} />
+              <ArrowUpRight size={13} className="transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </Link>
           </div>
         </div>
       </header>
 
       {/* ── Hero ────────────────────────────────────────────── */}
-      <section className="border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-6 py-20 sm:py-28">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 text-xs text-slate-600 border border-slate-200 rounded-full px-3 py-1 mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-900" />
-              ระบบจองคิวและ CRM สำหรับธุรกิจบริการ
+      <section className="border-b border-[#e8e6df]">
+        <div className="max-w-[1280px] mx-auto px-8 py-24 md:py-36">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
+            <div className="md:col-span-8">
+              <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[#6a6a6a] mb-10 font-mono">
+                <span className="inline-block w-6 h-px bg-[#b8b5ab]" />
+                <span>EST. 2026 — Booking Infrastructure</span>
+              </div>
+              <h1 className="font-serif font-normal text-[clamp(2.5rem,6.5vw,5.75rem)] leading-[0.98] tracking-[-0.02em] text-[#0a0a0a]">
+                ระบบจองคิวผ่าน LINE<br />
+                <span className="italic text-[#2a2a2a]">สำหรับธุรกิจบริการ</span><br />
+                <span className="text-[#6a6a6a]">ของคุณ</span>
+              </h1>
+              <p className="mt-10 max-w-xl text-[17px] leading-[1.65] text-[#3a3a3a]">
+                แพลตฟอร์มจองคิวและการดูแลลูกค้าที่ออกแบบสำหรับร้านเสริมสวย
+                ร้านทำเล็บ และสปา — ทำงานร่วมกับ LINE Official Account
+                ของร้านโดยตรง พร้อมระบบบริหารจัดการคิวและข้อมูลลูกค้าแบบเรียลไทม์
+              </p>
+              <div className="mt-12 flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/signup"
+                  className="group inline-flex items-center gap-2 bg-[#0a0a0a] hover:bg-[#2a2a2a] text-[#faf9f5] px-7 py-3.5 text-[14px] font-medium tracking-tight transition"
+                >
+                  สมัครใช้งาน
+                  <ArrowUpRight size={15} className="transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </Link>
+                <a
+                  href="#capabilities"
+                  className="inline-flex items-center gap-2 border border-[#0a0a0a] text-[#0a0a0a] hover:bg-[#0a0a0a] hover:text-[#faf9f5] px-7 py-3.5 text-[14px] font-medium tracking-tight transition"
+                >
+                  ศึกษาระบบ
+                </a>
+              </div>
             </div>
-            <h1 className="text-4xl sm:text-6xl font-semibold tracking-tight leading-[1.05] text-slate-900">
-              ระบบจองคิวผ่าน LINE<br className="hidden sm:block" />
-              <span className="text-slate-500"> สำหรับธุรกิจบริการไทย</span>
-            </h1>
-            <p className="mt-6 text-lg text-slate-600 max-w-2xl leading-relaxed">
-              ลูกค้าจองคิวผ่าน LINE ของร้านได้โดยตรง เจ้าของร้านจัดการคิว บริการ
-              และข้อมูลลูกค้าแบบเรียลไทม์ ระบบพร้อมใช้งานใน 10 นาที
-            </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-3">
-              <Link
-                href="/signup"
-                className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-md font-medium transition"
-              >
-                สมัครใช้งาน
-                <ArrowRight size={16} />
-              </Link>
-              <a
-                href="#features"
-                className="inline-flex items-center justify-center gap-2 border border-slate-300 hover:border-slate-400 text-slate-900 px-6 py-3 rounded-md font-medium transition"
-              >
-                ดูฟีเจอร์ทั้งหมด
-              </a>
-            </div>
-            <dl className="mt-14 grid grid-cols-3 gap-8 max-w-xl">
-              <Stat value="10 นาที" label="เวลาติดตั้ง" />
-              <Stat value="3 ประเภท" label="พรีเซทธุรกิจ" />
-              <Stat value="ฟรี" label="ไม่มีค่ารายเดือน" />
-            </dl>
+
+            <aside className="md:col-span-4 md:border-l md:border-[#e8e6df] md:pl-10 flex flex-col justify-end">
+              <div className="space-y-9">
+                <Metric number="10" unit="นาที" label="เวลาในการติดตั้งระบบ" />
+                <div className="h-px bg-[#e8e6df]" />
+                <Metric number="03" unit="ประเภท" label="พรีเซทธุรกิจที่รองรับ" />
+                <div className="h-px bg-[#e8e6df]" />
+                <Metric number="00" unit="บาท" label="ค่าธรรมเนียมรายเดือน" />
+              </div>
+            </aside>
           </div>
         </div>
       </section>
 
-      {/* ── Features ───────────────────────────────────────── */}
-      <section id="features" className="border-b border-slate-200 bg-slate-50/50">
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <SectionHead
-            kicker="ฟีเจอร์หลัก"
-            title="ทุกสิ่งที่ร้านบริการต้องการ"
-            desc="ระบบจองคิว บริหารลูกค้า และการสื่อสารอัตโนมัติในที่เดียว"
-          />
-          <div className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
-            <Feature
-              icon={<CalendarClock size={22} />}
-              title="จองคิวผ่าน LINE"
-              desc="ลูกค้าจองคิวผ่าน LIFF Mini App ในแชทของร้าน ไม่ต้องดาวน์โหลดแอปเพิ่ม"
+      {/* ── Capabilities ─────────────────────────────────────── */}
+      <section id="capabilities" className="border-b border-[#e8e6df]">
+        <div className="max-w-[1280px] mx-auto px-8 py-24 md:py-32">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 mb-20">
+            <div className="md:col-span-3">
+              <div className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#6a6a6a]">
+                § 01 — Capabilities
+              </div>
+            </div>
+            <div className="md:col-span-9">
+              <h2 className="font-serif font-normal text-[clamp(2rem,4vw,3.25rem)] leading-[1.05] tracking-[-0.015em] text-[#0a0a0a] max-w-2xl">
+                ทุกองค์ประกอบที่ร้านบริการต้องการ<br />
+                <span className="italic text-[#4a4a4a]">ออกแบบมาอย่างพิถีพิถัน</span>
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-14">
+            <Capability
+              num="01"
+              icon={<CalendarClock size={20} strokeWidth={1.4} />}
+              title="การจองผ่าน LINE"
+              desc="ลูกค้าจองคิวผ่าน LIFF Mini App ภายในแชทของร้าน ไม่ต้องดาวน์โหลดแอปเพิ่มเติม รองรับการเลือกบริการ ช่าง วัน และเวลา"
             />
-            <Feature
-              icon={<Users size={22} />}
-              title="CRM และแต้มสะสม"
-              desc="เก็บประวัติการใช้บริการ แต้มสะสม และข้อมูลลูกค้าอัตโนมัติ"
+            <Capability
+              num="02"
+              icon={<Users size={20} strokeWidth={1.4} />}
+              title="ระบบ CRM"
+              desc="เก็บข้อมูลลูกค้า ประวัติการใช้บริการ แต้มสะสม และวันเกิด อัตโนมัติทุกครั้งที่มีการจอง ช่วยให้การดูแลลูกค้าประจำทำได้ง่าย"
             />
-            <Feature
-              icon={<Bell size={22} />}
-              title="แจ้งเตือนอัตโนมัติ"
-              desc="ส่งข้อความเตือนก่อนคิว 24 ชั่วโมงและ 1 ชั่วโมง พร้อมข้อความขอบคุณ"
+            <Capability
+              num="03"
+              icon={<Bell size={20} strokeWidth={1.4} />}
+              title="การแจ้งเตือนอัตโนมัติ"
+              desc="ส่งข้อความเตือนก่อนเวลาคิว 24 ชั่วโมงและ 1 ชั่วโมง รวมถึงข้อความขอบคุณหลังรับบริการ ลดอัตราการไม่มาตามนัด"
             />
-            <Feature
-              icon={<BarChart3 size={22} />}
-              title="แดชบอร์ดเรียลไทม์"
-              desc="ดูคิววันนี้ ยอดขาย และลูกค้าประจำได้ทันที ไม่ต้องรีเฟรชหน้าจอ"
+            <Capability
+              num="04"
+              icon={<BarChart3 size={20} strokeWidth={1.4} />}
+              title="รายงานแบบเรียลไทม์"
+              desc="แดชบอร์ดแสดงคิววันนี้ ยอดขาย และสถิติลูกค้าอัปเดตทันทีที่มีการเปลี่ยนแปลง ไม่ต้องรีเฟรชหน้าจอ"
             />
-            <Feature
-              icon={<ShieldCheck size={22} />}
-              title="ป้องกันคิวซ้อน"
-              desc="ระบบตรวจสอบการจองซ้อนของช่างคนเดียวกันในระดับฐานข้อมูล"
+            <Capability
+              num="05"
+              icon={<ShieldCheck size={20} strokeWidth={1.4} />}
+              title="การป้องกันความผิดพลาด"
+              desc="ระบบตรวจสอบการจองซ้อนของช่างคนเดียวกันในระดับฐานข้อมูล ลดโอกาสผิดพลาดในการจัดคิวเหลือเป็นศูนย์"
             />
-            <Feature
-              icon={<LayoutGrid size={22} />}
-              title="พรีเซทพร้อมใช้"
-              desc="เลือกประเภทร้านแล้วระบบสร้างบริการ เวลา และข้อความเริ่มต้นให้"
+            <Capability
+              num="06"
+              icon={<LayoutGrid size={20} strokeWidth={1.4} />}
+              title="พรีเซทสำเร็จรูป"
+              desc="เลือกประเภทธุรกิจ ระบบจะติดตั้งบริการเริ่มต้น เวลาทำการ และข้อความอัตโนมัติ พร้อมใช้งานทันที ปรับแก้ได้ทุกรายละเอียด"
             />
           </div>
         </div>
       </section>
 
-      {/* ── Presets ────────────────────────────────────────── */}
-      <section id="presets" className="border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <SectionHead
-            kicker="พรีเซทธุรกิจ"
-            title="เริ่มต้นด้วยข้อมูลที่เหมาะกับธุรกิจของคุณ"
-            desc="เลือก 1 ใน 3 ประเภท ระบบจะติดตั้งบริการเริ่มต้น เวลาทำการ และข้อความอัตโนมัติ ปรับแก้ได้ทั้งหมดภายหลัง"
-          />
-          <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <PresetCard
-              icon={<Scissors size={20} />}
-              name="ร้านเสริมสวย / บาร์เบอร์"
-              desc="สำหรับร้านตัดผม ย้อมสี ทำทรีตเมนต์ และสระไดร์"
-              services={[
-                "ตัดผมชาย / ตัดผม + สระ",
-                "สระ + ไดร์ / ทรีตเมนต์",
-                "ทำสีผม / ดัด / ยืด",
-              ]}
-              count="6 บริการเริ่มต้น"
+      {/* ── Industries ────────────────────────────────────── */}
+      <section id="industries" className="border-b border-[#e8e6df]" style={{ backgroundColor: "#f4f2ea" }}>
+        <div className="max-w-[1280px] mx-auto px-8 py-24 md:py-32">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 mb-20">
+            <div className="md:col-span-3">
+              <div className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#6a6a6a]">
+                § 02 — Industries
+              </div>
+            </div>
+            <div className="md:col-span-9">
+              <h2 className="font-serif font-normal text-[clamp(2rem,4vw,3.25rem)] leading-[1.05] tracking-[-0.015em] text-[#0a0a0a] max-w-2xl">
+                รองรับธุรกิจบริการ<br />
+                <span className="italic text-[#4a4a4a]">สามประเภทหลัก</span>
+              </h2>
+            </div>
+          </div>
+
+          <div className="space-y-px">
+            <Industry
+              num="01"
+              name="ร้านเสริมสวย และบาร์เบอร์"
+              name_en="Salon & Barber"
+              desc="สำหรับร้านตัดผม ย้อมสี ทำทรีตเมนต์ และบริการสระไดร์"
+              services={["ตัดผมชาย", "ตัดผม + สระ", "สระ + ไดร์", "ทำสีผม", "ทรีตเมนต์", "ดัด / ยืด"]}
             />
-            <PresetCard
-              icon={<Sparkle size={20} />}
+            <Industry
+              num="02"
               name="ร้านทำเล็บ"
-              desc="สำหรับร้านทำเล็บมือ เล็บเท้า ต่อเล็บ และเพ้นท์ลาย"
-              services={[
-                "ทำเล็บมือ / เล็บเท้า",
-                "เจลสีมือ / เจลสีเท้า",
-                "ต่อเล็บอะคริลิค / เพ้นท์ลาย",
-              ]}
-              count="7 บริการเริ่มต้น"
+              name_en="Nail Salon"
+              desc="สำหรับร้านทำเล็บมือ เล็บเท้า ต่อเล็บ และบริการเพ้นท์ลาย"
+              services={["ทำเล็บมือ", "ทำเล็บเท้า", "สปามือ", "เจลสีเล็บมือ", "เจลสีเล็บเท้า", "ต่อเล็บอะคริลิค", "เพ้นท์ลาย"]}
             />
-            <PresetCard
-              icon={<Leaf size={20} />}
-              name="สปา / ร้านนวด"
-              desc="สำหรับร้านนวดไทย นวดน้ำมัน อโรม่า และสปาหน้า"
-              services={[
-                "นวดไทย 60 / 90 นาที",
-                "นวดน้ำมัน / อโรม่า",
-                "สปาหน้า / สปาตัว",
-              ]}
-              count="7 บริการเริ่มต้น"
+            <Industry
+              num="03"
+              name="สปา และร้านนวด"
+              name_en="Spa & Massage"
+              desc="สำหรับร้านนวดไทย นวดน้ำมัน อโรม่าเทอราปี และบริการสปา"
+              services={["นวดไทย 60 นาที", "นวดไทย 90 นาที", "นวดน้ำมัน", "นวดอโรม่า", "นวดฝ่าเท้า", "สปาหน้า", "สปาตัว + ขัดผิว"]}
             />
           </div>
         </div>
       </section>
 
-      {/* ── How it works ──────────────────────────────────── */}
-      <section id="how" className="border-b border-slate-200 bg-slate-50/50">
-        <div className="max-w-6xl mx-auto px-6 py-20">
-          <SectionHead
-            kicker="การใช้งาน"
-            title="เริ่มใช้งานใน 4 ขั้นตอน"
-          />
-          <div className="mt-14 grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Step n={1} title="กรอกข้อมูลร้าน" desc="ชื่อร้าน URL เบอร์โทร และที่อยู่" />
-            <Step n={2} title="เลือกประเภทธุรกิจ" desc="พรีเซทบริการและเวลาทำการ" />
-            <Step n={3} title="เชื่อม LINE OA" desc="กรอก Channel Token และ LIFF ID" />
-            <Step n={4} title="เริ่มรับการจอง" desc="ส่งลิงก์ให้ลูกค้าผ่าน LINE" />
+      {/* ── Process ────────────────────────────────────────── */}
+      <section id="process" className="border-b border-[#e8e6df]">
+        <div className="max-w-[1280px] mx-auto px-8 py-24 md:py-32">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 mb-20">
+            <div className="md:col-span-3">
+              <div className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#6a6a6a]">
+                § 03 — Process
+              </div>
+            </div>
+            <div className="md:col-span-9">
+              <h2 className="font-serif font-normal text-[clamp(2rem,4vw,3.25rem)] leading-[1.05] tracking-[-0.015em] text-[#0a0a0a] max-w-2xl">
+                ขั้นตอนการติดตั้ง<br />
+                <span className="italic text-[#4a4a4a]">ใช้เวลาไม่เกินสิบนาที</span>
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-6">
+            <Step n="01" title="กรอกข้อมูลร้าน" desc="ระบุชื่อร้าน URL เบอร์โทร และที่อยู่ที่ใช้สำหรับการจอง" />
+            <Step n="02" title="เลือกประเภทธุรกิจ" desc="ระบบจะสร้างบริการเริ่มต้นและเวลาทำการตามพรีเซทที่เลือก" />
+            <Step n="03" title="เชื่อม LINE OA" desc="กรอก Channel Access Token และ LIFF ID ของร้านจาก LINE Developers" />
+            <Step n="04" title="เริ่มรับการจอง" desc="แชร์ลิงก์หรือ QR ให้ลูกค้าผ่าน LINE เพื่อเริ่มรับการจองทันที" />
           </div>
         </div>
       </section>
 
-      {/* ── Final CTA ─────────────────────────────────────── */}
-      <section className="border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-6 py-24">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">
-              พร้อมยกระดับการให้บริการของคุณ
+      {/* ── CTA ────────────────────────────────────────────── */}
+      <section className="border-b border-[#e8e6df]">
+        <div className="max-w-[1280px] mx-auto px-8 py-28 md:py-40">
+          <div className="max-w-3xl">
+            <div className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#6a6a6a] mb-8">
+              Ready to begin
+            </div>
+            <h2 className="font-serif font-normal text-[clamp(2.25rem,5.5vw,4.5rem)] leading-[1] tracking-[-0.02em] text-[#0a0a0a]">
+              ยกระดับการบริหารจัดการร้าน<br />
+              <span className="italic text-[#4a4a4a]">ของคุณในวันนี้</span>
             </h2>
-            <p className="mt-4 text-slate-600 text-lg leading-relaxed">
-              สร้างร้านของคุณได้ในไม่กี่นาที ไม่มีค่าใช้จ่ายแอบแฝง
-              ไม่ต้องใช้บัตรเครดิตในการสมัคร
+            <p className="mt-8 text-[17px] leading-[1.65] text-[#3a3a3a] max-w-xl">
+              สร้างบัญชีได้ทันที โดยไม่ต้องใช้บัตรเครดิตและไม่มีค่าใช้จ่ายแอบแฝง
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            <div className="mt-12 flex flex-col sm:flex-row gap-4">
               <Link
                 href="/signup"
-                className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-md font-medium transition"
+                className="group inline-flex items-center gap-2 bg-[#0a0a0a] hover:bg-[#2a2a2a] text-[#faf9f5] px-8 py-4 text-[14px] font-medium tracking-tight transition"
               >
                 สมัครใช้งานฟรี
-                <ArrowRight size={16} />
+                <ArrowUpRight size={15} className="transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </Link>
               <Link
                 href="/admin"
-                className="inline-flex items-center justify-center gap-2 border border-slate-300 hover:border-slate-400 text-slate-900 px-6 py-3 rounded-md font-medium transition"
+                className="inline-flex items-center gap-2 border border-[#0a0a0a] text-[#0a0a0a] hover:bg-[#0a0a0a] hover:text-[#faf9f5] px-8 py-4 text-[14px] font-medium tracking-tight transition"
               >
                 เข้าสู่ระบบ
               </Link>
@@ -222,84 +254,124 @@ export default function Home() {
 
       {/* ── Footer ────────────────────────────────────────── */}
       <footer>
-        <div className="max-w-6xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded-md bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold">
-              LB
+        <div className="max-w-[1280px] mx-auto px-8 py-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-14">
+            <div className="col-span-2 md:col-span-1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-[#0a0a0a] text-[#faf9f5] flex items-center justify-center text-[10px] font-semibold tracking-wider">
+                  LB
+                </div>
+                <span className="font-serif text-[17px] font-semibold tracking-tight">LineBook</span>
+              </div>
+              <p className="text-[13px] text-[#6a6a6a] leading-relaxed max-w-xs">
+                Booking infrastructure for<br />service businesses in Thailand
+              </p>
             </div>
-            <span className="text-sm text-slate-600">LineBook · ระบบจองคิวสำหรับธุรกิจบริการไทย</span>
+            <FooterCol title="Product" links={[["ฟีเจอร์", "#capabilities"], ["ประเภทธุรกิจ", "#industries"], ["การใช้งาน", "#process"]]} />
+            <FooterCol title="Resources" links={[["สมัครใช้งาน", "/signup"], ["เข้าสู่ระบบ", "/admin"]]} />
+            <FooterCol title="Contact" links={[["LINE Developers", "https://developers.line.biz"]]} />
           </div>
-          <div className="text-xs text-slate-500">© {new Date().getFullYear()} LineBook. All rights reserved.</div>
+          <div className="pt-8 border-t border-[#e8e6df] flex flex-col sm:flex-row justify-between gap-3 text-[12px] text-[#8a8a8a]">
+            <div>© {new Date().getFullYear()} LineBook. All rights reserved.</div>
+            <div className="font-mono tracking-wider uppercase">v1.0 — Released 2026</div>
+          </div>
         </div>
       </footer>
     </main>
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function Metric({ number, unit, label }: { number: string; unit: string; label: string }) {
   return (
     <div>
-      <dt className="text-2xl font-semibold text-slate-900 tracking-tight">{value}</dt>
-      <dd className="text-sm text-slate-600 mt-1">{label}</dd>
-    </div>
-  );
-}
-
-function SectionHead({ kicker, title, desc }: { kicker: string; title: string; desc?: string }) {
-  return (
-    <div className="max-w-2xl">
-      <div className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">{kicker}</div>
-      <h2 className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900">{title}</h2>
-      {desc && <p className="mt-4 text-slate-600 text-base leading-relaxed">{desc}</p>}
-    </div>
-  );
-}
-
-function Feature({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
-  return (
-    <div className="bg-white p-7">
-      <div className="w-10 h-10 rounded-md border border-slate-200 text-slate-700 flex items-center justify-center mb-5">
-        {icon}
+      <div className="flex items-baseline gap-2">
+        <span className="font-serif text-6xl font-light leading-none tracking-[-0.02em] text-[#0a0a0a] tabular-nums">
+          {number}
+        </span>
+        <span className="text-[13px] text-[#6a6a6a] tracking-tight">{unit}</span>
       </div>
-      <div className="font-semibold text-slate-900">{title}</div>
-      <div className="text-sm text-slate-600 mt-2 leading-relaxed">{desc}</div>
+      <div className="mt-3 text-[12px] text-[#6a6a6a] tracking-tight">{label}</div>
     </div>
   );
 }
 
-function PresetCard({
-  icon, name, desc, services, count,
-}: {
-  icon: React.ReactNode; name: string; desc: string; services: string[]; count: string;
-}) {
+function Capability({
+  num, icon, title, desc,
+}: { num: string; icon: React.ReactNode; title: string; desc: string }) {
   return (
-    <div className="border border-slate-200 rounded-lg p-7 bg-white flex flex-col">
-      <div className="w-10 h-10 rounded-md border border-slate-200 text-slate-700 flex items-center justify-center mb-5">
-        {icon}
+    <div className="max-w-sm">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="text-[#8a8a8a]">{icon}</div>
+        <span className="text-[11px] font-mono tracking-[0.18em] text-[#8a8a8a]">{num}</span>
       </div>
-      <div className="font-semibold text-slate-900">{name}</div>
-      <div className="text-sm text-slate-600 mt-2 leading-relaxed">{desc}</div>
-      <ul className="mt-6 space-y-2 text-sm text-slate-700">
-        {services.map((s, i) => (
-          <li key={i} className="flex items-start gap-2">
-            <Check size={14} className="mt-1 shrink-0 text-slate-400" />
-            <span>{s}</span>
+      <h3 className="font-serif text-[22px] font-medium tracking-tight leading-tight text-[#0a0a0a]">
+        {title}
+      </h3>
+      <p className="mt-3 text-[14px] leading-[1.65] text-[#4a4a4a]">{desc}</p>
+    </div>
+  );
+}
+
+function Industry({
+  num, name, name_en, desc, services,
+}: { num: string; name: string; name_en: string; desc: string; services: string[] }) {
+  return (
+    <div className="py-10 border-t border-[#d8d5cb] grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-10 group">
+      <div className="md:col-span-1">
+        <div className="font-mono text-[11px] tracking-[0.18em] text-[#8a8a8a]">{num}</div>
+      </div>
+      <div className="md:col-span-5">
+        <h3 className="font-serif text-[28px] md:text-[34px] font-normal tracking-[-0.01em] leading-[1.1] text-[#0a0a0a]">
+          {name}
+        </h3>
+        <div className="mt-1 text-[12px] font-mono tracking-[0.1em] text-[#8a8a8a] uppercase">
+          {name_en}
+        </div>
+        <p className="mt-5 text-[14px] leading-[1.65] text-[#4a4a4a] max-w-md">{desc}</p>
+      </div>
+      <div className="md:col-span-6">
+        <ul className="grid grid-cols-2 gap-x-6 gap-y-2.5 text-[13px] text-[#3a3a3a]">
+          {services.map((s, i) => (
+            <li key={i} className="flex items-baseline gap-2.5">
+              <span className="font-mono text-[10px] text-[#b8b5ab]">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span>{s}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function Step({ n, title, desc }: { n: string; title: string; desc: string }) {
+  return (
+    <div>
+      <div className="font-mono text-[11px] tracking-[0.18em] text-[#8a8a8a] mb-5">{n}</div>
+      <h3 className="font-serif text-[20px] font-medium tracking-tight leading-tight text-[#0a0a0a]">
+        {title}
+      </h3>
+      <p className="mt-3 text-[13px] leading-[1.65] text-[#4a4a4a]">{desc}</p>
+    </div>
+  );
+}
+
+function FooterCol({ title, links }: { title: string; links: [string, string][] }) {
+  return (
+    <div>
+      <div className="text-[11px] font-mono uppercase tracking-[0.18em] text-[#6a6a6a] mb-5">
+        {title}
+      </div>
+      <ul className="space-y-2.5">
+        {links.map(([label, href], i) => (
+          <li key={i}>
+            <a href={href} className="text-[13px] text-[#2a2a2a] hover:text-[#0a0a0a] hover:underline underline-offset-4 transition">
+              {label}
+            </a>
           </li>
         ))}
       </ul>
-      <div className="mt-auto pt-6 text-xs text-slate-500 uppercase tracking-wider border-t border-slate-100 mt-6">
-        {count}
-      </div>
-    </div>
-  );
-}
-
-function Step({ n, title, desc }: { n: number; title: string; desc: string }) {
-  return (
-    <div>
-      <div className="text-xs text-slate-500 font-mono">0{n}</div>
-      <div className="mt-2 font-semibold text-slate-900">{title}</div>
-      <div className="text-sm text-slate-600 mt-1.5 leading-relaxed">{desc}</div>
     </div>
   );
 }
