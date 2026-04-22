@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function checkAuth(req: NextRequest) {
-  const pw = req.headers.get("x-admin-password");
-  return pw && pw === process.env.ADMIN_PASSWORD;
-}
-
 // GET /api/admin/customers — list all customers with latest booking date
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const db = supabaseAdmin();
   const sp = req.nextUrl.searchParams;
@@ -24,7 +21,7 @@ export async function GET(req: NextRequest) {
       full_name, phone, birthday, points, visit_count,
       registered_at, created_at
     `)
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .order("created_at", { ascending: false });
 
   if (search) {

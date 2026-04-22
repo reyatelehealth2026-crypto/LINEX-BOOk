@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function checkAuth(req: NextRequest) {
-  const pw = req.headers.get("x-admin-password");
-  return pw && pw === process.env.ADMIN_PASSWORD;
-}
 
 /** Known placeholder tokens for documentation/preview */
 const KNOWN_VARS: Record<string, string> = {
@@ -27,7 +23,8 @@ function renderTemplate(body: string, vars: Record<string, string>): string {
 // Body: { template_id?: number, body?: string, vars?: Record<string,string> }
 // Returns: { subject, body, missing_vars }
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await req.json();
   const customVars = (body.vars ?? {}) as Record<string, string>;
@@ -43,7 +40,7 @@ export async function POST(req: NextRequest) {
       .from("message_templates")
       .select("body, subject")
       .eq("id", Number(body.template_id))
-      .eq("shop_id", SHOP_ID)
+      .eq("shop_id", identity.shopId)
       .single();
     if (error || !data) return NextResponse.json({ error: "template not found" }, { status: 404 });
     rawBody = data.body;
