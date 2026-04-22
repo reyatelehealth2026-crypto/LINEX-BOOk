@@ -1,18 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Proxy (formerly "middleware") resolves the current tenant (shop) from the
-// request host:
-//   likesms.net              → marketing + signup (root, no tenant)
-//   <slug>.likesms.net       → tenant app; inject x-shop-slug for downstream
+// request. Three resolution strategies, tried in order:
 //
-// We purposely do NOT hit the database here — this runs on every request
-// (incl. static assets) and keeping it DB-free avoids cold-start latency.
-// The slug is forwarded as x-shop-slug on the REQUEST headers so server
-// components / route handlers can read it via `next/headers`; each handler
-// then calls getShopBySlug() which performs the DB lookup with short-lived
-// in-memory caching.
+//   1. Subdomain:  <slug>.likesms.net  → x-shop-slug header
+//   2. Path entry: likesms.net/<slug>/... → 302 to strip prefix + set cookie
+//   3. Cookie:     tenant_slug=<slug>    → x-shop-slug header
+//
+// Strategy 1 is the long-term design (isolated origins, proper cookies).
+// Strategies 2+3 are the "simple mode" entry path — a tenant shares a link
+// like likesms.net/hairx/admin/setup; the first hit sets a cookie so all
+// subsequent /admin/* links (hardcoded throughout the app) keep working on
+// the apex without needing a slug prefix.
 
 const ROOT_DOMAIN = (process.env.ROOT_DOMAIN ?? "likesms.net").toLowerCase();
+const TENANT_COOKIE = "tenant_slug";
+
+// First path segments that must NOT be interpreted as a tenant slug.
+const RESERVED_FIRST_SEG = new Set([
+  "",
+  "signup", "login", "signin", "auth",
+  "api", "_next",
+  "admin", "liff", "booking", "profile", "services", "my-bookings",
+  "favicon.ico", "robots.txt", "sitemap.xml", "assets", "images",
+  "www",
+]);
+
+const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
+
 const TENANT_WHITELIST_PATHS = [
   "/liff",
   "/admin",
@@ -24,9 +39,8 @@ const TENANT_WHITELIST_PATHS = [
 ];
 const ROOT_ONLY_PATHS = ["/signup", "/api/signup"];
 
-function extractSlug(host: string): string | null {
+function extractSubdomainSlug(host: string): string | null {
   const bare = host.split(":")[0].toLowerCase();
-  // localhost subdomains for dev: "<slug>.localhost"
   if (bare.endsWith(".localhost")) {
     const slug = bare.slice(0, -".localhost".length);
     return slug || null;
@@ -37,26 +51,69 @@ function extractSlug(host: string): string | null {
     if (!slug || slug === "www") return null;
     return slug;
   }
-  // Unknown host (e.g., Vercel preview URL): treat as root
   return null;
+}
+
+function attachSlug(req: NextRequest, slug: string, res?: NextResponse) {
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-shop-slug", slug);
+  const next = NextResponse.next({ request: { headers: requestHeaders } });
+  // Preserve any cookies set on the caller's response.
+  if (res) {
+    res.cookies.getAll().forEach((c) => next.cookies.set(c));
+  }
+  return next;
 }
 
 export function proxy(req: NextRequest) {
   const host = req.headers.get("host") ?? "";
-  const slug = extractSlug(host);
   const { pathname } = req.nextUrl;
 
-  // Root-only paths accessed on a tenant subdomain → redirect to root.
-  if (slug && ROOT_ONLY_PATHS.some((p) => pathname.startsWith(p))) {
-    const url = req.nextUrl.clone();
-    url.host = ROOT_DOMAIN;
-    return NextResponse.redirect(url);
+  // ---- Strategy 1: subdomain ----
+  const subSlug = extractSubdomainSlug(host);
+  if (subSlug) {
+    if (ROOT_ONLY_PATHS.some((p) => pathname.startsWith(p))) {
+      const url = req.nextUrl.clone();
+      url.host = ROOT_DOMAIN;
+      return NextResponse.redirect(url);
+    }
+    return attachSlug(req, subSlug);
   }
 
-  // Tenant-only paths require a slug — unless it's a multi-tenant-aware
-  // endpoint that resolves the shop from the request body or iterates all
-  // shops (webhook, cron, signup).
-  if (!slug && TENANT_WHITELIST_PATHS.some((p) => pathname.startsWith(p))) {
+  // On the root domain from here down.
+
+  // ---- Strategy 2: path prefix /<slug>/... (one-shot entry) ----
+  const segs = pathname.split("/").filter(Boolean);
+  const first = (segs[0] || "").toLowerCase();
+  if (first && !RESERVED_FIRST_SEG.has(first) && SLUG_RE.test(first)) {
+    // Rewrite URL to strip the slug prefix, set tenant cookie, then redirect
+    // so subsequent in-app links (hardcoded to /admin/*, /liff/*) keep
+    // working without further middleware gymnastics.
+    const url = req.nextUrl.clone();
+    url.pathname = "/" + segs.slice(1).join("/");
+    const res = NextResponse.redirect(url);
+    res.cookies.set(TENANT_COOKIE, first, {
+      path: "/",
+      sameSite: "lax",
+      httpOnly: false, // needs to be readable by client for /api fetches in some flows
+      maxAge: 60 * 60 * 24 * 30,
+    });
+    return res;
+  }
+
+  // ---- Strategy 3: cookie ----
+  const cookieSlug = req.cookies.get(TENANT_COOKIE)?.value;
+  if (cookieSlug && SLUG_RE.test(cookieSlug)) {
+    // Don't let cookie-tenant hit root-only signup pages.
+    if (ROOT_ONLY_PATHS.some((p) => pathname.startsWith(p))) {
+      return NextResponse.next();
+    }
+    return attachSlug(req, cookieSlug);
+  }
+
+  // ---- No tenant. Enforce tenant-only paths. ----
+  if (TENANT_WHITELIST_PATHS.some((p) => pathname.startsWith(p))) {
+    // Multi-tenant-aware endpoints resolve shop from payload/iteration.
     if (pathname.startsWith("/api/signup")) return NextResponse.next();
     if (pathname.startsWith("/api/line/webhook")) return NextResponse.next();
     if (pathname.startsWith("/api/cron")) return NextResponse.next();
@@ -65,14 +122,6 @@ export function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (slug) {
-    // Forward the slug on REQUEST headers so server handlers can read it
-    // via next/headers. NextResponse.next({ request: { headers } }) is the
-    // documented way to mutate request headers.
-    const requestHeaders = new Headers(req.headers);
-    requestHeaders.set("x-shop-slug", slug);
-    return NextResponse.next({ request: { headers: requestHeaders } });
-  }
   return NextResponse.next();
 }
 

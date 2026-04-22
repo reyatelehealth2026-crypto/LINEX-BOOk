@@ -104,9 +104,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `create admin failed: ${adminErr.message}` }, { status: 500 });
   }
 
+  // Path-based entry (simple mode): the proxy turns the first hit into a
+  // cookie + strip-prefix redirect, so every subsequent /admin/* link works
+  // on the apex without needing the wildcard cert to be issued.
   const rootDomain = process.env.ROOT_DOMAIN || "likesms.net";
   const proto = req.nextUrl.protocol.replace(":", "") || "https";
-  const redirectUrl = `${proto}://${created.slug}.${rootDomain}/admin/setup`;
+  const redirectUrl = `${proto}://${rootDomain}/${created.slug}/admin/setup`;
 
   return NextResponse.json({
     ok: true,
