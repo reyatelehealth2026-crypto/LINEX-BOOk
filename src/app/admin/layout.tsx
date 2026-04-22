@@ -48,12 +48,15 @@ const NAV: NavItem[] = [
   { href: "/admin/reviews", label: "รีวิว", icon: Star },
 ];
 
+type ShopBadge = { name: string; slug: string };
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [pw, setPw] = useState<string>("");
   const [authed, setAuthed] = useState<boolean>(false);
   const [input, setInput] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [shop, setShop] = useState<ShopBadge | null>(null);
 
   useEffect(() => {
     const saved = typeof window !== "undefined" ? sessionStorage.getItem("adminPw") : null;
@@ -62,6 +65,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setAuthed(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!authed || !pw) return;
+    fetch("/api/admin/shop-info", { headers: { "x-admin-password": pw } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setShop({ name: d.name, slug: d.slug }))
+      .catch(() => {});
+  }, [authed, pw]);
+
+  function switchShop() {
+    document.cookie = "tenant_slug=; Max-Age=0; path=/";
+    sessionStorage.removeItem("adminPw");
+    window.location.href = "/";
+  }
 
   // Close drawer on route change
   useEffect(() => {
@@ -133,8 +150,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <span className="w-8 h-8 rounded-md bg-ink-900 text-white flex items-center justify-center">
                 <Settings size={14} />
               </span>
-              <span className="text-ink-900 tracking-tight hidden sm:inline font-bold">LineBook Admin</span>
+              <span className="text-ink-900 tracking-tight hidden sm:inline font-bold">
+                {shop ? shop.name : "LineBook Admin"}
+              </span>
             </Link>
+            {shop && (
+              <button
+                onClick={switchShop}
+                title="สลับร้าน"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold bg-ink-100 text-ink-600 hover:bg-ink-200"
+              >
+                <span className="font-mono">{shop.slug}</span>
+                <span className="text-ink-400">↻</span>
+              </button>
+            )}
 
             {/* Desktop nav */}
             <nav className="hidden lg:flex items-center gap-1 flex-1 ml-4">
@@ -187,7 +216,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <span className="w-8 h-8 rounded-md bg-ink-900 text-white flex items-center justify-center">
                     <Settings size={14} />
                   </span>
-                  <span className="text-ink-900 tracking-tight">Admin</span>
+                  <div className="flex flex-col leading-tight">
+                    <span className="text-ink-900 tracking-tight">{shop?.name ?? "Admin"}</span>
+                    {shop && <span className="text-[10px] font-mono text-ink-400">{shop.slug}</span>}
+                  </div>
                 </div>
                 <button
                   onClick={() => setDrawerOpen(false)}
