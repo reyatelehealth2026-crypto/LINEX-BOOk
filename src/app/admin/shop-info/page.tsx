@@ -95,7 +95,7 @@ export default function ShopInfoPage() {
         <div className="eyebrow">ตั้งค่าร้าน</div>
         <h1 className="h-display text-2xl mt-1">ข้อมูลร้าน</h1>
         <p className="text-sm text-ink-500 mt-1">
-          URL: <code className="bg-ink-100 px-1.5 py-0.5 rounded">{info.slug}.linebook.app</code> · ประเภท: <strong>{info.business_type ?? "-"}</strong>
+          URL: <code className="bg-ink-100 px-1.5 py-0.5 rounded">{info.slug}.likesms.net</code> · ประเภท: <strong>{info.business_type ?? "-"}</strong>
         </p>
       </div>
 
