@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function checkAuth(req: NextRequest) {
-  const pw = req.headers.get("x-admin-password");
-  return pw && pw === process.env.ADMIN_PASSWORD;
-}
-
 // GET /api/admin/working-hours — list all working hours for the shop
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const db = supabaseAdmin();
 
   const { data, error } = await db
     .from("working_hours")
     .select("*, staff:staff(id, name, nickname)")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .order("day_of_week", { ascending: true })
     .order("staff_id", { ascending: true, nullsFirst: true });
 
@@ -27,7 +24,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin/working-hours — create a new working_hours row
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const db = supabaseAdmin();
   const body = await req.json() as {
     day_of_week: number;
@@ -47,7 +45,7 @@ export async function POST(req: NextRequest) {
   }
 
   const row = {
-    shop_id: SHOP_ID,
+    shop_id: identity.shopId,
     staff_id: body.staff_id || null,
     day_of_week: body.day_of_week,
     open_time: body.open_time,

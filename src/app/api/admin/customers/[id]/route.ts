@@ -1,30 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function checkAuth(req: NextRequest) {
-  const pw = req.headers.get("x-admin-password");
-  return pw && pw === process.env.ADMIN_PASSWORD;
-}
-
 // GET /api/admin/customers/[id] — customer detail + booking timeline
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
-  // Re-extract req from closure — _req is the actual request
-  const req = _req;
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const db = supabaseAdmin();
 
   const { data: customer, error: cErr } = await db
     .from("customers")
     .select("*")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .eq("id", Number(id))
     .single();
 
@@ -40,7 +35,7 @@ export async function GET(
        service:services(id, name, name_en, duration_min, price),
        staff:staff(id, name, nickname)`
     )
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .eq("customer_id", Number(id))
     .order("starts_at", { ascending: false });
 

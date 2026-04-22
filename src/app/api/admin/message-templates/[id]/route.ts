@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function checkAuth(req: NextRequest) {
-  const pw = req.headers.get("x-admin-password");
-  return pw && pw === process.env.ADMIN_PASSWORD;
-}
 
 const VALID_CATEGORIES = ["reminder", "promo", "follow_up", "custom"] as const;
 
 // GET — single template
 export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id: idStr } = await ctx.params;
   const id = Number(idStr);
 
@@ -22,7 +19,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
     .from("message_templates")
     .select("*")
     .eq("id", id)
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -32,7 +29,8 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
 
 // PATCH — update a message template
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id: idStr } = await ctx.params;
   const id = Number(idStr);
   const body = await req.json();
@@ -56,7 +54,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     .from("message_templates")
     .update(updates)
     .eq("id", id)
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .select("*")
     .single();
 
@@ -67,7 +65,8 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
 // DELETE — delete a message template
 export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id: idStr } = await ctx.params;
   const id = Number(idStr);
 
@@ -76,7 +75,7 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
     .from("message_templates")
     .delete()
     .eq("id", id)
-    .eq("shop_id", SHOP_ID);
+    .eq("shop_id", identity.shopId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

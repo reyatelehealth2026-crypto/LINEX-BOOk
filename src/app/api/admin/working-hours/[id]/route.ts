@@ -1,20 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function checkAuth(req: NextRequest) {
-  const pw = req.headers.get("x-admin-password");
-  return pw && pw === process.env.ADMIN_PASSWORD;
-}
 
 // PATCH /api/admin/working-hours/[id] — update a working_hours row
 export async function PATCH(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> }
 ) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id: idStr } = await ctx.params;
   const id = Number(idStr);
   if (isNaN(id)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
@@ -47,7 +44,7 @@ export async function PATCH(
     .from("working_hours")
     .update(updates)
     .eq("id", id)
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .select("*, staff:staff(id, name, nickname)")
     .single();
 
@@ -70,7 +67,8 @@ export async function DELETE(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> }
 ) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id: idStr } = await ctx.params;
   const id = Number(idStr);
   if (isNaN(id)) return NextResponse.json({ error: "invalid id" }, { status: 400 });
@@ -80,7 +78,7 @@ export async function DELETE(
     .from("working_hours")
     .delete()
     .eq("id", id)
-    .eq("shop_id", SHOP_ID);
+    .eq("shop_id", identity.shopId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

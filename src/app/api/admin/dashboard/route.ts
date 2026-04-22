@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function checkAuth(req: NextRequest) {
-  const pw = req.headers.get("x-admin-password");
-  return pw && pw === process.env.ADMIN_PASSWORD;
-}
 
 /* ---------- row types ---------- */
 interface BookingRow {
@@ -36,7 +32,9 @@ interface LightBookingRow {
 }
 
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const shopId = identity.shopId;
 
   const db = supabaseAdmin();
   const tz = "Asia/Bangkok";
@@ -62,7 +60,7 @@ export async function GET(req: NextRequest) {
     .select(
       "id, starts_at, ends_at, status, price, service:services(id, name), staff:staff(id, name, nickname), customer:customers(id, display_name, full_name, phone, picture_url, line_user_id)"
     )
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .gte("starts_at", dayStart)
     .lte("starts_at", dayEnd)
     .order("starts_at", { ascending: true });
@@ -76,7 +74,7 @@ export async function GET(req: NextRequest) {
   const { data: weekBookings } = await db
     .from("bookings")
     .select("id, status, price, starts_at")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .gte("starts_at", weekStart)
     .lte("starts_at", weekEnd);
 
@@ -86,19 +84,19 @@ export async function GET(req: NextRequest) {
   const { count: totalCustomers } = await db
     .from("customers")
     .select("*", { count: "exact", head: true })
-    .eq("shop_id", SHOP_ID);
+    .eq("shop_id", shopId);
 
   // --- Active services & staff counts ---
   const { count: activeServices } = await db
     .from("services")
     .select("*", { count: "exact", head: true })
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("active", true);
 
   const { count: activeStaff } = await db
     .from("staff")
     .select("*", { count: "exact", head: true })
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("active", true);
 
   // --- Compute today stats ---
