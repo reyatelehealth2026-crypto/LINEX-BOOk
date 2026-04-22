@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Proxy (formerly "middleware") resolves the current tenant (shop) from the
 // request host:
-//   linebook.app              → marketing + signup (root, no tenant)
-//   <slug>.linebook.app       → tenant app; inject x-shop-slug for downstream
+//   likesms.net              → marketing + signup (root, no tenant)
+//   <slug>.likesms.net       → tenant app; inject x-shop-slug for downstream
 //
 // We purposely do NOT hit the database here — this runs on every request
 // (incl. static assets) and keeping it DB-free avoids cold-start latency.
@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 // then calls getShopBySlug() which performs the DB lookup with short-lived
 // in-memory caching.
 
-const ROOT_DOMAIN = (process.env.ROOT_DOMAIN ?? "linebook.app").toLowerCase();
+const ROOT_DOMAIN = (process.env.ROOT_DOMAIN ?? "likesms.net").toLowerCase();
 const TENANT_WHITELIST_PATHS = [
   "/liff",
   "/admin",

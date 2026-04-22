@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `create admin failed: ${adminErr.message}` }, { status: 500 });
   }
 
-  const rootDomain = process.env.ROOT_DOMAIN || "linebook.app";
+  const rootDomain = process.env.ROOT_DOMAIN || "likesms.net";
   const proto = req.nextUrl.protocol.replace(":", "") || "https";
   const redirectUrl = `${proto}://${created.slug}.${rootDomain}/admin/setup`;
 
