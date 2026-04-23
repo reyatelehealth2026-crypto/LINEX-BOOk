@@ -30,16 +30,16 @@ type AiSettings = {
 };
 
 const MODELS = [
-  { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash — ⭐ แนะนำ เร็วและฉลาด" },
-  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash — ฉลาดกว่า ช้ากว่านิดหน่อย" },
-  { value: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash Lite — เบาที่สุด ฟรี" },
-  { value: "glm-4.7", label: "GLM-4.7 — Z.AI สมดุล" },
+  { value: "gemini-3-flash", label: "Gemini 3 Flash — ⭐ แนะนำ เร็ว ฉลาด ฟรี" },
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash — ฉลาด ช้ากว่านิดหน่อย" },
+  { value: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash Lite — เบาที่สุด" },
+  { value: "glm-4.7", label: "GLM-4.7 — Z.AI" },
   { value: "glm-4.5-air", label: "GLM-4.5-Air — Z.AI เบา" },
 ];
 
 const DEFAULT: AiSettings = {
   enabled: true,
-  model: "gemini-2.0-flash",
+  model: "gemini-3-flash",
   temperature: 0.7,
   max_tokens: 350,
   history_limit: 6,

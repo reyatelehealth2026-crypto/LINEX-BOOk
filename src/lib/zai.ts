@@ -36,7 +36,7 @@ const shopPromptContextCache = new Map<number, CacheEntry<ShopPromptContext>>();
 
 const DEFAULT_SETTINGS: AiSettings = {
   enabled: true,
-  model: "gemini-2.0-flash",
+  model: "gemini-3-flash",
   temperature: 0.7,
   max_tokens: 350,
   history_limit: 6,
