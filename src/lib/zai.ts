@@ -3,7 +3,8 @@ import { getAiProvider, type AiChatMessage, type AiProviderFailure, type AiProvi
 
 const AI_SETTINGS_CACHE_TTL_MS = 30_000;
 const SHOP_CONTEXT_CACHE_TTL_MS = 60_000;
-const MAX_RUNTIME_HISTORY = 6;
+const MAX_RUNTIME_HISTORY = 4;
+const MAX_RUNTIME_TOKENS = 180;
 
 export type AiSettings = {
   enabled: boolean;
@@ -21,8 +22,6 @@ type ShopPromptContext = {
   shopName: string;
   phone: string;
   address: string;
-  serviceLines: string;
-  staffLines: string;
 };
 
 type CacheEntry<T> = {
@@ -132,23 +131,12 @@ async function getShopPromptContext(shopId: number): Promise<ShopPromptContext> 
   if (cached) return cached;
 
   const db = supabaseAdmin();
-  const [shopRes, servicesRes, staffRes] = await Promise.all([
-    db.from("shops").select("name, phone, address").eq("id", shopId).maybeSingle(),
-    db.from("services").select("name, price, duration_min").eq("shop_id", shopId).eq("active", true).order("sort_order"),
-    db.from("staff").select("name, nickname").eq("shop_id", shopId).eq("active", true).order("sort_order"),
-  ]);
+  const { data: shop } = await db.from("shops").select("name, phone, address").eq("id", shopId).maybeSingle();
 
-  const shop = shopRes.data;
   const context: ShopPromptContext = {
     shopName: shop?.name ?? "ร้าน",
     phone: shop?.phone ?? "-",
     address: shop?.address ?? "-",
-    serviceLines: (servicesRes.data ?? [])
-      .map((s: any) => `• ${s.name} — ${Number(s.price).toLocaleString()} บาท (${s.duration_min} นาที)`)
-      .join("\n"),
-    staffLines: (staffRes.data ?? [])
-      .map((s: any) => `• ${s.nickname ?? s.name}`)
-      .join("\n"),
   };
 
   setCached(shopPromptContextCache, shopId, context);
@@ -170,17 +158,11 @@ async function buildShopSystemPrompt(shopId: number, settings: AiSettings): Prom
 เบอร์ร้าน: ${context.phone}
 ที่อยู่: ${context.address}${businessBlock}
 
-บริการและราคา:
-${context.serviceLines || "ยังไม่มีข้อมูลบริการ"}
-
-ช่างในร้าน:
-${context.staffLines || "ยังไม่มีข้อมูลช่าง"}
-
 กฎสำคัญ:
-- ถ้าลูกค้าต้องการจองคิว ให้บอกว่า "${settings.booking_redirect}"
+- ถ้าลูกค้าต้องการจองคิว ถามราคา ถามบริการ ถามเวลาว่าง หรือถามเวลาทำการ ให้บอกว่า "${settings.booking_redirect}"
 - ห้ามยืนยันการจองในแชท ต้องจองผ่านระบบเท่านั้น
-- ถ้าไม่รู้คำตอบ ให้แนะนำให้โทรหาร้าน
-- ตอบสั้นๆ ไม่เกิน 3-4 ประโยค${customRulesBlock}`;
+- ถ้าไม่แน่ใจข้อมูลเชิงตัวเลขหรือรายละเอียดเฉพาะร้าน ให้แนะนำให้โทรหาร้านหรือกดเมนูแทน
+- ตอบสั้นๆ ไม่เกิน 2-3 ประโยค${customRulesBlock}`;
 }
 
 async function getLastMessages(shopId: number, lineUserId: string, historyLimit: number): Promise<AiChatMessage[]> {
@@ -223,6 +205,7 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
     if (!settings.enabled) return null;
 
     const historyLimit = effectiveHistoryLimit(settings.history_limit);
+    const runtimeMaxTokens = Math.min(settings.max_tokens, MAX_RUNTIME_TOKENS);
     const promptStartedAt = Date.now();
     const [systemPrompt, history] = await Promise.all([
       buildShopSystemPrompt(shopId, settings),
@@ -245,7 +228,7 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
         model,
         messages,
         temperature: settings.temperature,
-        maxTokens: settings.max_tokens,
+        maxTokens: runtimeMaxTokens,
       });
 
       if (result.ok) {
@@ -262,6 +245,7 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
           model: result.model,
           attemptedModels: models,
           historyLimit,
+          runtimeMaxTokens,
           promptMs,
           modelMs: result.latencyMs,
           saveMs,
