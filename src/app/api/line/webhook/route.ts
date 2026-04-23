@@ -4,7 +4,8 @@ import { verifySignature, replyMessage, getProfile, pushMessage, startLoading } 
 import { supabaseAdmin, SHOP_ID, getShopByLineOaId, getShopById } from "@/lib/supabase";
 import { runWithShopContext } from "@/lib/request-context";
 import { availableSlots } from "@/lib/booking";
-import { parseBookingIntent, parseAdminCommand, detectHandoffIntent } from "@/lib/thai-nlp";
+import { parseAdminCommand } from "@/lib/thai-nlp";
+import { resolveAiRoute } from "@/lib/ai/router";
 import {
   welcomeMessage,
   profileCard,
@@ -1053,63 +1054,43 @@ async function handleMessage(ev: any, customer: Customer) {
     }
   }
 
-  const { data: services } = await db.from("services").select("id, name, name_en, duration_min, price").eq("shop_id", SHOP_ID).eq("active", true);
-  const { data: staff } = await db.from("staff").select("id, name, nickname").eq("shop_id", SHOP_ID).eq("active", true);
+  const route = await resolveAiRoute({ shopId: Number(SHOP_ID), text });
 
-  // ── Direct booking shortcut — redirect to LIFF for a smooth single-screen flow ──
-  if (/^(จอง|จองคิว|book|booking)$/i.test(text.trim())) {
-    if (!(services ?? []).length) return replyMessage(rt, [textMessage("ยังไม่มีบริการในระบบ")]);
+  if (route.kind === "booking_shortcut") {
+    if (!route.services.length) return replyMessage(rt, [textMessage("ยังไม่มีบริการในระบบ")]);
     return replyMessage(rt, [bookInLiffMessage()]);
   }
 
-  // ── AI Natural Language Booking ──
-  const intent = parseBookingIntent(text, services ?? [], staff ?? []);
-  if (intent && intent.confidence !== "low") {
-    return handleAIBooking(rt, intent, customer, services ?? [], staff ?? []);
+  if (route.kind === "ai_booking") {
+    return handleAIBooking(rt, route.intent, customer, route.services, route.staff);
   }
 
-  // ── Keyword shortcuts — redirect to LIFF via quick reply URI ──
-  if (/คิว|บุ๊ค|queue/i.test(text)) {
+  if (route.kind === "keyword_bookings") {
     return replyMessage(rt, [textMessage("กดปุ่มด้านล่างเพื่อดูเวลานัดหมายของคุณได้เลยค่ะ 📅", defaultQuickReply())]);
   }
-  if (/แต้ม|point|profile|โปรไฟล์/i.test(text)) {
+
+  if (route.kind === "keyword_profile") {
     return replyMessage(rt, [textMessage("กดปุ่มด้านล่างเพื่อดูโปรไฟล์และแต้มสะสมได้เลยค่ะ ⭐", defaultQuickReply())]);
   }
-  if (/ยกเลิก|cancel/i.test(text)) {
+
+  if (route.kind === "keyword_cancel") {
     return replyMessage(rt, [textMessage("เปิดคิวของฉันเพื่อยกเลิกคิวได้เลยค่ะ 📋", defaultQuickReply())]);
   }
-  if (/บริการ|ราคา|service|price/i.test(text)) {
+
+  if (route.kind === "services") {
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID ?? "";
     return replyMessage(rt, [textMessage("ดูบริการและราคาทั้งหมดได้เลยค่ะ 👇", {
       items: [{ type: "action", action: { type: "uri", label: "🔍 ดูบริการ/ราคา", uri: `https://liff.line.me/${liffId}/services` } }],
     })]);
   }
 
-  // ── FAQ: Shop hours ──
-  if (/(?:เปิด(?:กี่โมง|ตอน[กก]ี่|วันไหน)|ปิดกี่โมง|เวลาทำการ|เวลาเปิดปิด|opening hours|hours)/i.test(text)) {
-    const [shopRes, hoursRes] = await Promise.all([
-      db.from("shops").select("name, phone, address").eq("id", SHOP_ID).maybeSingle(),
-      db.from("working_hours").select("day_of_week, open_time, close_time").eq("shop_id", SHOP_ID).is("staff_id", null).order("day_of_week"),
-    ]);
-    const days = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
-    const lines = (hoursRes.data ?? []).map((h: any) => {
-      const open = String(h.open_time).slice(0, 5);
-      const close = String(h.close_time).slice(0, 5);
-      return `วัน${days[h.day_of_week]}. ${open}-${close}`;
-    });
-    const body = lines.length
-      ? lines.join("\n")
-      : "ยังไม่ได้ตั้งเวลาทำการในระบบ";
-    const shopName = shopRes.data?.name ?? "ร้าน";
-    const phone = shopRes.data?.phone ? `\n📞 ${shopRes.data.phone}` : "";
-    return replyMessage(rt, [textMessage(`⏰ เวลาทำการ ${shopName}\n${body}${phone}`, defaultQuickReply())]);
+  if (route.kind === "hours") {
+    return replyMessage(rt, [textMessage(route.message, defaultQuickReply())]);
   }
 
-  // ── Human handoff intent (before AI fallback) ──
-  if (detectHandoffIntent(text)) {
+  if (route.kind === "handoff") {
     const session = await requestHandoff(customer.id, userId, text);
     if (session) {
-      // Fire-and-forget: notify admins so reply to user is not delayed
       notifyAdminsOfHandoff(session, customer.full_name ?? customer.display_name ?? "ลูกค้า", customer.picture_url ?? null).catch((err) => {
         console.error("[handoff] notify admins error", err);
       });
