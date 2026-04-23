@@ -568,7 +568,7 @@ async function handleEvent(ev: any) {
   }
 
   if (ev.type === "postback") {
-    try { await startLoading(userId, 5); } catch {}
+    try { await startLoading(userId, 3); } catch {}
     try {
       return await handlePostback(ev, customer);
     } finally {
@@ -580,7 +580,7 @@ async function handleEvent(ev: any) {
   }
 
   if (ev.type === "message" && ev.message?.type === "text") {
-    try { await startLoading(userId, 5); } catch {}
+    try { await startLoading(userId, 3); } catch {}
     try {
       return await handleMessage(ev, customer);
     } finally {
