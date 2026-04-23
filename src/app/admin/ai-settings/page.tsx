@@ -30,7 +30,7 @@ type AiSettings = {
 };
 
 const MODELS = [
-  { value: "gemini-3-flash", label: "Gemini 3 Flash — ⭐ แนะนำ เร็ว ฉลาด ฟรี" },
+  { value: "gemini-3-flash-preview", label: "Gemini 3 Flash — ⭐ แนะนำ เร็ว ฉลาด ฟรี" },
   { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash — ฉลาด ช้ากว่านิดหน่อย" },
   { value: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash Lite — เบาที่สุด" },
   { value: "glm-4.7", label: "GLM-4.7 — Z.AI" },
@@ -39,7 +39,7 @@ const MODELS = [
 
 const DEFAULT: AiSettings = {
   enabled: true,
-  model: "gemini-3-flash",
+  model: "gemini-3-flash-preview",
   temperature: 0.7,
   max_tokens: 350,
   history_limit: 6,

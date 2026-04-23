@@ -4,7 +4,7 @@ import { getAiProvider, type AiChatMessage, type AiProviderFailure, type AiProvi
 const AI_SETTINGS_CACHE_TTL_MS = 30_000;
 const SHOP_CONTEXT_CACHE_TTL_MS = 60_000;
 const MAX_RUNTIME_HISTORY = 6;
-const MAX_RUNTIME_TOKENS = 260;
+const MAX_RUNTIME_TOKENS = 500;
 
 export type AiSettings = {
   enabled: boolean;
@@ -36,9 +36,9 @@ const shopPromptContextCache = new Map<number, CacheEntry<ShopPromptContext>>();
 
 const DEFAULT_SETTINGS: AiSettings = {
   enabled: true,
-  model: "gemini-3-flash",
+  model: "gemini-3-flash-preview",
   temperature: 0.7,
-  max_tokens: 350,
+  max_tokens: 500,
   history_limit: 6,
   bot_name: "ผู้ช่วยร้าน",
   business_desc: "",
