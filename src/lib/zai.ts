@@ -1,9 +1,8 @@
 import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
+import { getAiProvider, type AiChatMessage, type AiProviderFailure, type AiProviderResult } from "@/lib/ai/providers";
 
-const ZAI_API_URL = "https://api.z.ai/api/coding/paas/v4/chat/completions";
 const AI_SETTINGS_CACHE_TTL_MS = 30_000;
 const SHOP_CONTEXT_CACHE_TTL_MS = 60_000;
-const ZAI_TIMEOUT_MS = Number(process.env.ZAI_TIMEOUT_MS ?? process.env.AI_MODEL_TIMEOUT_MS ?? 3500);
 const MAX_RUNTIME_HISTORY = 6;
 
 export type AiSettings = {
@@ -64,6 +63,25 @@ function effectiveHistoryLimit(raw: number): number {
   return Math.max(1, Math.min(raw, MAX_RUNTIME_HISTORY));
 }
 
+function dedupeStrings(values: string[]) {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+}
+
+function getFallbackModels(primaryModel: string): string[] {
+  const configured = process.env.AI_FALLBACK_MODELS ?? process.env.ZAI_FALLBACK_MODELS ?? "glm-4.5-air";
+  return dedupeStrings([primaryModel, ...configured.split(",")]);
+}
+
+function classifyFinalFallback(failures: AiProviderFailure[]): string | null {
+  if (failures.some((failure) => failure.code === "timeout")) {
+    return "ขออภัยค่ะ ตอนนี้ระบบตอบช้ากว่าปกติ ลองพิมพ์ใหม่อีกครั้งหรือกดเมนูลัดด้านล่างได้เลยค่ะ 🙏";
+  }
+  if (failures.some((failure) => failure.code === "rate_limit")) {
+    return "ขออภัยค่ะ ขณะนี้บอทมีผู้ใช้งานมากค่ะ กรุณาลองถามใหม่อีกครั้งในอีกสักครู่นะคะ 🙏";
+  }
+  return null;
+}
+
 export function invalidateAiCache(shopId?: number) {
   if (typeof shopId === "number") {
     aiSettingsCache.delete(shopId);
@@ -73,8 +91,6 @@ export function invalidateAiCache(shopId?: number) {
   aiSettingsCache.clear();
   shopPromptContextCache.clear();
 }
-
-// ─── Load AI settings from DB ────────────────────────────────────────────────
 
 export async function getAiSettings(shopId?: number): Promise<AiSettings> {
   const resolvedShopId = shopId ?? await getCurrentShopId();
@@ -89,7 +105,7 @@ export async function getAiSettings(shopId?: number): Promise<AiSettings> {
     .maybeSingle();
 
   if (error) {
-    console.error("[zai] failed to load ai_settings", { shopId: resolvedShopId, error: error.message });
+    console.error("[ai] failed to load ai_settings", { shopId: resolvedShopId, error: error.message });
     return DEFAULT_SETTINGS;
   }
 
@@ -110,8 +126,6 @@ export async function getAiSettings(shopId?: number): Promise<AiSettings> {
   setCached(aiSettingsCache, resolvedShopId, settings);
   return settings;
 }
-
-// ─── Shop context (system prompt) ───────────────────────────────────────────
 
 async function getShopPromptContext(shopId: number): Promise<ShopPromptContext> {
   const cached = getCached(shopPromptContextCache, shopId, SHOP_CONTEXT_CACHE_TTL_MS);
@@ -169,9 +183,7 @@ ${context.staffLines || "ยังไม่มีข้อมูลช่าง"
 - ตอบสั้นๆ ไม่เกิน 3-4 ประโยค${customRulesBlock}`;
 }
 
-// ─── Chat history ────────────────────────────────────────────────────────────
-
-async function getLastMessages(shopId: number, lineUserId: string, historyLimit: number): Promise<Array<{ role: string; content: string }>> {
+async function getLastMessages(shopId: number, lineUserId: string, historyLimit: number): Promise<AiChatMessage[]> {
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("chat_history")
@@ -182,39 +194,28 @@ async function getLastMessages(shopId: number, lineUserId: string, historyLimit:
     .limit(historyLimit);
 
   if (error) {
-    console.error("[zai] failed to load chat history", { shopId, lineUserId, error: error.message });
+    console.error("[ai] failed to load chat history", { shopId, lineUserId, error: error.message });
     return [];
   }
 
   if (!data?.length) return [];
-  return data.reverse();
+  return data.reverse() as AiChatMessage[];
 }
 
-async function saveMessages(
-  shopId: number,
-  lineUserId: string,
-  userText: string,
-  assistantText: string
-): Promise<void> {
+async function saveMessages(shopId: number, lineUserId: string, userText: string, assistantText: string): Promise<void> {
   const db = supabaseAdmin();
   const { error } = await db.from("chat_history").insert([
     { shop_id: shopId, line_user_id: lineUserId, role: "user", content: userText },
     { shop_id: shopId, line_user_id: lineUserId, role: "assistant", content: assistantText },
   ]);
+
   if (error) {
-    console.error("[zai] failed to persist chat history", { shopId, lineUserId, error: error.message });
+    console.error("[ai] failed to persist chat history", { shopId, lineUserId, error: error.message });
   }
 }
 
-// ─── Z.AI GLM call ───────────────────────────────────────────────────────────
-
 export async function askGLM(lineUserId: string, userText: string): Promise<string | null> {
   const startedAt = Date.now();
-  const apiKey = process.env.ZAI_API_KEY;
-  if (!apiKey) {
-    console.warn("[zai] ZAI_API_KEY not set — skipping AI reply");
-    return null;
-  }
 
   try {
     const shopId = await getCurrentShopId();
@@ -229,87 +230,77 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
     ]);
     const promptMs = Date.now() - promptStartedAt;
 
-    const messages = [
+    const messages: AiChatMessage[] = [
       { role: "system", content: systemPrompt },
       ...history,
       { role: "user", content: userText },
     ];
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), ZAI_TIMEOUT_MS);
-    const fetchStartedAt = Date.now();
+    const provider = getAiProvider();
+    const models = getFallbackModels(settings.model);
+    const failures: AiProviderFailure[] = [];
 
-    let res: Response;
-    try {
-      res = await fetch(ZAI_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: settings.model,
-          messages,
-          max_tokens: settings.max_tokens,
-          temperature: settings.temperature,
-          stream: false,
-        }),
-        signal: controller.signal,
+    for (const model of models) {
+      const result: AiProviderResult = await provider.chat({
+        model,
+        messages,
+        temperature: settings.temperature,
+        maxTokens: settings.max_tokens,
       });
-    } finally {
-      clearTimeout(timeout);
-    }
 
-    const modelMs = Date.now() - fetchStartedAt;
+      if (result.ok) {
+        let saveMs = 0;
+        if (result.text) {
+          const saveStartedAt = Date.now();
+          await saveMessages(shopId, lineUserId, userText, result.text);
+          saveMs = Date.now() - saveStartedAt;
+        }
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("[zai] API error", {
-        shopId,
-        status: res.status,
-        model: settings.model,
-        promptMs,
-        modelMs,
-        totalMs: Date.now() - startedAt,
-        errText,
-      });
-      if (res.status === 429) {
-        return "ขออภัยค่ะ ขณะนี้บอทมีผู้ใช้งานมากค่ะ กรุณาลองถามใหม่อีกครั้งในอีกสักครู่นะคะ 🙏";
+        console.info("[ai] completion", {
+          shopId,
+          provider: result.provider,
+          model: result.model,
+          attemptedModels: models,
+          historyLimit,
+          promptMs,
+          modelMs: result.latencyMs,
+          saveMs,
+          totalMs: Date.now() - startedAt,
+          replyChars: result.text?.length ?? 0,
+        });
+
+        return result.text;
       }
-      return null;
+
+      failures.push(result);
+      console.warn("[ai] provider attempt failed", {
+        shopId,
+        provider: result.provider,
+        model: result.model,
+        code: result.code,
+        status: result.status,
+        latencyMs: result.latencyMs,
+        retryable: result.retryable,
+        message: result.message,
+      });
+
+      if (!result.retryable) break;
     }
 
-    const json = await res.json();
-    const reply: string | null = json?.choices?.[0]?.message?.content ?? null;
+    const fallbackText = classifyFinalFallback(failures);
+    if (fallbackText) return fallbackText;
 
-    let saveMs = 0;
-    if (reply) {
-      const saveStartedAt = Date.now();
-      await saveMessages(shopId, lineUserId, userText, reply);
-      saveMs = Date.now() - saveStartedAt;
-    }
-
-    console.info("[zai] completion", {
+    console.error("[ai] all provider attempts failed", {
       shopId,
-      model: settings.model,
-      historyLimit,
-      promptMs,
-      modelMs,
-      saveMs,
+      provider: provider.name,
+      models,
       totalMs: Date.now() - startedAt,
-      replyChars: reply?.length ?? 0,
+      failures,
     });
 
-    return reply;
+    return null;
   } catch (err: any) {
-    if (err?.name === "AbortError") {
-      console.warn("[zai] timeout", {
-        timeoutMs: ZAI_TIMEOUT_MS,
-        totalMs: Date.now() - startedAt,
-      });
-      return "ขออภัยค่ะ ตอนนี้ระบบตอบช้ากว่าปกติ ลองพิมพ์ใหม่อีกครั้งหรือกดเมนูลัดด้านล่างได้เลยค่ะ 🙏";
-    }
-    console.error("[zai] askGLM exception:", err);
+    console.error("[ai] askGLM exception", err);
     return null;
   }
 }
