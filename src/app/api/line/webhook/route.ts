@@ -580,7 +580,6 @@ async function handleEvent(ev: any) {
   }
 
   if (ev.type === "message" && ev.message?.type === "text") {
-    try { await startLoading(userId, 3); } catch {}
     try {
       return await handleMessage(ev, customer);
     } finally {
@@ -1099,8 +1098,14 @@ async function handleMessage(ev: any, customer: Customer) {
   }
 
   // ── Default: AI chat reply via Z.AI GLM ──
+  try { await startLoading(userId, 5); } catch {} // show "..." only when AI is working
   const aiStartedAt = Date.now();
-  const aiReply = await askGLM(userId, text);
+  let aiReply: string | null = null;
+  try {
+    aiReply = await askGLM(userId, text);
+  } catch (err) {
+    console.error("[line-webhook] askGLM threw", err);
+  }
   const aiMs = Date.now() - aiStartedAt;
   if (aiMs >= 1500) {
     console.info("[line-webhook] ai fallback latency", {
@@ -1113,10 +1118,10 @@ async function handleMessage(ev: any, customer: Customer) {
   if (aiReply) {
     return replyMessage(rt, [textMessage(aiReply as string, defaultQuickReply())]);
   }
-  // Fallback: plain text + quick reply to guarantee LINE accepts the reply
-  const name = customer.display_name ?? customer.full_name ?? "คุณลูกค้า";
+  // AI failed — give a helpful fallback instead of generic "sorry"
+  console.warn("[line-webhook] AI returned null, using smart fallback", { shopId: Number(SHOP_ID), userId, text });
   return replyMessage(rt, [textMessage(
-    `ขอโทษค่ะ คุณ ${name} ลองพิมพ์ใหม่อีกครั้ง หรือเลือกจากเมนูนะค่ะ 🙏`,
+    "ขออภัยค่ะ ตอนนี้ผู้ช่วยอัจฉริยะกำลังไม่สะดวก ลองกดเมนูด้านล่างเลือกบริการได้เลยค่ะ หรือโทรหาร้านก็ได้นะคะ ☎️",
     defaultQuickReply()
   )]);
 }
