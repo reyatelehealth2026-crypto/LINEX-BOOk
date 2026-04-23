@@ -13,16 +13,26 @@ import { NextRequest, NextResponse } from "next/server";
 // subsequent /admin/* links (hardcoded throughout the app) keep working on
 // the apex without needing a slug prefix.
 //
-// Note: ROOT_DOMAIN compares against req.headers.host which arrives in
-// Punycode (A-label) form for IDN domains. In production set ROOT_DOMAIN
-// to the Punycode value (e.g. xn--12c1bp2bs4i.net for จองคิว.net).
+// The HTTP Host header always arrives in A-label (Punycode) form for IDN
+// domains — e.g. "xn--12c1bp2bs4i.net" for "จองคิว.net". We normalize the
+// configured roots through the URL parser so operators can set ROOT_DOMAIN
+// in either form and subdomain matching still works.
+function toAsciiDomain(domain: string): string {
+  const lower = domain.trim().toLowerCase();
+  if (!lower) return lower;
+  try {
+    return new URL(`http://${lower}`).hostname;
+  } catch {
+    return lower;
+  }
+}
 
-const ROOT_DOMAIN = (process.env.ROOT_DOMAIN ?? "จองคิว.net").toLowerCase();
+const ROOT_DOMAIN = toAsciiDomain(process.env.ROOT_DOMAIN ?? "จองคิว.net");
 // Additional alias root domains (comma-separated). Same multi-tenant app
 // serves each one; canonical links are still generated under ROOT_DOMAIN.
 const ADDITIONAL_ROOT_DOMAINS = (process.env.ADDITIONAL_ROOT_DOMAINS ?? "")
   .split(",")
-  .map((s) => s.trim().toLowerCase())
+  .map(toAsciiDomain)
   .filter(Boolean);
 const ROOT_DOMAINS: readonly string[] = [ROOT_DOMAIN, ...ADDITIONAL_ROOT_DOMAINS];
 const TENANT_COOKIE = "tenant_slug";
