@@ -59,9 +59,13 @@ const TENANT_WHITELIST_PATHS = [
   "/services",
   "/my-bookings",
 ];
+// Platform-level paths that must live on the apex only. On a tenant
+// subdomain these redirect back to the root domain. `/login` is NOT in
+// this list — on a subdomain it instead rewrites to `/admin` (see below),
+// because the shop is already identified by the host.
 const ROOT_ONLY_PATHS = [
   "/signup", "/api/signup",
-  "/login", "/api/lookup-shop-by-email",
+  "/api/lookup-shop-by-email",
   "/super", "/api/super",
 ];
 const SUPER_SESSION_COOKIE = "super_admin_session";
@@ -104,6 +108,14 @@ export function proxy(req: NextRequest) {
     if (ROOT_ONLY_PATHS.some((p) => pathname.startsWith(p))) {
       const url = req.nextUrl.clone();
       url.host = ROOT_DOMAIN;
+      return NextResponse.redirect(url);
+    }
+    // On a tenant subdomain the shop is already identified by the host, so
+    // there's no reason to send visitors to the marketing landing or the
+    // slug-entry login. Fast-path both to the shop's admin.
+    if (pathname === "/" || pathname === "/login") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/admin";
       return NextResponse.redirect(url);
     }
     return attachSlug(req, subSlug);
