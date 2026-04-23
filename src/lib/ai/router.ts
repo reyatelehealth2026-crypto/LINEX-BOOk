@@ -125,7 +125,7 @@ export async function resolveAiRoute(params: { shopId: number; text: string }): 
   if (/ยกเลิก|cancel/i.test(trimmed)) {
     return { kind: "keyword_cancel" };
   }
-  if (/บริการ|ราคา|service|price/i.test(trimmed)) {
+  if (/^(?:ดูบริการ|เมนูบริการ|list service|รายการบริการ)$/i.test(trimmed)) {
     return { kind: "services" };
   }
 
