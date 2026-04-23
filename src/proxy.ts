@@ -14,7 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 // the apex without needing a slug prefix.
 //
 // The HTTP Host header always arrives in A-label (Punycode) form for IDN
-// domains — e.g. "xn--12c1bp2bs4i.net" for "จองคิว.net". We normalize the
+// domains — e.g. "xn--42cfc0k1a8b.net" for "จองคิว.net". We normalize the
 // configured roots through the URL parser so operators can set ROOT_DOMAIN
 // in either form and subdomain matching still works.
 function toAsciiDomain(domain: string): string {
