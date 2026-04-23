@@ -16,7 +16,23 @@
       "Bash(curl -sI https://www.likesms.net/)",
       "Bash(curl -s \"https://www.likesms.net/api/signup/check-slug?slug=hairx\")",
       "Bash(curl -sv https://hairx.likesms.net/)",
-      "Bash(nslookup hairx.likesms.net)"
+      "Bash(nslookup hairx.likesms.net)",
+      "Bash(curl *)",
+      "Bash(nslookup demo.likesms.net)",
+      "Bash(nslookup likesms.net)",
+      "Bash(nslookup '*.likesms.net')",
+      "Bash(nslookup -type=ns likesms.net)",
+      "Bash(nslookup -type=TXT _vercel.likesms.net 8.8.8.8)",
+      "Bash(openssl s_client -connect demo.likesms.net:443 -servername demo.likesms.net)",
+      "Bash(nslookup hairx.likesms.net 8.8.8.8)",
+      "Bash(nslookup demo.likesms.net 8.8.8.8)",
+      "Bash(ipconfig //flushdns)",
+      "Bash(git status *)",
+      "Bash(git check-ignore *)",
+      "Bash(git restore *)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(vercel --version)",
+      "Bash(vercel whoami *)"
     ]
   }
 }

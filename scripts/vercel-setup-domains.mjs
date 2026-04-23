@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 // Vercel domain + env bootstrap for LineBook SaaS.
 //
-// Adds `likesms.net` and `*.likesms.net` to the Vercel project and writes
+// Adds `จองคิว.net` and `*.จองคิว.net` to the Vercel project and writes
 // ROOT_DOMAIN / NEXT_PUBLIC_APP_URL env vars. Idempotent — safe to re-run.
 //
 // Required env:
 //   VERCEL_TOKEN      personal/team token with project:write
 //   VERCEL_PROJECT    project name or id
 //   VERCEL_TEAM_ID    (optional) team id if project lives under a team
-//   ROOT_DOMAIN       (optional) defaults to likesms.net
+//   ROOT_DOMAIN       (optional) defaults to จองคิว.net
 
 const TOKEN = process.env.VERCEL_TOKEN;
 const PROJECT = process.env.VERCEL_PROJECT;
 const TEAM_ID = process.env.VERCEL_TEAM_ID || "";
-const ROOT = (process.env.ROOT_DOMAIN || "likesms.net").toLowerCase();
+const ROOT = (process.env.ROOT_DOMAIN || "จองคิว.net").toLowerCase();
 
 if (!TOKEN || !PROJECT) {
   console.error("Missing VERCEL_TOKEN or VERCEL_PROJECT");

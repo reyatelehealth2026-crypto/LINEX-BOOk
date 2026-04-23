@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
 
   const token = issueImpersonationToken(me.id, shopId, 120);
 
-  const rootDomain = (process.env.ROOT_DOMAIN ?? "likesms.net").toLowerCase();
+  const rootDomain = (process.env.ROOT_DOMAIN ?? "จองคิว.net").toLowerCase();
   const proto = rootDomain === "localhost" ? "http" : "https";
   const port = rootDomain === "localhost" ? ":3000" : "";
   const url = `${proto}://${shop.slug}.${rootDomain}${port}/admin/impersonate?token=${encodeURIComponent(token)}`;

@@ -3,17 +3,28 @@ import { NextRequest, NextResponse } from "next/server";
 // Proxy (formerly "middleware") resolves the current tenant (shop) from the
 // request. Three resolution strategies, tried in order:
 //
-//   1. Subdomain:  <slug>.likesms.net  → x-shop-slug header
-//   2. Path entry: likesms.net/<slug>/... → 302 to strip prefix + set cookie
+//   1. Subdomain:  <slug>.จองคิว.net  → x-shop-slug header
+//   2. Path entry: จองคิว.net/<slug>/... → 302 to strip prefix + set cookie
 //   3. Cookie:     tenant_slug=<slug>    → x-shop-slug header
 //
 // Strategy 1 is the long-term design (isolated origins, proper cookies).
 // Strategies 2+3 are the "simple mode" entry path — a tenant shares a link
-// like likesms.net/hairx/admin/setup; the first hit sets a cookie so all
+// like จองคิว.net/hairx/admin/setup; the first hit sets a cookie so all
 // subsequent /admin/* links (hardcoded throughout the app) keep working on
 // the apex without needing a slug prefix.
+//
+// Note: ROOT_DOMAIN compares against req.headers.host which arrives in
+// Punycode (A-label) form for IDN domains. In production set ROOT_DOMAIN
+// to the Punycode value (e.g. xn--12c1bp2bs4i.net for จองคิว.net).
 
-const ROOT_DOMAIN = (process.env.ROOT_DOMAIN ?? "likesms.net").toLowerCase();
+const ROOT_DOMAIN = (process.env.ROOT_DOMAIN ?? "จองคิว.net").toLowerCase();
+// Additional alias root domains (comma-separated). Same multi-tenant app
+// serves each one; canonical links are still generated under ROOT_DOMAIN.
+const ADDITIONAL_ROOT_DOMAINS = (process.env.ADDITIONAL_ROOT_DOMAINS ?? "")
+  .split(",")
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
+const ROOT_DOMAINS: readonly string[] = [ROOT_DOMAIN, ...ADDITIONAL_ROOT_DOMAINS];
 const TENANT_COOKIE = "tenant_slug";
 
 // First path segments that must NOT be interpreted as a tenant slug.
@@ -51,11 +62,13 @@ function extractSubdomainSlug(host: string): string | null {
     const slug = bare.slice(0, -".localhost".length);
     return slug || null;
   }
-  if (bare === ROOT_DOMAIN) return null;
-  if (bare.endsWith("." + ROOT_DOMAIN)) {
-    const slug = bare.slice(0, -("." + ROOT_DOMAIN).length);
-    if (!slug || slug === "www") return null;
-    return slug;
+  for (const root of ROOT_DOMAINS) {
+    if (bare === root) return null;
+    if (bare.endsWith("." + root)) {
+      const slug = bare.slice(0, -("." + root).length);
+      if (!slug || slug === "www") return null;
+      return slug;
+    }
   }
   return null;
 }

@@ -17,12 +17,12 @@ import {
   LogOut,
   Menu,
   X,
-  Lock,
   ShieldCheck,
   BarChart3,
   Tag,
   Star,
   Palette,
+  ArrowRightLeft,
 } from "lucide-react";
 
 type NavItem = {
@@ -34,21 +34,26 @@ type NavItem = {
 const NAV: NavItem[] = [
   { href: "/admin", label: "คิววันนี้", icon: CalendarCheck },
   { href: "/admin/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
-  { href: "/admin/setup", label: "ตั้งค่าร้าน", icon: Settings },
-  { href: "/admin/theme", label: "ธีมของร้าน", icon: Palette },
-  { href: "/admin/healthcheck", label: "ตรวจระบบ", icon: Stethoscope },
+  { href: "/admin/analytics", label: "วิเคราะห์", icon: BarChart3 },
   { href: "/admin/services", label: "บริการ", icon: Sparkles },
   { href: "/admin/staff", label: "พนักงาน", icon: UserCircle2 },
-  { href: "/admin/working-hours", label: "เวลาทำการ", icon: Clock },
   { href: "/admin/customers", label: "ลูกค้า", icon: Users },
-  { href: "/admin/templates", label: "เทมเพลตข้อความ", icon: MessageSquareText },
-  { href: "/admin/ai-settings", label: "ตั้งค่า AI แชท", icon: Bot },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/admin/working-hours", label: "เวลาทำการ", icon: Clock },
   { href: "/admin/coupons", label: "คูปอง", icon: Tag },
   { href: "/admin/reviews", label: "รีวิว", icon: Star },
+  { href: "/admin/templates", label: "เทมเพลต", icon: MessageSquareText },
+  { href: "/admin/ai-settings", label: "AI แชท", icon: Bot },
+  { href: "/admin/theme", label: "ธีมของร้าน", icon: Palette },
+  { href: "/admin/setup", label: "ตั้งค่า", icon: Settings },
+  { href: "/admin/healthcheck", label: "ตรวจระบบ", icon: Stethoscope },
 ];
 
 type ShopBadge = { name: string; slug: string };
+
+function brandMark(name: string | undefined, slug: string | undefined) {
+  const src = (name?.trim() || slug || "JK").replace(/\s+/g, "");
+  return src.slice(0, 2).toUpperCase();
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -80,7 +85,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     window.location.href = "/";
   }
 
-  // Close drawer on route change
   useEffect(() => {
     setDrawerOpen(false);
   }, [pathname]);
@@ -94,18 +98,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!authed) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6 bg-ink-50">
-        <form onSubmit={login} className="card p-7 w-full max-w-sm space-y-4 animate-fade-up">
+      <main className="min-h-screen flex items-center justify-center p-6 bg-paper-1 relative overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-[520px] h-[520px] rounded-full bg-forest-50 blur-3xl opacity-70 pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-[480px] h-[480px] rounded-full bg-ochre-200/40 blur-3xl opacity-60 pointer-events-none" />
+
+        <form
+          onSubmit={login}
+          className="relative card p-8 w-full max-w-sm space-y-5 animate-fade-up shadow-editorial"
+        >
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-md bg-ink-900 text-white flex items-center justify-center">
-              <Lock size={20} />
+            <div className="w-12 h-12 rounded-[12px] bg-forest-800 text-paper-1 grid place-items-center font-display text-xl">
+              จก
             </div>
             <div>
               <div className="eyebrow">Admin Console</div>
-              <h1 className="h-display text-xl">เข้าสู่ระบบร้าน</h1>
+              <h1 className="h-display text-2xl">เข้าสู่ร้าน</h1>
             </div>
           </div>
-          <p className="text-xs text-ink-500">
+          <p className="text-xs text-ink-500 leading-relaxed">
             ใช้รหัสผ่านที่ตั้งไว้ตอนสมัครร้าน (เจ้าของร้าน)
           </p>
           <div>
@@ -122,16 +132,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button className="btn-primary w-full justify-center">
             <ShieldCheck size={16} /> เข้าสู่ระบบ
           </button>
-          <div className="text-[11px] text-ink-400 text-center pt-1 space-y-1">
+          <div className="text-[11px] text-ink-500 text-center pt-1 space-y-1.5">
             <div>
               หรือเข้าผ่าน LINE (ไม่ต้องใช้รหัส){" "}
-              <Link href="/liff/admin" className="text-ink-700 font-semibold">/liff/admin</Link>
+              <Link href="/liff/admin" className="text-forest-700 font-semibold underline-offset-4 hover:underline">
+                /liff/admin
+              </Link>
             </div>
             <div>
               มาผิดร้าน?{" "}
               <a
-                href={`${typeof window !== "undefined" ? window.location.protocol : "https:"}//${(typeof window !== "undefined" ? window.location.host : "likesms.net").split(".").slice(1).join(".") || "likesms.net"}/login`}
-                className="text-ink-700 font-semibold"
+                href={`${typeof window !== "undefined" ? window.location.protocol : "https:"}//${(typeof window !== "undefined" ? window.location.host : "จองคิว.net").split(".").slice(1).join(".") || "จองคิว.net"}/login`}
+                className="text-forest-700 font-semibold underline-offset-4 hover:underline"
               >
                 เปลี่ยนร้าน
               </a>
@@ -142,70 +154,114 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
+  const mark = brandMark(shop?.name, shop?.slug);
+
   return (
     <AdminContext.Provider value={{ pw }}>
-      <div className="min-h-screen bg-ink-50">
+      <div className="min-h-screen bg-paper-1 text-ink-900 lg:flex">
+        {/* ── Sidebar (desktop) ───────────────────────────── */}
+        <aside className="hidden lg:flex flex-col w-[236px] shrink-0 bg-forest-800 text-paper-1 border-r border-forest-700 px-3 py-5 sticky top-0 h-screen">
+          <div className="flex items-center gap-2.5 px-2 pb-5 mb-4 border-b border-white/10">
+            <div className="w-9 h-9 rounded-[10px] bg-paper-1 text-forest-800 grid place-items-center font-display font-semibold text-[16px]">
+              {mark}
+            </div>
+            <div className="min-w-0">
+              <div className="font-display text-[18px] leading-tight tracking-tight truncate">
+                {shop?.name ?? "จองคิว"}
+              </div>
+              <div className="text-[10px] opacity-55 tracking-[0.12em] uppercase font-mono truncate">
+                {shop?.slug ? `${shop.slug}.จองคิว.net` : "จองคิว.net"}
+              </div>
+            </div>
+          </div>
 
-        {/* ── Header (mobile + desktop) ───────────────────────── */}
-        <header className="sticky top-0 z-30 bg-white border-b border-ink-200">
-          <div className="max-w-6xl mx-auto px-3 sm:px-5 h-14 flex items-center gap-3">
+          {shop && (
+            <button
+              onClick={switchShop}
+              className="flex items-center gap-2 px-3 py-2 rounded-[10px] bg-forest-700 border border-white/5 text-[11px] mb-4 hover:bg-forest-600 transition-colors"
+              title="สลับร้าน"
+            >
+              <ArrowRightLeft size={12} className="opacity-70" />
+              <span className="opacity-75">สลับร้าน</span>
+              <span className="ml-auto font-mono opacity-60">{shop.slug}</span>
+            </button>
+          )}
+
+          <nav className="flex flex-col gap-[2px] flex-1 overflow-y-auto no-scrollbar -mx-1 px-1">
+            {NAV.map((item) => {
+              const active = isActive(pathname, item.href);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`relative flex items-center gap-3 px-3 py-2 rounded-[8px] text-[13px] transition-colors ${
+                    active
+                      ? "bg-forest-600 text-white font-medium"
+                      : "text-white/75 hover:bg-forest-700 hover:text-white"
+                  }`}
+                >
+                  <Icon size={15} className="shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                  {active && (
+                    <span className="ml-auto w-[4px] h-[14px] bg-sage-200 rounded-sm" />
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="mt-auto pt-3 border-t border-white/10">
+            <div className="flex items-center gap-2.5 px-1.5 py-1.5">
+              <div className="w-7 h-7 rounded-full bg-ochre-200 text-ink-900 grid place-items-center text-[10px] font-semibold">
+                {mark}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[12px] font-medium truncate">{shop?.name ?? "เจ้าของร้าน"}</div>
+                <div className="text-[10px] opacity-55">เจ้าของร้าน</div>
+              </div>
+              <button
+                onClick={() => {
+                  sessionStorage.removeItem("adminPw");
+                  setAuthed(false);
+                }}
+                className="p-1.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition"
+                title="ออกจากระบบ"
+              >
+                <LogOut size={14} />
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        {/* ── Mobile header ───────────────────────────────── */}
+        <header className="lg:hidden sticky top-0 z-30 bg-paper-1/90 backdrop-blur border-b border-paper-3">
+          <div className="px-3 sm:px-5 h-14 flex items-center gap-3">
             <button
               onClick={() => setDrawerOpen(true)}
-              className="lg:hidden w-10 h-10 rounded-xl hover:bg-ink-100 flex items-center justify-center text-ink-700"
+              className="w-10 h-10 rounded-xl hover:bg-paper-2 flex items-center justify-center text-ink-700"
               aria-label="เปิดเมนู"
             >
               <Menu size={20} />
             </button>
 
-            <Link href="/admin" className="flex items-center gap-2 font-bold shrink-0">
-              <span className="w-8 h-8 rounded-md bg-ink-900 text-white flex items-center justify-center">
-                <Settings size={14} />
+            <Link href="/admin" className="flex items-center gap-2 shrink-0">
+              <span className="w-8 h-8 rounded-md bg-forest-800 text-paper-1 grid place-items-center font-display text-[13px]">
+                {mark}
               </span>
-              <span className="text-ink-900 tracking-tight hidden sm:inline font-bold">
-                {shop ? shop.name : "LineBook Admin"}
+              <span className="font-display text-[16px] tracking-tight text-ink-900 truncate">
+                {shop ? shop.name : "จองคิว"}
               </span>
             </Link>
-            {shop && (
-              <button
-                onClick={switchShop}
-                title="สลับร้าน"
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold bg-ink-100 text-ink-600 hover:bg-ink-200"
-              >
-                <span className="font-mono">{shop.slug}</span>
-                <span className="text-ink-400">↻</span>
-              </button>
-            )}
 
-            {/* Desktop nav */}
-            <nav className="hidden lg:flex items-center gap-1 flex-1 ml-4">
-              {NAV.map((item) => {
-                const active = isActive(pathname, item.href);
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition ${
-                      active
-                        ? "bg-ink-900 text-white"
-                        : "text-ink-600 hover:bg-ink-100 hover:text-ink-900"
-                    }`}
-                  >
-                    <Icon size={14} />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            <div className="flex-1 lg:flex-none" />
+            <div className="flex-1" />
 
             <button
               onClick={() => {
                 sessionStorage.removeItem("adminPw");
                 setAuthed(false);
               }}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl text-ink-500 hover:text-red-600 hover:bg-red-50 transition"
+              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg text-ink-500 hover:text-clay-700 hover:bg-clay-200/50 transition"
               title="ออกจากระบบ"
             >
               <LogOut size={14} />
@@ -214,27 +270,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        {/* ── Mobile drawer ───────────────────────────────────── */}
+        {/* ── Mobile drawer ───────────────────────────────── */}
         {drawerOpen && (
           <div className="fixed inset-0 z-40 lg:hidden">
             <div
-              className="absolute inset-0 bg-ink-900/40 animate-fade-up"
+              className="absolute inset-0 bg-forest-900/60 animate-fade-up"
               onClick={() => setDrawerOpen(false)}
             />
-            <aside className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-white border-r border-ink-200 p-4 flex flex-col animate-fade-up">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 font-bold">
-                  <span className="w-8 h-8 rounded-md bg-ink-900 text-white flex items-center justify-center">
-                    <Settings size={14} />
-                  </span>
-                  <div className="flex flex-col leading-tight">
-                    <span className="text-ink-900 tracking-tight">{shop?.name ?? "Admin"}</span>
-                    {shop && <span className="text-[10px] font-mono text-ink-400">{shop.slug}</span>}
+            <aside className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-forest-800 text-paper-1 p-4 flex flex-col animate-fade-up">
+              <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-[10px] bg-paper-1 text-forest-800 grid place-items-center font-display font-semibold text-[16px]">
+                    {mark}
+                  </div>
+                  <div className="flex flex-col leading-tight min-w-0">
+                    <span className="font-display text-[17px] tracking-tight truncate">
+                      {shop?.name ?? "จองคิว"}
+                    </span>
+                    {shop && (
+                      <span className="text-[10px] font-mono opacity-55 truncate">
+                        {shop.slug}.จองคิว.net
+                      </span>
+                    )}
                   </div>
                 </div>
                 <button
                   onClick={() => setDrawerOpen(false)}
-                  className="w-9 h-9 rounded-xl hover:bg-ink-100 flex items-center justify-center text-ink-600"
+                  className="w-9 h-9 rounded-xl hover:bg-white/10 flex items-center justify-center text-white/70"
                 >
                   <X size={18} />
                 </button>
@@ -247,23 +309,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition ${
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-[8px] text-[13px] transition ${
                         active
-                          ? "bg-ink-900 text-white"
-                          : "text-ink-700 hover:bg-ink-100 hover:text-ink-900"
+                          ? "bg-forest-600 text-white font-medium"
+                          : "text-white/75 hover:bg-forest-700 hover:text-white"
                       }`}
                     >
-                      <Icon size={16} className={active ? "text-white/70" : "text-ink-400"} />
+                      <Icon size={15} />
                       {item.label}
                     </Link>
                   );
                 })}
               </nav>
-              <div className="pt-3 mt-3 border-t border-ink-100 text-[11px] text-ink-400">
-                แอดมินผ่าน LINE: เปิด{" "}
+              <div className="pt-3 mt-3 border-t border-white/10 text-[11px] text-white/60">
+                เข้าผ่าน LINE:{" "}
                 <Link
                   href="/liff/admin"
-                  className="text-ink-700 font-semibold"
+                  className="text-sage-200 font-medium underline-offset-4 hover:underline"
                   onClick={() => setDrawerOpen(false)}
                 >
                   /liff/admin
@@ -273,7 +335,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         )}
 
-        <main className="relative max-w-6xl mx-auto px-3 sm:px-5 py-4 sm:py-6">{children}</main>
+        {/* ── Main column ─────────────────────────────────── */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          <main className="flex-1 px-4 sm:px-6 lg:px-10 py-6 lg:py-8 max-w-[1400px] w-full mx-auto">
+            {children}
+          </main>
+        </div>
       </div>
     </AdminContext.Provider>
   );

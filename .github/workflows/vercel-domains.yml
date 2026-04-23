@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       root_domain:
-        description: Root domain (default likesms.net)
+        description: Root domain (default จองคิว.net)
         required: false
-        default: likesms.net
+        default: จองคิว.net
   push:
     branches: [master]
     paths:
@@ -26,5 +26,5 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT: ${{ secrets.VERCEL_PROJECT }}
           VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
-          ROOT_DOMAIN: ${{ inputs.root_domain || 'likesms.net' }}
+          ROOT_DOMAIN: ${{ inputs.root_domain || 'จองคิว.net' }}
         run: node scripts/vercel-setup-domains.mjs

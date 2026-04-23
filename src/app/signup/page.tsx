@@ -54,7 +54,7 @@ export default function SignupPage() {
         const json = await res.json();
         if (json.available) {
           setSlugStatus("ok");
-          setSlugMsg(`ใช้ได้ — ${slug}.likesms.net`);
+          setSlugMsg(`ใช้ได้ — ${slug}.จองคิว.net`);
         } else {
           setSlugStatus("bad");
           const reasons: Record<string, string> = {
@@ -168,10 +168,10 @@ export default function SignupPage() {
             <Field label="ชื่อร้าน" required>
               <input className="input" value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="เช่น Salon Linda" />
             </Field>
-            <Field label="URL ของร้าน" required hint="ใช้เป็น subdomain เช่น mysalon.likesms.net">
+            <Field label="URL ของร้าน" required hint="ใช้เป็น subdomain เช่น mysalon.จองคิว.net">
               <div className="flex items-center gap-2">
                 <input className="input flex-1" value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} placeholder="mysalon" />
-                <span className="text-sm text-ink-500">.likesms.net</span>
+                <span className="text-sm text-ink-500">.จองคิว.net</span>
               </div>
               <div className={`text-xs mt-1.5 ${slugStatus === "ok" ? "text-emerald-700" : slugStatus === "bad" ? "text-red-700" : "text-ink-500"}`}>
                 {slugStatus === "checking" ? "กำลังตรวจสอบ..." : slugMsg}

@@ -1,25 +1,71 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Sans+Thai+Looped:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ── Design tokens ─────────────────────────────────────────
- * Flat, editorial system. Single accent = tenant --primary.
- * No gradients, no mesh, no glow. Hairline borders + solid surfaces.
- * ThemeProvider overrides --primary at runtime per active shop theme. */
+ * Forest + Cream editorial system (จองคิว).
+ * Primary accent = --forest-500; --paper-1 is the app canvas.
+ * ThemeProvider still overrides --primary per shop at runtime, but the
+ * chrome palette is global. */
 :root {
-  --primary: #111827;
-  --primary-light: #1f2937;
-  --primary-dark: #030712;
+  /* Brand — Forest green */
+  --forest-50:  #eef5ef;
+  --forest-100: #d4e6d6;
+  --forest-200: #a8ccab;
+  --forest-300: #7aaf7f;
+  --forest-400: #4e8a55;
+  --forest-500: #2f6a37;
+  --forest-600: #1f4f28;
+  --forest-700: #15391d;
+  --forest-800: #0d2614;
+  --forest-900: #06160a;
+
+  /* Paper — cream surfaces */
+  --paper-0: #ffffff;
+  --paper-1: #faf7f0;
+  --paper-2: #f5f0e4;
+  --paper-3: #ebe5d4;
+  --paper-4: #e0d8c0;
+
+  /* Warm neutrals */
+  --ink-900: #0f1c17;
+  --ink-800: #1a2a22;
+  --ink-700: #2e3f35;
+  --ink-600: #4a5a50;
+  --ink-500: #6b7a70;
+  --ink-400: #96a097;
+  --ink-300: #c2c7bf;
+  --ink-200: #e2e3dc;
+  --ink-100: #eeeee7;
+  --ink-50:  #faf7f0;
+
+  /* Secondary accents */
+  --ochre-200: #e8d6a8;
+  --ochre-500: #b5832d;
+  --clay-200:  #e6c3b2;
+  --clay-500:  #a8523a;
+  --sage-200:  #d1dcca;
+  --sage-500:  #8aa382;
+
+  /* Legacy tenant accent — still resolved by ThemeProvider */
+  --primary: var(--forest-500);
+  --primary-light: var(--forest-400);
+  --primary-dark: var(--forest-700);
   --on-primary: #ffffff;
-  --secondary: #4b5563;
-  --accent: #e5e7eb;
-  --surface: #ffffff;
-  --surface-muted: #f8fafc;
-  --surface-dark: #0f172a;
-  --border: #e5e7eb;
-  --border-strong: #cbd5e1;
-  --primary-rgb: 17, 24, 39;
+  --secondary: var(--ink-600);
+  --accent: var(--paper-3);
+  --surface: var(--paper-0);
+  --surface-muted: var(--paper-1);
+  --surface-dark: var(--forest-800);
+  --border: var(--paper-3);
+  --border-strong: var(--paper-4);
+  --primary-rgb: 47, 106, 55;
+
+  /* Type */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "IBM Plex Sans Thai Looped", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -37,55 +83,70 @@
 
 html, body { height: 100%; }
 body {
-  @apply bg-white text-ink-900 antialiased;
-  font-feature-settings: "cv11", "ss01", "ss03";
-  letter-spacing: -0.005em;
+  background: var(--paper-1);
+  color: var(--ink-900);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.003em;
 }
 
 @layer components {
-/* ── Buttons — solid, no glow ────────────────────────── */
-.btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 font-medium text-[14px] transition-colors duration-150 active:translate-y-[0.5px] disabled:opacity-50 disabled:pointer-events-none select-none; }
-.btn-primary { @apply btn bg-ink-900 text-white hover:bg-ink-800; }
-.btn-secondary { @apply btn bg-white text-ink-900 border border-ink-200 hover:bg-ink-50; }
-.btn-ghost { @apply btn text-ink-700 hover:bg-ink-100; }
-.btn-dark { @apply btn bg-ink-900 text-white hover:bg-ink-800; }
+/* ── Buttons — solid, forest-forward ─────────────────── */
+.btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 font-medium text-[13px] transition-colors duration-150 active:translate-y-[0.5px] disabled:opacity-50 disabled:pointer-events-none select-none; }
+.btn-primary { @apply btn bg-forest-500 text-white border border-forest-600 hover:bg-forest-600; }
+.btn-secondary { @apply btn bg-paper-0 text-ink-900 border border-paper-4 hover:bg-paper-1; }
+.btn-ghost { @apply btn text-ink-700 hover:bg-paper-2; }
+.btn-dark { @apply btn bg-ink-900 text-paper-1 border border-ink-900 hover:bg-ink-800; }
+.btn-outline { @apply btn bg-transparent text-forest-600 border border-forest-300 hover:bg-forest-50; }
 .btn-accent { @apply btn text-white; background-color: var(--primary); }
 .btn-accent:hover { background-color: var(--primary-dark); }
 
-/* ── Surfaces — hairline border, no shadow by default ─ */
-.card { @apply bg-white rounded-xl border border-ink-200; }
-.card-muted { @apply bg-ink-50 rounded-xl border border-ink-200; }
-.card-dark { @apply bg-ink-900 text-white rounded-xl border border-ink-800; }
+/* ── Surfaces — hairline warm border, soft shadow ────── */
+.card { @apply bg-paper-0 rounded-[14px] border border-paper-3 shadow-soft; }
+.card-muted { @apply bg-paper-1 rounded-[14px] border border-paper-3; }
+.card-cream { @apply bg-paper-2 rounded-[14px] border border-paper-3; }
+.card-dark { @apply bg-ink-900 text-paper-1 rounded-[14px] border border-ink-900; }
+.card-forest { @apply bg-forest-800 text-paper-1 rounded-[14px] border border-forest-700; }
 
 /* ── Forms ───────────────────────────────────────────── */
-.input { @apply w-full rounded-lg border border-ink-300 bg-white px-3.5 py-2.5 text-[14px] text-ink-900 outline-none transition-colors placeholder:text-ink-400 focus:border-ink-900 focus:ring-2 focus:ring-ink-900/10; }
+.input { @apply w-full rounded-lg border border-paper-4 bg-paper-0 px-3.5 py-2.5 text-[14px] text-ink-900 outline-none transition-colors placeholder:text-ink-400 focus:border-forest-500 focus:ring-2 focus:ring-forest-500/15; }
 .label { @apply block text-[13px] font-medium text-ink-700 mb-1.5; }
-.chip { @apply inline-flex items-center gap-1 rounded-md border border-ink-200 bg-white px-2 py-0.5 text-[11px] font-medium text-ink-700; }
+.chip { @apply inline-flex items-center gap-1 rounded-full border border-paper-3 bg-paper-0 px-2.5 py-0.5 text-[11px] font-medium text-ink-700; }
+.pill { @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium; }
+.pill-forest { @apply pill bg-forest-100 text-forest-700; }
+.pill-ochre  { @apply pill bg-ochre-200 text-ochre-700; }
+.pill-clay   { @apply pill bg-clay-200 text-clay-700; }
+.pill-sage   { @apply pill bg-sage-200 text-sage-700; }
+.pill-cream  { @apply pill bg-paper-2 text-ink-700; }
+.pill-dark   { @apply pill bg-ink-900 text-paper-1; }
 
 /* ── Typography ──────────────────────────────────────── */
-.h-display { @apply font-display font-semibold tracking-tight text-ink-900; }
-.section-title { @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-500; }
-.eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500; }
+.h-display { @apply font-display font-normal tracking-tight text-ink-900; letter-spacing: -0.02em; }
+.h-display-italic { @apply font-display italic text-forest-600; letter-spacing: -0.02em; }
+.section-title { @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500; }
+.eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-forest-600; }
+.eyebrow-muted { @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500; }
 
 /* ── Section divider ─────────────────────────────────── */
-.divider { @apply border-t border-ink-200; }
-.divider-dashed { @apply border-t border-dashed border-ink-200; }
+.divider { @apply border-t border-paper-3; }
+.divider-dashed { @apply border-t border-dashed border-paper-4; }
 
-/* ── Legacy class aliases (flatten old gradient utils) ─ */
+/* ── Legacy class aliases ────────────────────────────── */
 .gradient-text { @apply text-ink-900; }
-.mesh-bg { @apply bg-white; }
+.mesh-bg { @apply bg-paper-1; }
 .glow-btn { @apply btn-primary; }
 .linex-grad-text { @apply text-ink-900; }
 .grad-text { @apply text-ink-900; }
 .card-glass { @apply card; }
 .card-hover { @apply transition-colors; }
-.card-hover:hover { @apply bg-ink-50; }
+.card-hover:hover { @apply bg-paper-1; }
 
-.linex-shell { @apply bg-white text-ink-900; }
-.linex-panel { @apply rounded-xl border border-ink-200 bg-white; }
-.linex-panel-dark { @apply rounded-xl border border-ink-800 bg-ink-900 text-white; }
-.linex-kicker { @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500; }
-.linex-title { @apply font-display font-semibold tracking-tight text-ink-900; }
+.linex-shell { @apply bg-paper-1 text-ink-900; }
+.linex-panel { @apply card; }
+.linex-panel-dark { @apply card-dark; }
+.linex-kicker { @apply eyebrow-muted; }
+.linex-title { @apply h-display; }
 .linex-subtle { @apply text-ink-500; }
 .linex-btn-primary { @apply btn-primary; }
 .linex-btn-secondary { @apply btn-secondary; }
@@ -97,11 +158,22 @@ body {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Subtle grain overlay — apply to a positioned parent */
+.grain::before {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: radial-gradient(rgba(0,0,0,0.04) 1px, transparent 1px);
+  background-size: 3px 3px;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+}
+
 * { -webkit-tap-highlight-color: transparent; }
 
-/* Skeleton — neutral, no shimmer gradient */
+/* Skeleton — warm paper-tinted */
 .skeleton {
-  @apply rounded-md bg-ink-100;
+  @apply rounded-md bg-paper-2;
   animation: pulseSoft 1.6s ease-in-out infinite;
 }
 @keyframes pulseSoft {

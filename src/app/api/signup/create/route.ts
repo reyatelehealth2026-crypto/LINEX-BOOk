@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
   // Path-based entry (simple mode): the proxy turns the first hit into a
   // cookie + strip-prefix redirect, so every subsequent /admin/* link works
   // on the apex without needing the wildcard cert to be issued.
-  const rootDomain = process.env.ROOT_DOMAIN || "likesms.net";
+  const rootDomain = process.env.ROOT_DOMAIN || "จองคิว.net";
   const proto = req.nextUrl.protocol.replace(":", "") || "https";
   const redirectUrl = `${proto}://${rootDomain}/${created.slug}/admin/setup`;
 

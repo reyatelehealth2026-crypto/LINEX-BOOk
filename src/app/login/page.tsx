@@ -106,11 +106,11 @@ export default function LoginPage() {
                   autoFocus
                 />
                 <div className="bg-ink-50 border-l border-ink-200 px-3 flex items-center text-xs text-ink-500 font-mono">
-                  .likesms.net
+                  .จองคิว.net
                 </div>
               </div>
               <p className="text-[11px] text-ink-400 mt-1.5">
-                URL ที่ได้จากตอนสมัคร เช่น <span className="font-mono">hairx.likesms.net</span>
+                URL ที่ได้จากตอนสมัคร เช่น <span className="font-mono">hairx.จองคิว.net</span>
               </p>
             </div>
           ) : (
