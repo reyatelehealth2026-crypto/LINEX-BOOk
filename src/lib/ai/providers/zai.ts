@@ -1,7 +1,7 @@
 import type { AiProvider, AiProviderRequest, AiProviderResult } from "./types";
 
 const ZAI_API_URL = process.env.ZAI_API_URL ?? "https://api.z.ai/api/coding/paas/v4/chat/completions";
-const ZAI_TIMEOUT_MS = Number(process.env.ZAI_TIMEOUT_MS ?? process.env.AI_MODEL_TIMEOUT_MS ?? 3500);
+const ZAI_TIMEOUT_MS = Number(process.env.ZAI_TIMEOUT_MS ?? process.env.AI_MODEL_TIMEOUT_MS ?? 8000);
 
 export function createZaiProvider(): AiProvider {
   return {
