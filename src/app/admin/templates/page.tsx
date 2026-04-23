@@ -10,8 +10,8 @@ import type { MessageTemplate, TemplateCategory } from "@/types/db";
 
 const CATEGORY_LABELS: Record<TemplateCategory, { label: string; color: string }> = {
   reminder: { label: "เตือน", color: "bg-amber-100 text-amber-700" },
-  promo: { label: "โปรโมชั่น", color: "bg-violet-100 text-violet-700" },
-  follow_up: { label: "ติดตาม", color: "bg-sky-100 text-sky-700" },
+  promo: { label: "โปรโมชั่น", color: "bg-sage-200 text-sage-700" },
+  follow_up: { label: "ติดตาม", color: "bg-forest-100 text-forest-700" },
   custom: { label: "อื่นๆ", color: "bg-ink-100 text-ink-700" },
 };
 

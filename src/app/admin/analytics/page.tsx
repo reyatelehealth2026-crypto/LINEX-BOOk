@@ -52,10 +52,10 @@ type Forecast = {
 
 const DOW_TH = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
 const SEGMENT_CONFIG = {
-  new:       { label: "ใหม่",      cls: "bg-blue-50 text-blue-700" },
-  returning: { label: "ประจำ",     cls: "bg-green-50 text-green-700" },
-  at_risk:   { label: "เสี่ยงหาย", cls: "bg-amber-50 text-amber-700" },
-  vip:       { label: "VIP",       cls: "bg-purple-50 text-purple-700" },
+  new:       { label: "ใหม่",      cls: "bg-forest-100 text-forest-700" },
+  returning: { label: "ประจำ",     cls: "bg-emerald-100 text-emerald-700" },
+  at_risk:   { label: "เสี่ยงหาย", cls: "bg-amber-100 text-amber-700" },
+  vip:       { label: "VIP",       cls: "bg-sage-200 text-sage-700" },
 };
 
 /* ─── Page ───────────────────────────────────────────────────── */
@@ -129,9 +129,9 @@ export default function AnalyticsPage() {
         <div className="space-y-5 animate-fade-up">
           {/* KPI cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            <KpiCard label="รายได้รวม" value={baht(kpi.revenue)} sub={`${days} วัน`} icon={<TrendingUp size={18} />} color="bg-green-50 text-green-700" />
-            <KpiCard label="Avg LTV" value={baht(kpi.avg_ltv)} sub="ต่อลูกค้า" icon={<Users size={18} />} color="bg-blue-50 text-blue-700" />
-            <KpiCard label="Retention" value={`${(kpi.retention_rate * 100).toFixed(0)}%`} sub="ลูกค้ากลับมา" icon={<CheckCircle2 size={18} />} color="bg-purple-50 text-purple-700" />
+            <KpiCard label="รายได้รวม" value={baht(kpi.revenue)} sub={`${days} วัน`} icon={<TrendingUp size={18} />} color="bg-emerald-100 text-emerald-700" />
+            <KpiCard label="Avg LTV" value={baht(kpi.avg_ltv)} sub="ต่อลูกค้า" icon={<Users size={18} />} color="bg-forest-100 text-forest-700" />
+            <KpiCard label="Retention" value={`${(kpi.retention_rate * 100).toFixed(0)}%`} sub="ลูกค้ากลับมา" icon={<CheckCircle2 size={18} />} color="bg-sage-200 text-sage-700" />
             <KpiCard label="No-show" value={`${(kpi.no_show_rate * 100).toFixed(1)}%`} sub={`${kpi.no_show} ครั้ง`} icon={<UserX size={18} />} color="bg-red-50 text-red-600" />
             <KpiCard label="คิวทั้งหมด" value={kpi.total_bookings} sub={`${kpi.completed} เสร็จสิ้น`} icon={<Activity size={18} />} color="bg-amber-50 text-amber-700" />
             <KpiCard label="ลูกค้าทั้งหมด" value={kpi.total_customers} sub="สะสม" icon={<Users size={18} />} color="bg-ink-100 text-ink-700" />
@@ -155,11 +155,11 @@ export default function AnalyticsPage() {
                           <span className="text-ink-600">Service #{s.service_id}</span>
                           <div className="flex gap-3 text-right">
                             <span className="text-ink-400">{s.count} คิว</span>
-                            <span className="font-semibold text-green-700">{baht(s.revenue)}</span>
+                            <span className="font-semibold text-forest-700">{baht(s.revenue)}</span>
                           </div>
                         </div>
                         <div className="h-1.5 bg-ink-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-green-400 rounded-full" style={{ width: `${pct}%` }} />
+                          <div className="h-full bg-forest-400 rounded-full" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );
@@ -183,11 +183,11 @@ export default function AnalyticsPage() {
                           <span className="text-ink-600">{s.staff_id ? `Staff #${s.staff_id}` : "ไม่ระบุช่าง"}</span>
                           <div className="flex gap-3 text-right">
                             <span className="text-ink-400">{s.count} คิว</span>
-                            <span className="font-semibold text-blue-700">{baht(s.revenue)}</span>
+                            <span className="font-semibold text-forest-700">{baht(s.revenue)}</span>
                           </div>
                         </div>
                         <div className="h-1.5 bg-ink-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-400 rounded-full" style={{ width: `${pct}%` }} />
+                          <div className="h-full bg-forest-400 rounded-full" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );
@@ -267,7 +267,7 @@ export default function AnalyticsPage() {
                           <span className={`chip text-xs ${cfg.cls}`}>{cfg.label}</span>
                         </td>
                         <td className="px-3 py-2.5 text-center text-ink-600">{c.visit_count}</td>
-                        <td className="px-4 py-2.5 text-right font-semibold text-green-700">{baht(c.total_spent)}</td>
+                        <td className="px-4 py-2.5 text-right font-semibold text-forest-700">{baht(c.total_spent)}</td>
                         <td className="px-4 py-2.5 text-right text-ink-500 hidden sm:table-cell">{c.lifetime_points.toLocaleString()}</td>
                         <td className="px-4 py-2.5 text-right text-ink-400 text-[11px] hidden md:table-cell">
                           {c.last_visit ? new Date(c.last_visit).toLocaleDateString("th-TH") : "—"}

@@ -76,6 +76,58 @@ const config: Config = {
           sky: "#3a5f7a",
           violet: "#8aa382",
         },
+        // Editorial overrides of Tailwind's default state tones. Pages
+        // across LIFF/admin use amber/rose/emerald/orange for semantic
+        // state (pending, danger, success). Re-tinting here means we
+        // don't have to chase every `bg-amber-*` callsite individually.
+        amber: {
+          50:  "#faf5e8",
+          100: "#f4e8cc",
+          200: "#e8d6a8",
+          300: "#dcc088",
+          400: "#c9a55a",
+          500: "#b5832d",
+          600: "#946924",
+          700: "#6a4816",
+          800: "#4a3110",
+          900: "#2e1e0a",
+        },
+        rose: {
+          50:  "#f9ede7",
+          100: "#f0d6c8",
+          200: "#e6c3b2",
+          300: "#d9a48a",
+          400: "#c47d5e",
+          500: "#a8523a",
+          600: "#873e2a",
+          700: "#6a2a19",
+          800: "#4a1d11",
+          900: "#2e120a",
+        },
+        emerald: {
+          50:  "#eef5ef",
+          100: "#d4e6d6",
+          200: "#a8ccab",
+          300: "#7aaf7f",
+          400: "#4e8a55",
+          500: "#2f6a37",
+          600: "#1f4f28",
+          700: "#15391d",
+          800: "#0d2614",
+          900: "#06160a",
+        },
+        orange: {
+          50:  "#f9ede7",
+          100: "#f0d6c8",
+          200: "#e6c3b2",
+          300: "#d9a48a",
+          400: "#c47d5e",
+          500: "#a8523a",
+          600: "#873e2a",
+          700: "#6a2a19",
+          800: "#4a1d11",
+          900: "#2e120a",
+        },
       },
       fontFamily: {
         sans: [

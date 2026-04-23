@@ -17,7 +17,7 @@ type Shop = {
 
 const STATUS_CLS: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700",
-  setup_in_progress: "bg-sky-100 text-sky-700",
+  setup_in_progress: "bg-forest-100 text-forest-700",
   completed: "bg-emerald-100 text-emerald-700",
 };
 

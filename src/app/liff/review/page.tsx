@@ -150,8 +150,8 @@ export default function ReviewPage() {
                   size={40}
                   className={
                     i <= (hoverRating || rating)
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-neutral-300 hover:text-yellow-300"
+                      ? "fill-amber-400 text-amber-400"
+                      : "text-ink-300 hover:text-amber-300"
                   }
                 />
               </button>

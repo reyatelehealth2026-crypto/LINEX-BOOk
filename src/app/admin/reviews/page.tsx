@@ -149,7 +149,7 @@ export default function ReviewsPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-sm text-ink-800">{customerName}</span>
                       <StarRating rating={rv.rating} />
-                      {rv.reply && <span className="chip bg-green-50 text-green-700 text-[10px]">ตอบแล้ว</span>}
+                      {rv.reply && <span className="chip bg-forest-100 text-forest-700 text-[10px]">ตอบแล้ว</span>}
                       {!rv.reply && <span className="chip bg-amber-50 text-amber-600 text-[10px]">รอตอบ</span>}
                     </div>
                     <div className="text-xs text-ink-400 mt-0.5">
@@ -160,7 +160,7 @@ export default function ReviewsPage() {
                       <p className="text-sm text-ink-700 mt-1.5 line-clamp-2">{rv.comment}</p>
                     )}
                     {rv.reply && (
-                      <p className="text-xs text-green-700 mt-1.5 bg-green-50 px-2.5 py-1.5 rounded-lg border border-green-100">
+                      <p className="text-xs text-forest-700 mt-1.5 bg-forest-50 px-2.5 py-1.5 rounded-lg border border-forest-100">
                         <strong>ตอบ:</strong> {rv.reply}
                       </p>
                     )}

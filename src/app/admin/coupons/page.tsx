@@ -251,14 +251,14 @@ export default function CouponsPage() {
                           className="w-6 h-6 rounded-lg hover:bg-ink-200 flex items-center justify-center text-ink-400"
                           title="คัดลอก"
                         >
-                          {copiedId === c.id ? <Check size={12} className="text-green-600" /> : <Copy size={12} />}
+                          {copiedId === c.id ? <Check size={12} className="text-forest-600" /> : <Copy size={12} />}
                         </button>
                       </div>
-                      {c.issued_by_redeem && <span className="text-[10px] text-purple-500 ml-1">จากแต้ม</span>}
+                      {c.issued_by_redeem && <span className="text-[10px] text-sage-700 ml-1">จากแต้ม</span>}
                     </td>
                     <td className="px-3 py-2.5 text-ink-600 hidden sm:table-cell max-w-[12rem] truncate">{c.name}</td>
                     <td className="px-3 py-2.5 text-center">
-                      <span className="chip bg-blue-50 text-blue-700 text-xs">{KIND_LABELS[c.kind]}</span>
+                      <span className="chip bg-forest-100 text-forest-700 text-xs">{KIND_LABELS[c.kind]}</span>
                     </td>
                     <td className="px-3 py-2.5 text-center font-semibold text-ink-800">
                       {c.kind === "percent" ? `${c.value}%` : c.kind === "amount" ? baht(c.value) : "ฟรี"}
@@ -273,7 +273,7 @@ export default function CouponsPage() {
                     <td className="px-3 py-2.5 text-center">
                       <button onClick={() => toggleActive(c)} title={c.active ? "ปิด" : "เปิด"}>
                         {effectiveActive
-                          ? <ToggleRight size={22} className="text-green-500" />
+                          ? <ToggleRight size={22} className="text-forest-500" />
                           : <ToggleLeft size={22} className="text-ink-300" />}
                       </button>
                     </td>
