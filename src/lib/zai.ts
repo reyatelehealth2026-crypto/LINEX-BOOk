@@ -3,8 +3,8 @@ import { getAiProvider, type AiChatMessage, type AiProviderFailure, type AiProvi
 
 const AI_SETTINGS_CACHE_TTL_MS = 30_000;
 const SHOP_CONTEXT_CACHE_TTL_MS = 60_000;
-const MAX_RUNTIME_HISTORY = 4;
-const MAX_RUNTIME_TOKENS = 180;
+const MAX_RUNTIME_HISTORY = 6;
+const MAX_RUNTIME_TOKENS = 260;
 
 export type AiSettings = {
   enabled: boolean;
@@ -22,6 +22,8 @@ type ShopPromptContext = {
   shopName: string;
   phone: string;
   address: string;
+  serviceSummary: string;
+  staffSummary: string;
 };
 
 type CacheEntry<T> = {
@@ -131,12 +133,26 @@ async function getShopPromptContext(shopId: number): Promise<ShopPromptContext> 
   if (cached) return cached;
 
   const db = supabaseAdmin();
-  const { data: shop } = await db.from("shops").select("name, phone, address").eq("id", shopId).maybeSingle();
+  const [shopRes, servicesRes, staffRes] = await Promise.all([
+    db.from("shops").select("name, phone, address").eq("id", shopId).maybeSingle(),
+    db.from("services").select("name, price, duration_min").eq("shop_id", shopId).eq("active", true).order("sort_order").limit(6),
+    db.from("staff").select("name, nickname").eq("shop_id", shopId).eq("active", true).order("sort_order").limit(5),
+  ]);
+
+  const shop = shopRes.data;
+  const serviceSummary = (servicesRes.data ?? [])
+    .map((s: any) => `${s.name} ${Number(s.price).toLocaleString()}บ./${s.duration_min}น.`)
+    .join(" | ");
+  const staffSummary = (staffRes.data ?? [])
+    .map((s: any) => s.nickname ?? s.name)
+    .join(", ");
 
   const context: ShopPromptContext = {
     shopName: shop?.name ?? "ร้าน",
     phone: shop?.phone ?? "-",
     address: shop?.address ?? "-",
+    serviceSummary,
+    staffSummary,
   };
 
   setCached(shopPromptContextCache, shopId, context);
@@ -154,15 +170,18 @@ async function buildShopSystemPrompt(shopId: number, settings: AiSettings): Prom
     ? `\nกฎเพิ่มเติมจากเจ้าของร้าน:\n${settings.custom_rules}`
     : "";
 
-  return `คุณคือ${settings.bot_name}ของร้าน ${context.shopName} ตอบภาษาไทยเสมอ พูดสุภาพ กระชับ และเป็นมิตร
+  return `คุณคือ${settings.bot_name}ของร้าน ${context.shopName} ตอบภาษาไทยเสมอ พูดสุภาพ เป็นธรรมชาติ ช่วยแนะนำได้เหมือนพนักงานหน้าร้านที่คุยเก่ง
 เบอร์ร้าน: ${context.phone}
 ที่อยู่: ${context.address}${businessBlock}
+บริการเด่น: ${context.serviceSummary || "ยังไม่มีข้อมูลบริการ"}
+ทีมงาน: ${context.staffSummary || "ยังไม่มีข้อมูลช่าง"}
 
 กฎสำคัญ:
-- ถ้าลูกค้าต้องการจองคิว ถามราคา ถามบริการ ถามเวลาว่าง หรือถามเวลาทำการ ให้บอกว่า "${settings.booking_redirect}"
+- ถ้าลูกค้าถามเชิงเปิดกว้าง เช่น ร้านเด่นอะไร ควรเริ่มบริการไหนดี เหมาะกับใคร หรือขอคำแนะนำ ให้ตอบได้ตามบริบทร้านอย่างเป็นธรรมชาติ
+- ถ้าลูกค้าต้องการจองคิวจริง หรือถามเวลาว่างเฉพาะช่วง ให้บอกว่า "${settings.booking_redirect}"
 - ห้ามยืนยันการจองในแชท ต้องจองผ่านระบบเท่านั้น
-- ถ้าไม่แน่ใจข้อมูลเชิงตัวเลขหรือรายละเอียดเฉพาะร้าน ให้แนะนำให้โทรหาร้านหรือกดเมนูแทน
-- ตอบสั้นๆ ไม่เกิน 2-3 ประโยค${customRulesBlock}`;
+- ถ้าไม่แน่ใจข้อมูลเชิงตัวเลขหรือรายละเอียดเฉพาะร้าน ให้บอกตามตรงและแนะนำให้ดูเมนูหรือโทรหาร้าน
+- ตอบสั้นกระชับเป็นหลัก แต่ถ้าผู้ใช้ถามเชิงแนะนำให้ตอบได้ 3-5 ประโยค${customRulesBlock}`;
 }
 
 async function getLastMessages(shopId: number, lineUserId: string, historyLimit: number): Promise<AiChatMessage[]> {
