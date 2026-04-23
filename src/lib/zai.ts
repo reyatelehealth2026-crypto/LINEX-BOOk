@@ -74,11 +74,28 @@ function getFallbackModels(primaryModel: string): string[] {
 }
 
 function classifyFinalFallback(failures: AiProviderFailure[]): string | null {
-  if (failures.some((failure) => failure.code === "timeout")) {
+  if (failures.some((f) => f.code === "timeout")) {
     return "ขออภัยค่ะ ตอนนี้ระบบตอบช้ากว่าปกติ ลองพิมพ์ใหม่อีกครั้งหรือกดเมนูลัดด้านล่างได้เลยค่ะ 🙏";
   }
-  if (failures.some((failure) => failure.code === "rate_limit")) {
+  if (failures.some((f) => f.code === "rate_limit")) {
     return "ขออภัยค่ะ ขณะนี้บอทมีผู้ใช้งานมากค่ะ กรุณาลองถามใหม่อีกครั้งในอีกสักครู่นะคะ 🙏";
+  }
+  if (failures.some((f) => f.code === "not_configured")) {
+    console.error("[ai] ZAI_API_KEY not set — AI chat disabled");
+    return null;
+  }
+  if (failures.some((f) => f.code === "auth")) {
+    console.error("[ai] ZAI_API_KEY invalid or expired", {
+      model: failures[0].model,
+      status: failures[0].status,
+      message: failures[0].message,
+    });
+  }
+  if (failures.some((f) => f.code === "network_error")) {
+    console.error("[ai] network error calling Z.AI API", {
+      url: process.env.ZAI_API_URL ?? "https://api.z.ai/api/coding/paas/v4/chat/completions",
+      message: failures[0].message,
+    });
   }
   return null;
 }
@@ -241,25 +258,27 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
     const provider = getAiProvider();
     const models = getFallbackModels(settings.model);
     const failures: AiProviderFailure[] = [];
+    const maxRetries = 1; // retry once on timeout
 
     for (const model of models) {
-      const result: AiProviderResult = await provider.chat({
-        model,
-        messages,
-        temperature: settings.temperature,
-        maxTokens: runtimeMaxTokens,
-      });
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        const result: AiProviderResult = await provider.chat({
+          model,
+          messages,
+          temperature: attempt === 0 ? settings.temperature : Math.min(settings.temperature + 0.1, 1.0),
+          maxTokens: attempt === 0 ? runtimeMaxTokens : Math.min(runtimeMaxTokens, 160), // smaller on retry
+        });
 
-      if (result.ok) {
-        let saveMs = 0;
-        if (result.text) {
-          const saveStartedAt = Date.now();
-          await saveMessages(shopId, lineUserId, userText, result.text);
-          saveMs = Date.now() - saveStartedAt;
-        }
+        if (result.ok) {
+          let saveMs = 0;
+          if (result.text) {
+            const saveStartedAt = Date.now();
+            await saveMessages(shopId, lineUserId, userText, result.text);
+            saveMs = Date.now() - saveStartedAt;
+          }
 
-        console.info("[ai] completion", {
-          shopId,
+          console.info("[ai] completion", {
+            shopId,
           provider: result.provider,
           model: result.model,
           attemptedModels: models,
@@ -272,22 +291,31 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
           replyChars: result.text?.length ?? 0,
         });
 
-        return result.text;
+          return result.text;
+        }
+
+        failures.push(result);
+        console.warn("[ai] provider attempt failed", {
+          shopId,
+          provider: result.provider,
+          model: result.model,
+          code: result.code,
+          status: result.status,
+          latencyMs: result.latencyMs,
+          retryable: result.retryable,
+          message: result.message,
+          attempt,
+        });
+
+        // Only retry on timeout; don't waste time on auth/config errors
+        if (result.code !== "timeout") break;
+        // Don't retry if this is the last model
+        if (attempt < maxRetries && model === models[models.length - 1]) break;
       }
 
-      failures.push(result);
-      console.warn("[ai] provider attempt failed", {
-        shopId,
-        provider: result.provider,
-        model: result.model,
-        code: result.code,
-        status: result.status,
-        latencyMs: result.latencyMs,
-        retryable: result.retryable,
-        message: result.message,
-      });
-
-      if (!result.retryable) break;
+      // If the model had a non-retryable error (auth, not_configured), skip to next model
+      const lastFailure = failures[failures.length - 1];
+      if (lastFailure && !lastFailure.retryable) continue;
     }
 
     const fallbackText = classifyFinalFallback(failures);
