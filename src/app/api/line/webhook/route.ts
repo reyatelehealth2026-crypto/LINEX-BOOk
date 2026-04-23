@@ -484,10 +484,21 @@ async function enqueueLineEvent(ev: any) {
     return;
   }
 
+  const enqueuedAt = Date.now();
   const previous = lineEventQueues.get(userId) ?? Promise.resolve();
   const current = previous
     .catch(() => {})
-    .then(() => handleEvent(ev));
+    .then(async () => {
+      const queueWaitMs = Date.now() - enqueuedAt;
+      if (queueWaitMs >= 1000) {
+        console.warn("[line-queue] event waited in per-user queue", {
+          userId,
+          type: ev.type,
+          queueWaitMs,
+        });
+      }
+      return handleEvent(ev);
+    });
 
   lineEventQueues.set(userId, current);
 
@@ -543,6 +554,7 @@ async function handleEvent(ev: any) {
   const userId: string | undefined = ev.source?.userId;
   if (!userId) return;
 
+  const eventStartedAt = Date.now();
   const customer = await upsertCustomerFromLine(userId);
   if (!customer) return;
 
@@ -556,12 +568,26 @@ async function handleEvent(ev: any) {
 
   if (ev.type === "postback") {
     try { await startLoading(userId, 5); } catch {}
-    return handlePostback(ev, customer);
+    try {
+      return await handlePostback(ev, customer);
+    } finally {
+      const totalMs = Date.now() - eventStartedAt;
+      if (totalMs >= 1500) {
+        console.info("[line-webhook] slow postback handled", { userId, totalMs });
+      }
+    }
   }
 
   if (ev.type === "message" && ev.message?.type === "text") {
     try { await startLoading(userId, 5); } catch {}
-    return handleMessage(ev, customer);
+    try {
+      return await handleMessage(ev, customer);
+    } finally {
+      const totalMs = Date.now() - eventStartedAt;
+      if (totalMs >= 1500) {
+        console.info("[line-webhook] slow text handled", { userId, totalMs });
+      }
+    }
   }
 }
 
@@ -1092,7 +1118,17 @@ async function handleMessage(ev: any, customer: Customer) {
   }
 
   // ── Default: AI chat reply via Z.AI GLM ──
+  const aiStartedAt = Date.now();
   const aiReply = await askGLM(userId, text);
+  const aiMs = Date.now() - aiStartedAt;
+  if (aiMs >= 1500) {
+    console.info("[line-webhook] ai fallback latency", {
+      shopId: Number(SHOP_ID),
+      userId,
+      aiMs,
+      gotReply: !!aiReply,
+    });
+  }
   if (aiReply) {
     return replyMessage(rt, [textMessage(aiReply as string, defaultQuickReply())]);
   }

@@ -41,7 +41,7 @@ const DEFAULT: AiSettings = {
   model: "glm-4.7",
   temperature: 0.7,
   max_tokens: 350,
-  history_limit: 10,
+  history_limit: 6,
   bot_name: "ผู้ช่วยร้าน",
   business_desc: "",
   custom_rules: "",
@@ -342,7 +342,7 @@ export default function AiSettingsPage() {
             <div className="flex justify-between text-[11px] text-ink-400 mt-0.5">
               <span>2</span><span>20</span>
             </div>
-            <Hint>จำนวนข้อความในประวัติที่ส่งให้ AI — มากขึ้นใช้ token มากขึ้น</Hint>
+            <Hint>จำนวนข้อความในประวัติที่ส่งให้ AI, แนะนำ 4-6 ข้อความถ้าอยากได้ความไวและลด token</Hint>
           </div>
         </div>
       </Section>

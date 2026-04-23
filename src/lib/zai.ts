@@ -1,6 +1,10 @@
 import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 
 const ZAI_API_URL = "https://api.z.ai/api/coding/paas/v4/chat/completions";
+const AI_SETTINGS_CACHE_TTL_MS = 30_000;
+const SHOP_CONTEXT_CACHE_TTL_MS = 60_000;
+const ZAI_TIMEOUT_MS = Number(process.env.ZAI_TIMEOUT_MS ?? process.env.AI_MODEL_TIMEOUT_MS ?? 3500);
+const MAX_RUNTIME_HISTORY = 6;
 
 export type AiSettings = {
   enabled: boolean;
@@ -14,48 +18,106 @@ export type AiSettings = {
   booking_redirect: string;
 };
 
+type ShopPromptContext = {
+  shopName: string;
+  phone: string;
+  address: string;
+  serviceLines: string;
+  staffLines: string;
+};
+
+type CacheEntry<T> = {
+  value: T;
+  at: number;
+};
+
+const aiSettingsCache = new Map<number, CacheEntry<AiSettings>>();
+const shopPromptContextCache = new Map<number, CacheEntry<ShopPromptContext>>();
+
 const DEFAULT_SETTINGS: AiSettings = {
   enabled: true,
   model: "glm-4.7",
   temperature: 0.7,
   max_tokens: 350,
-  history_limit: 10,
+  history_limit: 6,
   bot_name: "ผู้ช่วยร้าน",
   business_desc: "",
   custom_rules: "",
   booking_redirect: "พิมพ์ว่า จอง ได้เลยค่ะ หรือกดปุ่มจองคิวในเมนูนะคะ",
 };
 
+function getCached<T>(cache: Map<number, CacheEntry<T>>, key: number, ttlMs: number): T | null {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.at > ttlMs) {
+    cache.delete(key);
+    return null;
+  }
+  return entry.value;
+}
+
+function setCached<T>(cache: Map<number, CacheEntry<T>>, key: number, value: T) {
+  cache.set(key, { value, at: Date.now() });
+}
+
+function effectiveHistoryLimit(raw: number): number {
+  return Math.max(1, Math.min(raw, MAX_RUNTIME_HISTORY));
+}
+
+export function invalidateAiCache(shopId?: number) {
+  if (typeof shopId === "number") {
+    aiSettingsCache.delete(shopId);
+    shopPromptContextCache.delete(shopId);
+    return;
+  }
+  aiSettingsCache.clear();
+  shopPromptContextCache.clear();
+}
+
 // ─── Load AI settings from DB ────────────────────────────────────────────────
 
-export async function getAiSettings(): Promise<AiSettings> {
-  const shopId = await getCurrentShopId();
+export async function getAiSettings(shopId?: number): Promise<AiSettings> {
+  const resolvedShopId = shopId ?? await getCurrentShopId();
+  const cached = getCached(aiSettingsCache, resolvedShopId, AI_SETTINGS_CACHE_TTL_MS);
+  if (cached) return cached;
+
   const db = supabaseAdmin();
-  const { data } = await db
+  const { data, error } = await db
     .from("ai_settings")
     .select("*")
-    .eq("shop_id", shopId)
+    .eq("shop_id", resolvedShopId)
     .maybeSingle();
-  if (!data) return DEFAULT_SETTINGS;
-  return {
-    enabled: data.enabled ?? DEFAULT_SETTINGS.enabled,
-    model: data.model ?? DEFAULT_SETTINGS.model,
-    temperature: Number(data.temperature ?? DEFAULT_SETTINGS.temperature),
-    max_tokens: data.max_tokens ?? DEFAULT_SETTINGS.max_tokens,
-    history_limit: data.history_limit ?? DEFAULT_SETTINGS.history_limit,
-    bot_name: data.bot_name ?? DEFAULT_SETTINGS.bot_name,
-    business_desc: data.business_desc ?? "",
-    custom_rules: data.custom_rules ?? "",
-    booking_redirect: data.booking_redirect ?? DEFAULT_SETTINGS.booking_redirect,
-  };
+
+  if (error) {
+    console.error("[zai] failed to load ai_settings", { shopId: resolvedShopId, error: error.message });
+    return DEFAULT_SETTINGS;
+  }
+
+  const settings: AiSettings = !data
+    ? DEFAULT_SETTINGS
+    : {
+        enabled: data.enabled ?? DEFAULT_SETTINGS.enabled,
+        model: data.model ?? DEFAULT_SETTINGS.model,
+        temperature: Number(data.temperature ?? DEFAULT_SETTINGS.temperature),
+        max_tokens: data.max_tokens ?? DEFAULT_SETTINGS.max_tokens,
+        history_limit: data.history_limit ?? DEFAULT_SETTINGS.history_limit,
+        bot_name: data.bot_name ?? DEFAULT_SETTINGS.bot_name,
+        business_desc: data.business_desc ?? "",
+        custom_rules: data.custom_rules ?? "",
+        booking_redirect: data.booking_redirect ?? DEFAULT_SETTINGS.booking_redirect,
+      };
+
+  setCached(aiSettingsCache, resolvedShopId, settings);
+  return settings;
 }
 
 // ─── Shop context (system prompt) ───────────────────────────────────────────
 
-async function buildShopSystemPrompt(settings: AiSettings): Promise<string> {
-  const shopId = await getCurrentShopId();
-  const db = supabaseAdmin();
+async function getShopPromptContext(shopId: number): Promise<ShopPromptContext> {
+  const cached = getCached(shopPromptContextCache, shopId, SHOP_CONTEXT_CACHE_TTL_MS);
+  if (cached) return cached;
 
+  const db = supabaseAdmin();
   const [shopRes, servicesRes, staffRes] = await Promise.all([
     db.from("shops").select("name, phone, address").eq("id", shopId).maybeSingle(),
     db.from("services").select("name, price, duration_min").eq("shop_id", shopId).eq("active", true).order("sort_order"),
@@ -63,17 +125,24 @@ async function buildShopSystemPrompt(settings: AiSettings): Promise<string> {
   ]);
 
   const shop = shopRes.data;
-  const shopName = shop?.name ?? "ร้าน";
-  const phone = shop?.phone ?? "-";
-  const address = shop?.address ?? "-";
+  const context: ShopPromptContext = {
+    shopName: shop?.name ?? "ร้าน",
+    phone: shop?.phone ?? "-",
+    address: shop?.address ?? "-",
+    serviceLines: (servicesRes.data ?? [])
+      .map((s: any) => `• ${s.name} — ${Number(s.price).toLocaleString()} บาท (${s.duration_min} นาที)`)
+      .join("\n"),
+    staffLines: (staffRes.data ?? [])
+      .map((s: any) => `• ${s.nickname ?? s.name}`)
+      .join("\n"),
+  };
 
-  const serviceLines = (servicesRes.data ?? [])
-    .map((s: any) => `• ${s.name} — ${Number(s.price).toLocaleString()} บาท (${s.duration_min} นาที)`)
-    .join("\n");
+  setCached(shopPromptContextCache, shopId, context);
+  return context;
+}
 
-  const staffLines = (staffRes.data ?? [])
-    .map((s: any) => `• ${s.nickname ?? s.name}`)
-    .join("\n");
+async function buildShopSystemPrompt(shopId: number, settings: AiSettings): Promise<string> {
+  const context = await getShopPromptContext(shopId);
 
   const businessBlock = settings.business_desc
     ? `\nข้อมูลธุรกิจเพิ่มเติม:\n${settings.business_desc}`
@@ -83,15 +152,15 @@ async function buildShopSystemPrompt(settings: AiSettings): Promise<string> {
     ? `\nกฎเพิ่มเติมจากเจ้าของร้าน:\n${settings.custom_rules}`
     : "";
 
-  return `คุณคือ${settings.bot_name}ของร้าน ${shopName} ตอบภาษาไทยเสมอ พูดสุภาพ กระชับ และเป็นมิตร
-เบอร์ร้าน: ${phone}
-ที่อยู่: ${address}${businessBlock}
+  return `คุณคือ${settings.bot_name}ของร้าน ${context.shopName} ตอบภาษาไทยเสมอ พูดสุภาพ กระชับ และเป็นมิตร
+เบอร์ร้าน: ${context.phone}
+ที่อยู่: ${context.address}${businessBlock}
 
 บริการและราคา:
-${serviceLines || "ยังไม่มีข้อมูลบริการ"}
+${context.serviceLines || "ยังไม่มีข้อมูลบริการ"}
 
 ช่างในร้าน:
-${staffLines || "ยังไม่มีข้อมูลช่าง"}
+${context.staffLines || "ยังไม่มีข้อมูลช่าง"}
 
 กฎสำคัญ:
 - ถ้าลูกค้าต้องการจองคิว ให้บอกว่า "${settings.booking_redirect}"
@@ -102,10 +171,9 @@ ${staffLines || "ยังไม่มีข้อมูลช่าง"}
 
 // ─── Chat history ────────────────────────────────────────────────────────────
 
-async function getLastMessages(lineUserId: string, historyLimit: number): Promise<Array<{ role: string; content: string }>> {
-  const shopId = await getCurrentShopId();
+async function getLastMessages(shopId: number, lineUserId: string, historyLimit: number): Promise<Array<{ role: string; content: string }>> {
   const db = supabaseAdmin();
-  const { data } = await db
+  const { data, error } = await db
     .from("chat_history")
     .select("role, content")
     .eq("shop_id", shopId)
@@ -113,26 +181,35 @@ async function getLastMessages(lineUserId: string, historyLimit: number): Promis
     .order("created_at", { ascending: false })
     .limit(historyLimit);
 
+  if (error) {
+    console.error("[zai] failed to load chat history", { shopId, lineUserId, error: error.message });
+    return [];
+  }
+
   if (!data?.length) return [];
   return data.reverse();
 }
 
 async function saveMessages(
+  shopId: number,
   lineUserId: string,
   userText: string,
   assistantText: string
 ): Promise<void> {
-  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
-  await db.from("chat_history").insert([
+  const { error } = await db.from("chat_history").insert([
     { shop_id: shopId, line_user_id: lineUserId, role: "user", content: userText },
     { shop_id: shopId, line_user_id: lineUserId, role: "assistant", content: assistantText },
   ]);
+  if (error) {
+    console.error("[zai] failed to persist chat history", { shopId, lineUserId, error: error.message });
+  }
 }
 
 // ─── Z.AI GLM call ───────────────────────────────────────────────────────────
 
 export async function askGLM(lineUserId: string, userText: string): Promise<string | null> {
+  const startedAt = Date.now();
   const apiKey = process.env.ZAI_API_KEY;
   if (!apiKey) {
     console.warn("[zai] ZAI_API_KEY not set — skipping AI reply");
@@ -140,13 +217,17 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
   }
 
   try {
-    const settings = await getAiSettings();
+    const shopId = await getCurrentShopId();
+    const settings = await getAiSettings(shopId);
     if (!settings.enabled) return null;
 
+    const historyLimit = effectiveHistoryLimit(settings.history_limit);
+    const promptStartedAt = Date.now();
     const [systemPrompt, history] = await Promise.all([
-      buildShopSystemPrompt(settings),
-      getLastMessages(lineUserId, settings.history_limit),
+      buildShopSystemPrompt(shopId, settings),
+      getLastMessages(shopId, lineUserId, historyLimit),
     ]);
+    const promptMs = Date.now() - promptStartedAt;
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -154,25 +235,44 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
       { role: "user", content: userText },
     ];
 
-    const res = await fetch(ZAI_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: settings.model,
-        messages,
-        max_tokens: settings.max_tokens,
-        temperature: settings.temperature,
-        stream: false,
-      }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), ZAI_TIMEOUT_MS);
+    const fetchStartedAt = Date.now();
+
+    let res: Response;
+    try {
+      res = await fetch(ZAI_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: settings.model,
+          messages,
+          max_tokens: settings.max_tokens,
+          temperature: settings.temperature,
+          stream: false,
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    const modelMs = Date.now() - fetchStartedAt;
 
     if (!res.ok) {
       const errText = await res.text();
-      console.error(`[zai] API error ${res.status}:`, errText);
-      // 429 = rate limit — return a polite fallback instead of null so LINE can still reply
+      console.error("[zai] API error", {
+        shopId,
+        status: res.status,
+        model: settings.model,
+        promptMs,
+        modelMs,
+        totalMs: Date.now() - startedAt,
+        errText,
+      });
       if (res.status === 429) {
         return "ขออภัยค่ะ ขณะนี้บอทมีผู้ใช้งานมากค่ะ กรุณาลองถามใหม่อีกครั้งในอีกสักครู่นะคะ 🙏";
       }
@@ -182,12 +282,33 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
     const json = await res.json();
     const reply: string | null = json?.choices?.[0]?.message?.content ?? null;
 
+    let saveMs = 0;
     if (reply) {
-      await saveMessages(lineUserId, userText, reply);
+      const saveStartedAt = Date.now();
+      await saveMessages(shopId, lineUserId, userText, reply);
+      saveMs = Date.now() - saveStartedAt;
     }
 
+    console.info("[zai] completion", {
+      shopId,
+      model: settings.model,
+      historyLimit,
+      promptMs,
+      modelMs,
+      saveMs,
+      totalMs: Date.now() - startedAt,
+      replyChars: reply?.length ?? 0,
+    });
+
     return reply;
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.name === "AbortError") {
+      console.warn("[zai] timeout", {
+        timeoutMs: ZAI_TIMEOUT_MS,
+        totalMs: Date.now() - startedAt,
+      });
+      return "ขออภัยค่ะ ตอนนี้ระบบตอบช้ากว่าปกติ ลองพิมพ์ใหม่อีกครั้งหรือกดเมนูลัดด้านล่างได้เลยค่ะ 🙏";
+    }
     console.error("[zai] askGLM exception:", err);
     return null;
   }
