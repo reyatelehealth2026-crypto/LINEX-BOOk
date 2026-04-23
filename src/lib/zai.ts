@@ -1,5 +1,5 @@
 import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
-import { getAiProvider, type AiChatMessage, type AiProviderFailure, type AiProviderResult } from "@/lib/ai/providers";
+import { getAiProvider, providerForModel, type AiChatMessage, type AiProviderFailure, type AiProviderResult } from "@/lib/ai/providers";
 
 const AI_SETTINGS_CACHE_TTL_MS = 30_000;
 const SHOP_CONTEXT_CACHE_TTL_MS = 60_000;
@@ -269,12 +269,13 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
       { role: "user", content: userText },
     ];
 
-    const provider = getAiProvider();
+    // Pick provider based on the actual model name (not just env)
     const models = getFallbackModels(settings.model);
     const failures: AiProviderFailure[] = [];
     const maxRetries = 1; // retry once on timeout
 
     for (const model of models) {
+      const provider = providerForModel(model);
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const result: AiProviderResult = await provider.chat({
           model,
@@ -337,7 +338,6 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
 
     console.error("[ai] all provider attempts failed", {
       shopId,
-      provider: provider.name,
       models,
       totalMs: Date.now() - startedAt,
       failures,
