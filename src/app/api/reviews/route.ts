@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
@@ -32,6 +32,7 @@ function tableMissingResponse(err: { message: string }) {
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const db = supabaseAdmin();
+  const shopId = await getCurrentShopId();
 
   // Get review for a specific booking
   const bookingId = sp.get("booking_id");
@@ -39,18 +40,20 @@ export async function GET(req: NextRequest) {
     const { data, error } = await db
       .from("reviews")
       .select("*, service:services(id,name,name_en), staff:staff(id,name,nickname), customer:customers(id,display_name,full_name,picture_url)")
+      .eq("shop_id", shopId)
       .eq("booking_id", Number(bookingId))
       .maybeSingle();
     if (error) return tableMissingResponse(error) ?? NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ review: data });
   }
 
-  // Get reviews for a staff member (public read)
+  // Get reviews for a staff member (public read, scoped to shop)
   const staffId = sp.get("staff_id");
   if (staffId) {
     const { data, error } = await db
       .from("reviews")
       .select("*, service:services(id,name,name_en), staff:staff(id,name,nickname), customer:customers(id,display_name,full_name,picture_url)")
+      .eq("shop_id", shopId)
       .eq("staff_id", Number(staffId))
       .order("created_at", { ascending: false })
       .limit(50);
@@ -58,12 +61,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ reviews: data ?? [] });
   }
 
-  // Get reviews for a service (public read)
+  // Get reviews for a service (public read, scoped to shop)
   const serviceId = sp.get("service_id");
   if (serviceId) {
     const { data, error } = await db
       .from("reviews")
       .select("*, service:services(id,name,name_en), staff:staff(id,name,nickname), customer:customers(id,display_name,full_name,picture_url)")
+      .eq("shop_id", shopId)
       .eq("service_id", Number(serviceId))
       .order("created_at", { ascending: false })
       .limit(50);
@@ -71,15 +75,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ reviews: data ?? [] });
   }
 
-  // List all reviews (admin)
-  const pw = req.headers.get("x-admin-password") ?? sp.get("pw");
-  if (pw !== process.env.ADMIN_PASSWORD) {
+  // List all reviews (admin — per-shop scoped)
+  const identity = await verifyAdmin(req);
+  if (!identity) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { data, error } = await db
     .from("reviews")
     .select("*, service:services(id,name,name_en), staff:staff(id,name,nickname), customer:customers(id,display_name,full_name,picture_url)")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .order("created_at", { ascending: false })
     .limit(200);
   if (error) return tableMissingResponse(error) ?? NextResponse.json({ error: error.message }, { status: 500 });
@@ -104,13 +108,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "rating must be integer 1-5" }, { status: 400 });
   }
 
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
 
   // Find customer
   const { data: customer } = await db
     .from("customers")
     .select("id")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("line_user_id", lineUserId)
     .maybeSingle();
   if (!customer) return NextResponse.json({ error: "customer not found" }, { status: 404 });
@@ -138,7 +143,7 @@ export async function POST(req: NextRequest) {
   const { data: review, error } = await db
     .from("reviews")
     .insert({
-      shop_id: SHOP_ID,
+      shop_id: shopId,
       booking_id: booking.id,
       customer_id: customer.id,
       service_id: booking.service_id,
@@ -171,7 +176,7 @@ export async function PATCH(req: NextRequest) {
     .from("reviews")
     .update({ reply: reply ?? null, replied_at: reply ? new Date().toISOString() : null })
     .eq("id", Number(id))
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .select("*")
     .single();
   if (error) return tableMissingResponse(error) ?? NextResponse.json({ error: error.message }, { status: 500 });

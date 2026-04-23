@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 import { DEFAULT_THEME_ID, getTheme, isValidThemeId } from "@/lib/themes";
 
 export const runtime = "nodejs";
@@ -12,10 +12,11 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   try {
+    const shopId = await getCurrentShopId();
     const { data, error } = await supabaseAdmin()
       .from("shops")
       .select("theme_id")
-      .eq("id", SHOP_ID)
+      .eq("id", shopId)
       .maybeSingle();
 
     // Schema not migrated yet → fall back to default theme.

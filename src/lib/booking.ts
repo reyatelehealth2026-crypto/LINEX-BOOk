@@ -1,7 +1,7 @@
 // Slot availability calculation.
 // Given a target date, service duration, and staff, compute 15-min-granular
 // free slots within the shop's working hours for that staff.
-import { supabaseAdmin, SHOP_ID } from "./supabase";
+import { supabaseAdmin, getCurrentShopId } from "./supabase";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 const TZ = process.env.SHOP_TIMEZONE || "Asia/Bangkok";
@@ -14,12 +14,14 @@ export async function availableSlots(args: {
   serviceId: number;
   staffId?: number | null;  // null/undefined = any staff
 }): Promise<Slot[]> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
 
   const { data: service, error: svcErr } = await db
     .from("services")
     .select("id, duration_min, shop_id, active")
     .eq("id", args.serviceId)
+    .eq("shop_id", shopId)
     .single();
   if (svcErr || !service || !service.active) return [];
 
@@ -30,7 +32,7 @@ export async function availableSlots(args: {
   if (args.staffId) {
     staffIds = [args.staffId];
   } else {
-    const { data } = await db.from("staff").select("id").eq("shop_id", SHOP_ID).eq("active", true);
+    const { data } = await db.from("staff").select("id").eq("shop_id", shopId).eq("active", true);
     staffIds = (data ?? []).map((r) => r.id as number);
     if (staffIds.length === 0) staffIds = [null]; // fallback: shop-wide slot
   }
@@ -41,7 +43,7 @@ export async function availableSlots(args: {
   const { data: hours } = await db
     .from("working_hours")
     .select("staff_id, open_time, close_time")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("day_of_week", dow);
 
   function hoursFor(staffId: number | null): Array<[string, string]> {
@@ -58,7 +60,7 @@ export async function availableSlots(args: {
   const { data: existing } = await db
     .from("bookings")
     .select("staff_id, starts_at, ends_at, status")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .in("status", ["pending", "confirmed"])
     .gte("starts_at", dayStart.toISOString())
     .lt("starts_at", dayEnd.toISOString());
@@ -66,7 +68,7 @@ export async function availableSlots(args: {
   const { data: offs } = await db
     .from("time_off")
     .select("staff_id, starts_at, ends_at")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .lte("starts_at", dayEnd.toISOString())
     .gte("ends_at", dayStart.toISOString());
 
@@ -181,13 +183,14 @@ export async function popularTimesByHour(args: {
   serviceId?: number | null;
   lookbackDays?: number;
 }): Promise<Record<number, number>> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const lookback = args.lookbackDays ?? 60;
   const since = new Date(Date.now() - lookback * 86400_000).toISOString();
   let q = db
     .from("bookings")
     .select("starts_at, service_id")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .in("status", ["confirmed", "completed"])
     .gte("starts_at", since);
   if (args.serviceId) q = q.eq("service_id", args.serviceId);
@@ -220,13 +223,14 @@ export async function hourlyAvailability(args: {
   // Compute working-hour window from the slots themselves (if empty, fall back to 9–20).
   // We also look at the shop's working_hours so we show hours that exist in the schedule
   // but are fully booked (available=false).
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const [y, m, d] = args.dateYmd.split("-").map(Number);
   const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
   const { data: hours } = await db
     .from("working_hours")
     .select("staff_id, open_time, close_time")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("day_of_week", dow);
 
   // Candidate staff filter

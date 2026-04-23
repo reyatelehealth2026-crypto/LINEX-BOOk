@@ -1,5 +1,5 @@
 // analytics.ts — Admin dashboard aggregates + customer segmentation + forecasting.
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 
 export type Segment = "new" | "returning" | "at_risk" | "vip";
 
@@ -35,11 +35,12 @@ function classifySegment(stats: {
  * Compute per-customer stats (visit count, last visit, total spent) and attach a segment.
  */
 export async function customerSegments(limit = 500): Promise<CustomerWithStats[]> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const { data: customers } = await db
     .from("customers")
     .select("id, full_name, display_name, phone, visit_count, lifetime_points")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .limit(limit);
   const ids = (customers ?? []).map((c: any) => c.id);
   if (ids.length === 0) return [];
@@ -47,7 +48,7 @@ export async function customerSegments(limit = 500): Promise<CustomerWithStats[]
   const { data: bookings } = await db
     .from("bookings")
     .select("customer_id, starts_at, status, price")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .in("customer_id", ids)
     .in("status", ["confirmed", "completed"]);
 
@@ -80,14 +81,15 @@ export async function customerSegments(limit = 500): Promise<CustomerWithStats[]
  * Shop-level KPIs: revenue, bookings, no-show rate, avg LTV, retention rate.
  */
 export async function shopKPIs(options?: { days?: number }) {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const days = options?.days ?? 30;
   const since = new Date(Date.now() - days * DAY_MS).toISOString();
 
   const [{ data: bookings }, { data: customers }, { count: totalCustomers }] = await Promise.all([
-    db.from("bookings").select("id, starts_at, ends_at, status, price, customer_id, service_id, staff_id").eq("shop_id", SHOP_ID).gte("starts_at", since),
-    db.from("customers").select("id, visit_count").eq("shop_id", SHOP_ID),
-    db.from("customers").select("id", { count: "exact", head: true }).eq("shop_id", SHOP_ID),
+    db.from("bookings").select("id, starts_at, ends_at, status, price, customer_id, service_id, staff_id").eq("shop_id", shopId).gte("starts_at", since),
+    db.from("customers").select("id, visit_count").eq("shop_id", shopId),
+    db.from("customers").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
   ]);
 
   const list = bookings ?? [];
@@ -106,7 +108,7 @@ export async function shopKPIs(options?: { days?: number }) {
   const { data: allCompleted } = await db
     .from("bookings")
     .select("price, customer_id")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .eq("status", "completed");
   const totalLTV = (allCompleted ?? []).reduce((s: number, b: any) => s + Number(b.price ?? 0), 0);
   const avgLTV = (totalCustomers ?? 0) ? totalLTV / (totalCustomers ?? 1) : 0;
@@ -149,12 +151,13 @@ export async function shopKPIs(options?: { days?: number }) {
  * average # of bookings per day. Used to flag "likely busy" days in admin UI.
  */
 export async function demandForecast(lookbackDays = 60) {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const since = new Date(Date.now() - lookbackDays * DAY_MS).toISOString();
   const { data } = await db
     .from("bookings")
     .select("starts_at")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .in("status", ["confirmed", "completed"])
     .gte("starts_at", since);
 
@@ -198,6 +201,7 @@ export async function suggestLeastBusyStaff(args: {
   serviceId: number;
   dateYmd: string;
 }): Promise<{ staffId: number | null; workloadByStaff: Record<number, number> }> {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
   const { data: eligible } = await db
     .from("staff_services")
@@ -205,7 +209,7 @@ export async function suggestLeastBusyStaff(args: {
     .eq("service_id", args.serviceId);
   const candidateIds = (eligible ?? [])
     .map((r: any) => r.staff)
-    .filter((s: any) => s && s.shop_id === SHOP_ID && s.active)
+    .filter((s: any) => s && s.shop_id === shopId && s.active)
     .map((s: any) => s.id as number);
   if (candidateIds.length === 0) return { staffId: null, workloadByStaff: {} };
 
@@ -214,7 +218,7 @@ export async function suggestLeastBusyStaff(args: {
   const { data: bookings } = await db
     .from("bookings")
     .select("staff_id")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", shopId)
     .in("status", ["pending", "confirmed", "completed"])
     .gte("starts_at", dayStart)
     .lte("starts_at", dayEnd)

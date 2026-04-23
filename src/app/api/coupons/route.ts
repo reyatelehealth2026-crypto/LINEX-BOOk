@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { validateCoupon } from "@/lib/coupons";
 
@@ -21,11 +21,12 @@ export async function GET(req: NextRequest) {
     if (!lineUserId || !serviceId || !Number.isFinite(price)) {
       return NextResponse.json({ error: "line_user_id, service_id, price required" }, { status: 400 });
     }
+    const shopId = await getCurrentShopId();
     const db = supabaseAdmin();
     const { data: customer } = await db
       .from("customers")
       .select("id")
-      .eq("shop_id", SHOP_ID)
+      .eq("shop_id", shopId)
       .eq("line_user_id", lineUserId)
       .maybeSingle();
     if (!customer) return NextResponse.json({ valid: false, reason: "customer_not_found" });
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await db
     .from("coupons")
     .select("*")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .order("created_at", { ascending: false })
     .limit(200);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await db
     .from("coupons")
     .insert({
-      shop_id: SHOP_ID,
+      shop_id: identity.shopId,
       code: String(code).trim(),
       name,
       kind,
@@ -104,7 +105,7 @@ export async function PATCH(req: NextRequest) {
     .from("coupons")
     .update(updates)
     .eq("id", Number(id))
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .select("*")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -120,7 +121,7 @@ export async function DELETE(req: NextRequest) {
   const id = Number(req.nextUrl.searchParams.get("id"));
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
   const db = supabaseAdmin();
-  const { error } = await db.from("coupons").delete().eq("id", id).eq("shop_id", SHOP_ID);
+  const { error } = await db.from("coupons").delete().eq("id", id).eq("shop_id", identity.shopId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

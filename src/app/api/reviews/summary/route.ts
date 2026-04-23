@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,12 +12,13 @@ export const dynamic = "force-dynamic";
  * Used on the public services list and staff profile pages.
  */
 export async function GET() {
+  const shopId = await getCurrentShopId();
   const db = supabaseAdmin();
 
   const { data, error } = await db
     .from("reviews")
     .select("service_id, staff_id, rating")
-    .eq("shop_id", SHOP_ID);
+    .eq("shop_id", shopId);
 
   if (error) {
     if (/does not exist|schema cache/i.test(error.message)) {

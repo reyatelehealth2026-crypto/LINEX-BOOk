@@ -1,24 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function checkAuth(req: NextRequest) {
-  const pw = req.headers.get("x-admin-password");
-  return pw && pw === process.env.ADMIN_PASSWORD;
-}
 
 const VALID_CATEGORIES = ["reminder", "promo", "follow_up", "custom"] as const;
 
 // GET — list all message templates for this shop
 export async function GET(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("message_templates")
     .select("*")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .order("sort_order");
   if (error) {
     if (/does not exist|schema cache/i.test(error.message)) {
@@ -39,7 +36,8 @@ export async function GET(req: NextRequest) {
 
 // POST — create a new message template
 export async function POST(req: NextRequest) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const body = await req.json();
   const { name, category, subject, body: tplBody, active, sort_order } = body;
 
@@ -56,7 +54,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await db
     .from("message_templates")
     .insert({
-      shop_id: SHOP_ID,
+      shop_id: identity.shopId,
       name,
       category: cat,
       subject: subject ?? null,

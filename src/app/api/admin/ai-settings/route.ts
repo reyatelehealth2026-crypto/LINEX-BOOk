@@ -1,22 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function auth(req: NextRequest) {
-  const pw = req.headers.get("x-admin-password") ?? new URL(req.url).searchParams.get("pw");
-  return pw === process.env.ADMIN_PASSWORD;
-}
-
 export async function GET(req: NextRequest) {
-  if (!auth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("ai_settings")
     .select("*")
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -24,7 +21,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!auth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await req.json();
 
@@ -46,7 +44,7 @@ export async function POST(req: NextRequest) {
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("ai_settings")
-    .upsert({ shop_id: SHOP_ID, ...patch }, { onConflict: "shop_id" })
+    .upsert({ shop_id: identity.shopId, ...patch }, { onConflict: "shop_id" })
     .select("*")
     .single();
 

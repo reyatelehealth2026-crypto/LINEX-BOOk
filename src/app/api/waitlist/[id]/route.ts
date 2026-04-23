@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, SHOP_ID } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
+import { verifyAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function checkAuth(req: NextRequest) {
-  const pw = req.headers.get("x-admin-password");
-  return pw && pw === process.env.ADMIN_PASSWORD;
-}
-
 // PATCH — update waitlist entry status (admin)
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id: idStr } = await ctx.params;
   const id = Number(idStr);
@@ -27,7 +24,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     .from("waitlist_entries")
     .update({ status })
     .eq("id", id)
-    .eq("shop_id", SHOP_ID)
+    .eq("shop_id", identity.shopId)
     .select("*")
     .single();
 
@@ -39,7 +36,8 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
 // DELETE — remove waitlist entry (admin)
 export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
-  if (!checkAuth(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const identity = await verifyAdmin(req);
+  if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { id: idStr } = await ctx.params;
   const id = Number(idStr);
@@ -49,7 +47,7 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
     .from("waitlist_entries")
     .delete()
     .eq("id", id)
-    .eq("shop_id", SHOP_ID);
+    .eq("shop_id", identity.shopId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
