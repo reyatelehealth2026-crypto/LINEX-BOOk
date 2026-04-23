@@ -36,7 +36,7 @@ const shopPromptContextCache = new Map<number, CacheEntry<ShopPromptContext>>();
 
 const DEFAULT_SETTINGS: AiSettings = {
   enabled: true,
-  model: "glm-4.7",
+  model: "gemini-2.0-flash",
   temperature: 0.7,
   max_tokens: 350,
   history_limit: 6,
@@ -69,8 +69,14 @@ function dedupeStrings(values: string[]) {
 }
 
 function getFallbackModels(primaryModel: string): string[] {
-  const configured = process.env.AI_FALLBACK_MODELS ?? process.env.ZAI_FALLBACK_MODELS ?? "glm-4.5-air";
-  return dedupeStrings([primaryModel, ...configured.split(",")]);
+  const configured = process.env.AI_FALLBACK_MODELS ?? process.env.ZAI_FALLBACK_MODELS ?? "";
+  if (configured) return dedupeStrings([primaryModel, ...configured.split(",")]);
+  // Default fallback chain for Gemini
+  if (primaryModel.startsWith("gemini")) {
+    return dedupeStrings([primaryModel, "gemini-2.0-flash-lite"]);
+  }
+  // Default fallback chain for ZAI/GLM
+  return dedupeStrings([primaryModel, "glm-4.5-air"]);
 }
 
 function classifyFinalFallback(failures: AiProviderFailure[]): string | null {
