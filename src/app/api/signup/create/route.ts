@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getBotInfo } from "@/lib/line";
 import { installPreset, type PresetKey } from "@/lib/presets";
 import { hashPassword } from "@/lib/admin-auth";
+import { attachTenantDomain } from "@/lib/vercel-domains";
 
 // POST /api/signup/create
 // body: {
@@ -104,17 +105,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `create admin failed: ${adminErr.message}` }, { status: 500 });
   }
 
-  // Path-based entry (simple mode): the proxy turns the first hit into a
-  // cookie + strip-prefix redirect, so every subsequent /admin/* link works
-  // on the apex without needing the wildcard cert to be issued.
   const rootDomain = process.env.ROOT_DOMAIN || "จองคิว.net";
   const proto = req.nextUrl.protocol.replace(":", "") || "https";
-  const redirectUrl = `${proto}://${rootDomain}/${created.slug}/admin/setup`;
+
+  // Attach the tenant's subdomain to the Vercel project so HTTP-01 auto-issues
+  // a cert for {slug}.{root}. Runs in the background — signup doesn't wait or
+  // fail on it (operators can re-attach via scripts/vercel-setup-domains.mjs
+  // if this call fails, e.g. Vercel API outage).
+  const attach = await attachTenantDomain(created.slug, rootDomain);
+  if (attach.attempted && !attach.ok) {
+    console.warn(`[signup] vercel attach failed for ${attach.domain}: ${attach.error}`);
+  }
+
+  // Prefer the per-subdomain URL when the attach succeeded. Otherwise fall
+  // back to the path-based entry (proxy sets a cookie + strips the prefix),
+  // which works on the apex cert alone.
+  const redirectUrl = attach.attempted && attach.ok
+    ? `${proto}://${created.slug}.${rootDomain}/admin/setup`
+    : `${proto}://${rootDomain}/${created.slug}/admin/setup`;
 
   return NextResponse.json({
     ok: true,
     shop: { id: created.id, slug: created.slug },
     redirectUrl,
+    domainAttached: attach.attempted && attach.ok ? true : false,
     bot: { displayName: botInfo.displayName, basicId: botInfo.basicId },
   });
 }
