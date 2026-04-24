@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAdmin } from "../_ctx";
 import { Plus, Pencil, Trash2, Check, X, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
 import type { Staff } from "@/types/db";
+import ImageUpload from "@/components/ImageUpload";
 
 export default function StaffPage() {
   const { pw } = useAdmin();
@@ -76,6 +77,7 @@ export default function StaffPage() {
         <div className="space-y-2">
           {editing === "new" && (
             <StaffEditor
+              pw={pw}
               onSave={(f) => handleSave("new", f)}
               onCancel={() => setEditing(null)}
               saving={saving}
@@ -85,6 +87,7 @@ export default function StaffPage() {
             editing === s.id ? (
               <StaffEditor
                 key={s.id}
+                pw={pw}
                 initial={s}
                 onSave={(f) => handleSave(s.id, f)}
                 onCancel={() => setEditing(null)}
@@ -128,11 +131,13 @@ function StaffEditor({
   onSave,
   onCancel,
   saving,
+  pw,
 }: {
   initial?: Staff;
   onSave: (fields: Record<string, unknown>) => void;
   onCancel: () => void;
   saving: boolean;
+  pw: string;
 }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [nickname, setNickname] = useState(initial?.nickname ?? "");
@@ -165,10 +170,7 @@ function StaffEditor({
           <label className="label">ชื่อเล่น</label>
           <input className="input" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="เช่น หญิง" />
         </div>
-        <div>
-          <label className="label">ลิงก์รูปโปรไฟล์</label>
-          <input className="input" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://..." />
-        </div>
+        <ImageUpload value={avatarUrl} onChange={setAvatarUrl} folder="staff" pw={pw} label="รูปโปรไฟล์" />
         <div>
           <label className="label">ลำดับแสดงผล</label>
           <input className="input" type="number" min={0} value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} />

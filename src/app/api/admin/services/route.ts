@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const identity = await verifyAdmin(req);
   if (!identity) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const body = await req.json();
-  const { name, name_en, description, duration_min, price, active, sort_order } = body;
+  const { name, name_en, description, duration_min, price, active, sort_order, image_url } = body;
 
   if (!name || !duration_min || price == null) {
     return NextResponse.json({ error: "name, duration_min, price are required" }, { status: 400 });
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
       description: description ?? null,
       duration_min: Number(duration_min),
       price: Number(price),
+      image_url: image_url ?? null,
       active: active !== false,
       sort_order: Number(sort_order ?? 0),
     })

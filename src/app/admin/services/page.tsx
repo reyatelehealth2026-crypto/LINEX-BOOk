@@ -4,6 +4,7 @@ import { useAdmin } from "../_ctx";
 import { baht } from "@/lib/utils";
 import { Plus, Pencil, Trash2, Check, X, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
 import type { Service } from "@/types/db";
+import ImageUpload from "@/components/ImageUpload";
 
 export default function ServicesPage() {
   const { pw } = useAdmin();
@@ -77,6 +78,7 @@ export default function ServicesPage() {
         <div className="space-y-2">
           {editing === "new" && (
             <ServiceEditor
+              pw={pw}
               onSave={(f) => handleSave("new", f)}
               onCancel={() => setEditing(null)}
               saving={saving}
@@ -86,6 +88,7 @@ export default function ServicesPage() {
             editing === s.id ? (
               <ServiceEditor
                 key={s.id}
+                pw={pw}
                 initial={s}
                 onSave={(f) => handleSave(s.id, f)}
                 onCancel={() => setEditing(null)}
@@ -123,11 +126,13 @@ function ServiceEditor({
   onSave,
   onCancel,
   saving,
+  pw,
 }: {
   initial?: Service;
   onSave: (fields: Record<string, unknown>) => void;
   onCancel: () => void;
   saving: boolean;
+  pw: string;
 }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [nameEn, setNameEn] = useState(initial?.name_en ?? "");
@@ -136,6 +141,7 @@ function ServiceEditor({
   const [sortOrder, setSortOrder] = useState(String(initial?.sort_order ?? 0));
   const [active, setActive] = useState(initial?.active ?? true);
   const [desc, setDesc] = useState(initial?.description ?? "");
+  const [imageUrl, setImageUrl] = useState(initial?.image_url ?? "");
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -147,6 +153,7 @@ function ServiceEditor({
       duration_min: Number(duration) || 60,
       price: Number(price) || 0,
       sort_order: Number(sortOrder) || 0,
+      image_url: imageUrl.trim() || null,
       active,
     });
   }
@@ -181,9 +188,12 @@ function ServiceEditor({
           </label>
         </div>
       </div>
-      <div>
-        <label className="label">รายละเอียด</label>
-        <textarea className="input" rows={2} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="คำอธิบายเพิ่มเติม (ถ้ามี)" />
+      <div className="flex gap-4">
+        <ImageUpload value={imageUrl} onChange={setImageUrl} folder="services" pw={pw} label="รูปบริการ" />
+        <div className="flex-1">
+          <label className="label">รายละเอียด</label>
+          <textarea className="input" rows={2} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="คำอธิบายเพิ่มเติม (ถ้ามี)" />
+        </div>
       </div>
       <div className="flex gap-2 justify-end">
         <button type="button" onClick={onCancel} className="btn-secondary" disabled={saving}><X size={16} /> ยกเลิก</button>
