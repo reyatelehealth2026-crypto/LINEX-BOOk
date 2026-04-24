@@ -214,6 +214,29 @@ async function getShopPromptContext(shopId: number): Promise<ShopPromptContext> 
   return context;
 }
 
+/**
+ * Build a system prompt for image generation that inherits the shop's persona,
+ * business description, and custom rules from `ai_settings`. Keeps generated
+ * images on-brand with the same tone the shop configured for text chat.
+ */
+export async function buildShopImageSystemPrompt(shopId: number, settings: AiSettings): Promise<string> {
+  const context = await getShopPromptContext(shopId);
+
+  const personaBlock = `บุคลิก/โทนของผู้ช่วย: ${settings.bot_name}`;
+  const businessBlock = settings.business_desc
+    ? `\nข้อมูลธุรกิจ:\n${settings.business_desc}`
+    : "";
+  const customRulesBlock = settings.custom_rules
+    ? `\nกฎเพิ่มเติมจากเจ้าของร้าน (ใช้โทนนี้ในการตีความคำขอภาพ):\n${settings.custom_rules}`
+    : "";
+
+  return `${personaBlock}
+ร้าน: ${context.shopName}${businessBlock}${customRulesBlock}
+
+คุณกำลังสร้างภาพให้ร้านนี้ ให้ยึดโทน/สไตล์/บุคลิกของร้านตามข้อมูลด้านบนเป็น "สมอง" ก่อนสร้างภาพเสมอ — ภาพที่ออกมาต้องสะท้อนคาแรคเตอร์ของร้าน ไม่ขัดกับกฎของเจ้าของร้าน
+ข้อกำหนดภาพ: สมจริง สวยงาม เหมาะสำหรับโปรโมทร้านในประเทศไทย ห้ามมีตัวอักษรหรือข้อความในภาพ`;
+}
+
 export async function buildShopSystemPrompt(shopId: number, settings: AiSettings): Promise<string> {
   const context = await getShopPromptContext(shopId);
 

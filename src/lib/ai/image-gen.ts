@@ -10,12 +10,17 @@ export type ImageGenResult =
   | { ok: true; imageBase64: string; mimeType: string; caption?: string }
   | { ok: false; code: "not_configured" | "api_error" | "timeout" | "no_image"; message?: string };
 
+export type ImageGenOptions = {
+  /** Short phrase grounding the image in the shop's style, e.g. "ร้านทำเล็บสไตล์เกาหลี". Ignored when `systemPrompt` is provided. */
+  shopContext?: string;
+  /** Full system-instruction override. When set, replaces the default system prompt so callers can inject shop persona / custom rules. */
+  systemPrompt?: string;
+};
+
 /**
  * Generate an image with Gemini and return base64 bytes + MIME type.
- * `shopContext` is a short phrase appended to the system prompt to ground the
- * output in the shop's style (e.g. "ร้านทำเล็บสไตล์เกาหลี").
  */
-export async function generateImage(prompt: string, shopContext?: string): Promise<ImageGenResult> {
+export async function generateImage(prompt: string, opts?: ImageGenOptions | string): Promise<ImageGenResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return { ok: false, code: "not_configured", message: "GEMINI_API_KEY not set" };
@@ -23,9 +28,12 @@ export async function generateImage(prompt: string, shopContext?: string): Promi
 
   const url = `${GEMINI_API_URL}/${IMAGE_GEN_MODEL}:generateContent?key=${apiKey}`;
 
-  const systemText = shopContext
-    ? `คุณกำลังสร้างภาพสำหรับ${shopContext}ในประเทศไทย สร้างภาพสมจริง สวยงาม เหมาะสำหรับโปรโมทร้าน ไม่มีตัวอักษรหรือข้อความในภาพ`
-    : "สร้างภาพสมจริง สวยงาม เหมาะสำหรับร้านเสริมสวยในประเทศไทย ไม่มีตัวอักษรหรือข้อความในภาพ";
+  const options: ImageGenOptions = typeof opts === "string" ? { shopContext: opts } : (opts ?? {});
+
+  const systemText = options.systemPrompt
+    ?? (options.shopContext
+      ? `คุณกำลังสร้างภาพสำหรับ${options.shopContext}ในประเทศไทย สร้างภาพสมจริง สวยงาม เหมาะสำหรับโปรโมทร้าน ไม่มีตัวอักษรหรือข้อความในภาพ`
+      : "สร้างภาพสมจริง สวยงาม เหมาะสำหรับร้านเสริมสวยในประเทศไทย ไม่มีตัวอักษรหรือข้อความในภาพ");
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), IMAGE_GEN_TIMEOUT_MS);

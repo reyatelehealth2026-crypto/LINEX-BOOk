@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { verifySignature, replyMessage, getProfile, pushMessage, startLoading, getMessageContent } from "@/lib/line";
-import { supabaseAdmin, SHOP_ID, getShopByLineOaId, getShopById } from "@/lib/supabase";
+import { supabaseAdmin, SHOP_ID, getShopByLineOaId, getShopById, getCurrentShopId } from "@/lib/supabase";
 import { runWithShopContext } from "@/lib/request-context";
 import { availableSlots } from "@/lib/booking";
 import { parseAdminCommand } from "@/lib/thai-nlp";
@@ -41,7 +41,7 @@ import {
   bookInLiffMessage,
 } from "@/lib/flex";
 import { getShopThemeId } from "@/lib/shop-theme";
-import { askGLM, askGLMWithImage, getAiSettings } from "@/lib/zai";
+import { askGLM, askGLMWithImage, getAiSettings, buildShopImageSystemPrompt } from "@/lib/zai";
 import { generateImage, uploadGeneratedImage } from "@/lib/ai/image-gen";
 import { getOpenHandoff, requestHandoff, takeHandoff, closeHandoff, notifyAdminsOfHandoff } from "@/lib/handoff";
 import { verifyPassword } from "@/lib/admin-auth";
@@ -1093,13 +1093,14 @@ async function handleImageGen(rt: string, prompt: string, userId: string) {
 
   try { await startLoading(userId, 15); } catch {}
 
-  // Fetch shop name to use as style context
-  const db = supabaseAdmin();
-  const { data: shop } = await db.from("shops").select("name, business_type").eq("id", SHOP_ID).maybeSingle();
-  const shopContext = shop?.name ? `ร้าน${shop.name}` : undefined;
+  // Build a system prompt that inherits the shop's persona (bot_name, business_desc,
+  // custom_rules) from ai_settings — so the image model uses the same tone the shop
+  // configured for text chat as its "brain" before generating.
+  const shopId = await getCurrentShopId();
+  const systemPrompt = await buildShopImageSystemPrompt(shopId, aiSettings);
 
   const genStart = Date.now();
-  const result = await generateImage(prompt, shopContext);
+  const result = await generateImage(prompt, { systemPrompt });
   console.log("[image-gen] generateImage done", { userId, ok: result.ok, elapsedMs: Date.now() - genStart });
 
   if (!result.ok) {
