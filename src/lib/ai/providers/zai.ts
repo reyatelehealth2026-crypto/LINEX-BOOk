@@ -106,7 +106,8 @@ export function createZaiProvider(): AiProvider {
     name: "zai",
     async chat(request: AiProviderRequest): Promise<AiProviderResult> {
       const startedAt = Date.now();
-      const apiKey = process.env.ZAI_API_KEY;
+      // Fallback order: per-shop key → global env var → not_configured
+      const apiKey = request.apiKey ?? process.env.ZAI_API_KEY;
 
       if (!apiKey) {
         return {

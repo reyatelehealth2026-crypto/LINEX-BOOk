@@ -15,6 +15,11 @@ export type AiProviderRequest = {
   maxTokens: number;
   /** Optional image(s) prepended to the last user turn (multimodal/vision). */
   imageParts?: AiImagePart[];
+  /**
+   * Per-shop API key override. When present, takes precedence over the
+   * global env var (GEMINI_API_KEY / ZAI_API_KEY). Never logged.
+   */
+  apiKey?: string;
 };
 
 export type AiProviderSuccess = {

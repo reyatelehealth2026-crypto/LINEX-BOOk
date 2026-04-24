@@ -1,7 +1,24 @@
 import type { AiProvider, AiProviderRequest, AiProviderResult, AiChatMessage, AiImagePart } from "./types";
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
-const GEMINI_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS ?? 20_000);
+
+/** Clamp a millisecond timeout value to [5 000, 60 000]. */
+function clampTimeoutMs(value: number): number {
+  return Math.min(60_000, Math.max(5_000, value));
+}
+
+// Per-call-type timeouts — override via env so ops can tune without a deploy.
+// Defaults: chat 25 s, vision 35 s. Legacy GEMINI_TIMEOUT_MS still honoured as fallback.
+const _legacyTimeoutMs = process.env.GEMINI_TIMEOUT_MS
+  ? clampTimeoutMs(Number(process.env.GEMINI_TIMEOUT_MS))
+  : null;
+const AI_CHAT_TIMEOUT_MS = clampTimeoutMs(
+  Number(process.env.AI_CHAT_TIMEOUT_MS ?? _legacyTimeoutMs ?? 25_000),
+);
+const AI_VISION_TIMEOUT_MS = clampTimeoutMs(
+  Number(process.env.AI_VISION_TIMEOUT_MS ?? _legacyTimeoutMs ?? 35_000),
+);
+
 // Gemini 3 Flash thinks by default and can burn the entire output budget on
 // reasoning tokens, producing empty or truncated replies. For a customer-facing
 // chatbot we want a direct answer. 0 = thinking disabled; override with
@@ -69,7 +86,8 @@ export function createGeminiProvider(): AiProvider {
     name: "gemini",
     async chat(request: AiProviderRequest): Promise<AiProviderResult> {
       const startedAt = Date.now();
-      const apiKey = process.env.GEMINI_API_KEY;
+      // Fallback order: per-shop key → global env var → not_configured
+      const apiKey = request.apiKey ?? process.env.GEMINI_API_KEY;
 
       if (!apiKey) {
         return {
@@ -87,7 +105,10 @@ export function createGeminiProvider(): AiProvider {
       const url = `${GEMINI_API_URL}/${request.model}:generateContent?key=${apiKey}`;
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+      // Use the vision timeout when image parts are present, chat timeout otherwise.
+      const callTimeoutMs =
+        request.imageParts && request.imageParts.length > 0 ? AI_VISION_TIMEOUT_MS : AI_CHAT_TIMEOUT_MS;
+      const timeout = setTimeout(() => controller.abort(), callTimeoutMs);
 
       try {
         const generationConfig: Record<string, unknown> = {
@@ -169,7 +190,7 @@ export function createGeminiProvider(): AiProvider {
             model: request.model,
             latencyMs,
             retryable: true,
-            message: `timed out after ${GEMINI_TIMEOUT_MS}ms`,
+            message: `timed out after ${callTimeoutMs}ms`,
           };
         }
         return {

@@ -41,7 +41,7 @@ import {
   bookInLiffMessage,
 } from "@/lib/flex";
 import { getShopThemeId } from "@/lib/shop-theme";
-import { askGLM, askGLMWithImage } from "@/lib/zai";
+import { askGLM, askGLMWithImage, getAiSettings } from "@/lib/zai";
 import { generateImage, uploadGeneratedImage } from "@/lib/ai/image-gen";
 import { getOpenHandoff, requestHandoff, takeHandoff, closeHandoff, notifyAdminsOfHandoff } from "@/lib/handoff";
 import { verifyPassword } from "@/lib/admin-auth";
@@ -1007,7 +1007,10 @@ async function handleImageMessage(ev: any, customer: Customer) {
   const userId: string = ev.source?.userId;
   const messageId: string = ev.message?.id;
 
-  if (process.env.AI_VISION_ENABLED === "false") {
+  // Per-shop toggle; fallback to env var for backwards compat.
+  const aiSettings = await getAiSettings();
+  const visionEnabled = aiSettings.vision_enabled ?? (process.env.AI_VISION_ENABLED !== "false");
+  if (!visionEnabled) {
     return replyMessage(rt, [textMessage("ขออภัยค่ะ ฟีเจอร์วิเคราะห์รูปยังไม่เปิดใช้งานในตอนนี้", defaultQuickReply())]);
   }
 
@@ -1046,32 +1049,43 @@ async function handleImageMessage(ev: any, customer: Customer) {
 // Max 3 image generations per user per hour to control cost.
 const _imageGenUsage = new Map<string, { count: number; resetAt: number }>();
 
-function isImageGenRateLimited(userId: string): boolean {
+function isImageGenRateLimited(userId: string, perHour: number): boolean {
   const entry = _imageGenUsage.get(userId);
   if (!entry || Date.now() > entry.resetAt) return false;
-  const limited = entry.count >= 3;
+  const limited = entry.count >= perHour;
   if (limited) {
-    console.warn("[image-gen] rate limited", { userId, count: entry.count, resetAt: new Date(entry.resetAt).toISOString() });
+    console.warn("[image-gen] rate limited", { userId, count: entry.count, perHour, resetAt: new Date(entry.resetAt).toISOString() });
   }
   return limited;
 }
 
 function incrementImageGenUsage(userId: string): void {
+  // Sweep expired entries on every write to prevent unbounded Map growth.
+  const now = Date.now();
+  for (const [uid, e] of _imageGenUsage) {
+    if (now > e.resetAt) _imageGenUsage.delete(uid);
+  }
+
   const entry = _imageGenUsage.get(userId);
-  if (!entry || Date.now() > entry.resetAt) {
-    _imageGenUsage.set(userId, { count: 1, resetAt: Date.now() + 3_600_000 });
+  if (!entry || now > entry.resetAt) {
+    _imageGenUsage.set(userId, { count: 1, resetAt: now + 3_600_000 });
   } else {
     entry.count += 1;
   }
 }
 
 async function handleImageGen(rt: string, prompt: string, userId: string) {
-  if (process.env.AI_IMAGE_GEN_ENABLED === "false") {
+  // Per-shop toggles; fallback to env var for backwards compat.
+  const aiSettings = await getAiSettings();
+  const imageGenEnabled = aiSettings.image_gen_enabled ?? (process.env.AI_IMAGE_GEN_ENABLED !== "false");
+  const perHour = aiSettings.image_gen_per_hour ?? 3;
+
+  if (!imageGenEnabled) {
     return replyMessage(rt, [textMessage("ขออภัยค่ะ ฟีเจอร์สร้างรูปยังไม่เปิดใช้งาน", defaultQuickReply())]);
   }
 
-  if (isImageGenRateLimited(userId)) {
-    return replyMessage(rt, [textMessage("ใช้งานฟีเจอร์สร้างรูปได้สูงสุด 3 ครั้ง/ชั่วโมงนะคะ ลองใหม่ในอีกสักครู่ค่ะ 🙏", defaultQuickReply())]);
+  if (isImageGenRateLimited(userId, perHour)) {
+    return replyMessage(rt, [textMessage(`ใช้งานฟีเจอร์สร้างรูปได้สูงสุด ${perHour} ครั้ง/ชั่วโมงนะคะ ลองใหม่ในอีกสักครู่ค่ะ 🙏`, defaultQuickReply())]);
   }
 
   const currentEntry = _imageGenUsage.get(userId);
@@ -1089,25 +1103,32 @@ async function handleImageGen(rt: string, prompt: string, userId: string) {
   console.log("[image-gen] generateImage done", { userId, ok: result.ok, elapsedMs: Date.now() - genStart });
 
   if (!result.ok) {
-    console.warn("[image-gen] failed", { userId, code: result.code, message: result.message });
+    // Gemini failed or safety-filtered (no_image) — do NOT charge quota.
+    console.warn("[image-gen] failed — quota not charged", { userId, code: result.code, message: result.message });
     return replyMessage(rt, [textMessage(
       result.code === "not_configured"
         ? "ขออภัยค่ะ ฟีเจอร์สร้างรูปยังไม่ได้ตั้งค่า GEMINI_API_KEY"
-        : "ขออภัยค่ะ สร้างรูปไม่สำเร็จในขณะนี้ ลองใหม่อีกครั้งนะคะ ☺️",
+        : result.code === "no_image"
+          ? "ขออภัยค่ะ ไม่สามารถสร้างรูปตามคำขอได้ในขณะนี้ ลองปรับคำขอแล้วลองใหม่นะคะ 🙏"
+          : "ขออภัยค่ะ สร้างรูปไม่สำเร็จในขณะนี้ ลองใหม่อีกครั้งนะคะ ☺️",
       defaultQuickReply(),
     )]);
   }
 
-  incrementImageGenUsage(userId);
-  console.log("[image-gen] incremented usage", { userId, newCount: (_imageGenUsage.get(userId)?.count ?? 0) });
-
   const imageUrl = await uploadGeneratedImage(result.imageBase64, result.mimeType, Number(SHOP_ID));
   if (!imageUrl) {
+    // Upload to Supabase Storage failed — image generated but not delivered.
+    // Do NOT increment quota so the user can retry without penalty.
+    console.error("[image-gen] upload failed — quota not charged", { userId, prompt: prompt.slice(0, 60) });
     return replyMessage(rt, [textMessage(
       "สร้างรูปสำเร็จแล้วค่ะ แต่อัพโหลดไม่สำเร็จ ลองใหม่อีกครั้งนะคะ ☺️",
       defaultQuickReply(),
     )]);
   }
+
+  // Charge quota only after image is generated AND successfully uploaded.
+  incrementImageGenUsage(userId);
+  console.log("[image-gen] incremented usage", { userId, newCount: (_imageGenUsage.get(userId)?.count ?? 0) });
 
   const messages: any[] = [
     { type: "image", originalContentUrl: imageUrl, previewImageUrl: imageUrl },

@@ -19,6 +19,13 @@ export type AiSettings = {
   business_desc: string;
   custom_rules: string;
   booking_redirect: string;
+  vision_enabled: boolean;
+  image_gen_enabled: boolean;
+  image_gen_per_hour: number;
+  /** Per-shop Gemini API key override. null/undefined = use GEMINI_API_KEY env. Never logged. */
+  gemini_api_key?: string | null;
+  /** Per-shop Z.AI API key override. null/undefined = use ZAI_API_KEY env. Never logged. */
+  zai_api_key?: string | null;
 };
 
 type ShopPromptContext = {
@@ -47,6 +54,9 @@ const DEFAULT_SETTINGS: AiSettings = {
   business_desc: "",
   custom_rules: "",
   booking_redirect: "พิมพ์ว่า จอง ได้เลยค่ะ หรือกดปุ่มจองคิวในเมนูนะคะ",
+  vision_enabled: true,
+  image_gen_enabled: true,
+  image_gen_per_hour: 3,
 };
 
 function getCached<T>(cache: Map<number, CacheEntry<T>>, key: number, ttlMs: number): T | null {
@@ -109,6 +119,19 @@ function classifyFinalFallback(failures: AiProviderFailure[]): string | null {
   return null;
 }
 
+/**
+ * Returns the per-shop API key override for the provider that handles `model`,
+ * or undefined if no override is set (caller falls back to env var).
+ * The key is never included in logs — pass it only in AiProviderRequest.apiKey.
+ */
+function shopApiKeyForModel(model: string, settings: AiSettings): string | undefined {
+  const lower = model.toLowerCase();
+  if (lower.startsWith("gemini")) return settings.gemini_api_key ?? undefined;
+  if (lower.startsWith("glm"))    return settings.zai_api_key    ?? undefined;
+  // Unknown model family — use Gemini key as default (matches providerForModel fallback)
+  return settings.gemini_api_key ?? undefined;
+}
+
 export function invalidateAiCache(shopId?: number) {
   if (typeof shopId === "number") {
     aiSettingsCache.delete(shopId);
@@ -148,6 +171,12 @@ export async function getAiSettings(shopId?: number): Promise<AiSettings> {
         business_desc: data.business_desc ?? "",
         custom_rules: data.custom_rules ?? "",
         booking_redirect: data.booking_redirect ?? DEFAULT_SETTINGS.booking_redirect,
+        vision_enabled: data.vision_enabled ?? DEFAULT_SETTINGS.vision_enabled,
+        image_gen_enabled: data.image_gen_enabled ?? DEFAULT_SETTINGS.image_gen_enabled,
+        image_gen_per_hour: data.image_gen_per_hour ?? DEFAULT_SETTINGS.image_gen_per_hour,
+        // Nullable — absence means "use platform env var"
+        gemini_api_key: data.gemini_api_key ?? null,
+        zai_api_key: data.zai_api_key ?? null,
       };
 
   setCached(aiSettingsCache, resolvedShopId, settings);
@@ -185,7 +214,7 @@ async function getShopPromptContext(shopId: number): Promise<ShopPromptContext> 
   return context;
 }
 
-async function buildShopSystemPrompt(shopId: number, settings: AiSettings): Promise<string> {
+export async function buildShopSystemPrompt(shopId: number, settings: AiSettings): Promise<string> {
   const context = await getShopPromptContext(shopId);
 
   const businessBlock = settings.business_desc
@@ -296,13 +325,21 @@ ${captionLine}
     const imageParts: AiImagePart[] = [{ mimeType, data: imageBuffer.toString("base64") }];
     const provider = providerForModel(VISION_MODEL);
     const runtimeMaxTokens = Math.min(settings.max_tokens, MAX_RUNTIME_TOKENS);
+    const visionApiKey = shopApiKeyForModel(VISION_MODEL, settings);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), VISION_TIMEOUT_MS);
 
     let result;
     try {
-      result = await provider.chat({ model: VISION_MODEL, messages, temperature: 0.7, maxTokens: runtimeMaxTokens, imageParts });
+      result = await provider.chat({
+        model: VISION_MODEL,
+        messages,
+        temperature: 0.7,
+        maxTokens: runtimeMaxTokens,
+        imageParts,
+        apiKey: visionApiKey,
+      });
     } finally {
       clearTimeout(timeoutId);
     }
@@ -354,6 +391,7 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
 
     for (const model of models) {
       const provider = providerForModel(model);
+      const modelApiKey = shopApiKeyForModel(model, settings);
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const result: AiProviderResult = await provider.chat({
           model,
@@ -362,6 +400,7 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
           // Keep full token budget on retry — shrinking to 160 was producing
           // truncated half-replies when the first attempt timed out.
           maxTokens: runtimeMaxTokens,
+          apiKey: modelApiKey,
         });
 
         if (result.ok) {

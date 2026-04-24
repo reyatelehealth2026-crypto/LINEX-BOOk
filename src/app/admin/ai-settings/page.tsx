@@ -15,6 +15,10 @@ import {
   Sliders,
   BookOpen,
   ShieldCheck,
+  ImageIcon,
+  Send,
+  FlaskConical,
+  KeyRound,
 } from "lucide-react";
 
 type AiSettings = {
@@ -27,6 +31,15 @@ type AiSettings = {
   business_desc: string;
   custom_rules: string;
   booking_redirect: string;
+  vision_enabled: boolean;
+  image_gen_enabled: boolean;
+  image_gen_per_hour: number;
+  /**
+   * Masked value from GET ("****abcd") or a new key the user typed, or ""
+   * to clear. Never contains a full plaintext key returned from the server.
+   */
+  gemini_api_key: string;
+  zai_api_key: string;
 };
 
 const MODELS = [
@@ -47,6 +60,11 @@ const DEFAULT: AiSettings = {
   business_desc: "",
   custom_rules: "",
   booking_redirect: "พิมพ์ว่า จอง ได้เลยค่ะ หรือกดปุ่มจองคิวในเมนูนะคะ",
+  vision_enabled: true,
+  image_gen_enabled: true,
+  image_gen_per_hour: 3,
+  gemini_api_key: "",
+  zai_api_key: "",
 };
 
 function Section({
@@ -101,7 +119,54 @@ export default function AiSettingsPage() {
     persona: true,
     model: false,
     rules: false,
+    multimodal: false,
+    apiKeys: false,
+    test: false,
   });
+
+  // ── Test chat panel state ──────────────────────────
+  type TestResult = {
+    reply: string;
+    systemPrompt: string;
+    model: string;
+    latencyMs: number;
+  };
+  const [testMessage, setTestMessage] = useState("");
+  const [testUseUnsaved, setTestUseUnsaved] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
+  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
+
+  async function runTest() {
+    const msg = testMessage.trim();
+    if (!msg || testLoading) return;
+    setTestLoading(true);
+    setTestResult(null);
+    setTestError(null);
+    setShowSystemPrompt(false);
+    try {
+      const body: { message: string; overrideSettings?: Partial<AiSettings> } = { message: msg };
+      if (testUseUnsaved) body.overrideSettings = settings;
+      const res = await fetch("/api/admin/ai-settings/test", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": pw,
+        },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setTestResult({ reply: data.reply, systemPrompt: data.systemPrompt, model: data.model, latencyMs: data.latencyMs });
+      } else {
+        setTestError(data.error ?? "เกิดข้อผิดพลาด");
+      }
+    } catch {
+      setTestError("ไม่สามารถเชื่อมต่อได้");
+    }
+    setTestLoading(false);
+  }
 
   function toggleSection(key: string) {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -278,6 +343,58 @@ export default function AiSettingsPage() {
         </div>
       </Section>
 
+      {/* ── Vision / Image Generation ─────────────────── */}
+      <Section title="ความสามารถเพิ่มเติม (Vision / Image Generation)" icon={ImageIcon} open={openSections.multimodal} onToggle={() => toggleSection("multimodal")}>
+        <div className={`flex items-center justify-between gap-4 p-4 rounded-xl transition ${settings.vision_enabled ? "bg-emerald-50 border border-emerald-200" : "bg-ink-50 border border-ink-100"}`}>
+          <div>
+            <div className="font-semibold text-ink-900 text-sm">วิเคราะห์รูปภาพ (Vision)</div>
+            <div className="text-xs text-ink-500 mt-0.5">ลูกค้าส่งรูปมาแล้วบอทวิเคราะห์ด้วย AI</div>
+          </div>
+          <button
+            onClick={() => set("vision_enabled", !settings.vision_enabled)}
+            aria-label="toggle vision"
+            className="shrink-0"
+          >
+            {settings.vision_enabled
+              ? <ToggleRight size={36} className="text-emerald-600" />
+              : <ToggleLeft size={36} className="text-ink-300" />}
+          </button>
+        </div>
+
+        <div className={`flex items-center justify-between gap-4 p-4 rounded-xl transition ${settings.image_gen_enabled ? "bg-emerald-50 border border-emerald-200" : "bg-ink-50 border border-ink-100"}`}>
+          <div>
+            <div className="font-semibold text-ink-900 text-sm">สร้างรูปภาพ (Image Generation)</div>
+            <div className="text-xs text-ink-500 mt-0.5">บอทสร้างรูปตัวอย่างผลงาน/สไตล์ให้ลูกค้า</div>
+          </div>
+          <button
+            onClick={() => set("image_gen_enabled", !settings.image_gen_enabled)}
+            aria-label="toggle image gen"
+            className="shrink-0"
+          >
+            {settings.image_gen_enabled
+              ? <ToggleRight size={36} className="text-emerald-600" />
+              : <ToggleLeft size={36} className="text-ink-300" />}
+          </button>
+        </div>
+
+        <div>
+          <label className="label">โควตาสร้างรูป (ครั้ง/ชั่วโมง/ผู้ใช้)</label>
+          <input
+            type="number"
+            className="input w-28"
+            min={1}
+            max={50}
+            value={settings.image_gen_per_hour}
+            onChange={(e) => {
+              const v = Math.min(50, Math.max(1, parseInt(e.target.value, 10) || 1));
+              set("image_gen_per_hour", v);
+            }}
+            disabled={!settings.image_gen_enabled}
+          />
+          <Hint>จำนวนครั้งสูงสุดที่ผู้ใช้แต่ละคนสร้างรูปได้ต่อชั่วโมง (1–50) ค่าแนะนำ 3</Hint>
+        </div>
+      </Section>
+
       {/* ── Model Settings ────────────────────────────── */}
       <Section title="ตั้งค่า AI Model" icon={Sliders} open={openSections.model} onToggle={() => toggleSection("model")}>
         <div>
@@ -348,12 +465,149 @@ export default function AiSettingsPage() {
         </div>
       </Section>
 
+      {/* ── API Keys (per-shop overrides) ─────────────── */}
+      <Section
+        title="API Keys (ไม่บังคับ — เว้นว่างไว้เพื่อใช้ของระบบ)"
+        icon={KeyRound}
+        open={openSections.apiKeys}
+        onToggle={() => toggleSection("apiKeys")}
+      >
+        <p className="text-sm text-ink-600 bg-ink-50 border border-ink-100 rounded-xl px-4 py-3">
+          โดยค่าเริ่มต้นร้านทุกร้านใช้ API key ส่วนกลางของแพลตฟอร์ม
+          หากต้องการ quota ของตัวเองให้ใส่ key ของร้านที่นี่
+        </p>
+
+        <div>
+          <label className="label">Gemini API Key</label>
+          <input
+            type="password"
+            className="input font-mono"
+            value={settings.gemini_api_key}
+            onChange={(e) => set("gemini_api_key", e.target.value)}
+            placeholder={settings.gemini_api_key ? "เว้นว่างเพื่อคงค่าเดิม" : "ใส่ key เพื่อใช้ quota ของร้าน"}
+            autoComplete="new-password"
+          />
+          {settings.gemini_api_key?.startsWith("****") && (
+            <p className="text-[12px] text-emerald-700 mt-1 flex items-center gap-1">
+              <ShieldCheck size={11} /> มี key ตั้งไว้แล้ว ({settings.gemini_api_key}) — พิมพ์ทับเพื่อเปลี่ยน หรือเว้นว่างเพื่อคงค่าเดิม
+            </p>
+          )}
+          <Hint>รับ key ได้จาก Google AI Studio (aistudio.google.com) ใส่เว้นว่างเพื่อลบ key และกลับมาใช้ของระบบ</Hint>
+        </div>
+
+        <div>
+          <label className="label">Z.AI API Key</label>
+          <input
+            type="password"
+            className="input font-mono"
+            value={settings.zai_api_key}
+            onChange={(e) => set("zai_api_key", e.target.value)}
+            placeholder={settings.zai_api_key ? "เว้นว่างเพื่อคงค่าเดิม" : "ใส่ key เพื่อใช้ quota ของร้าน"}
+            autoComplete="new-password"
+          />
+          {settings.zai_api_key?.startsWith("****") && (
+            <p className="text-[12px] text-emerald-700 mt-1 flex items-center gap-1">
+              <ShieldCheck size={11} /> มี key ตั้งไว้แล้ว ({settings.zai_api_key}) — พิมพ์ทับเพื่อเปลี่ยน หรือเว้นว่างเพื่อคงค่าเดิม
+            </p>
+          )}
+          <Hint>รับ key ได้จาก Z.AI / BigModel console ใส่เว้นว่างเพื่อลบ key และกลับมาใช้ของระบบ</Hint>
+        </div>
+      </Section>
+
       {/* ── System Prompt Preview ─────────────────────── */}
       <Section title="ตัวอย่าง System Prompt (Preview)" icon={Bot} open={openSections.main} onToggle={() => toggleSection("main")}>
         <div className="bg-ink-950 rounded-xl p-4 text-[12px] font-mono text-ink-200 whitespace-pre-wrap leading-relaxed overflow-auto max-h-80">
           {buildPreviewPrompt(settings)}
         </div>
         <Hint>นี่คือ system prompt ที่ระบบสร้างจากการตั้งค่าข้างต้น ข้อมูลร้าน/บริการ/ช่างจะถูกเพิ่มโดยอัตโนมัติเมื่อบอททำงานจริง</Hint>
+      </Section>
+
+      {/* ── ทดสอบคุย ──────────────────────────────────── */}
+      <Section title="ทดสอบคุย (ไม่บันทึกประวัติ)" icon={FlaskConical} open={openSections.test} onToggle={() => toggleSection("test")}>
+        {/* Checkbox: use unsaved form state */}
+        <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-ink-700">
+          <input
+            type="checkbox"
+            className="accent-ink-900 w-4 h-4"
+            checked={testUseUnsaved}
+            onChange={(e) => setTestUseUnsaved(e.target.checked)}
+          />
+          ใช้ค่าที่ยังไม่บันทึก (ทดสอบการตั้งค่าปัจจุบันในฟอร์ม)
+        </label>
+        <Hint>เมื่อติ๊กจะใช้ค่าจากฟอร์มด้านบน แม้ยังไม่กดบันทึก — เหมาะสำหรับทดลองก่อนบันทึกจริง</Hint>
+
+        {/* Message input */}
+        <div>
+          <label className="label">พิมพ์ข้อความทดสอบ</label>
+          <div className="flex gap-2 items-start">
+            <textarea
+              className="input resize-none flex-1"
+              rows={3}
+              value={testMessage}
+              onChange={(e) => setTestMessage(e.target.value)}
+              placeholder="เช่น: ราคาตัดผมชายเท่าไหร่คะ? หรือ ร้านเปิดวันไหนบ้างคะ"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault();
+                  runTest();
+                }
+              }}
+            />
+            <button
+              onClick={runTest}
+              disabled={testLoading || !testMessage.trim()}
+              className="btn-primary shrink-0 self-stretch"
+              aria-label="ส่งทดสอบ"
+            >
+              {testLoading
+                ? <RefreshCw size={15} className="animate-spin" />
+                : <Send size={15} />}
+              <span className="hidden sm:inline">
+                {testLoading ? "กำลังถาม..." : "ส่งทดสอบ"}
+              </span>
+            </button>
+          </div>
+          <p className="text-[11px] text-ink-400 mt-1">Ctrl+Enter เพื่อส่ง</p>
+        </div>
+
+        {/* Error */}
+        {testError && (
+          <div className="rounded-xl p-3 bg-red-50 border border-red-200 text-red-700 text-sm">
+            {testError}
+          </div>
+        )}
+
+        {/* Reply bubble */}
+        {testResult && (
+          <div className="space-y-2">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-ink-900 text-white flex items-center justify-center shrink-0 mt-0.5">
+                <Bot size={14} />
+              </div>
+              <div className="flex-1">
+                <div className="bg-ink-50 border border-ink-100 rounded-2xl rounded-tl-md px-4 py-3 text-sm text-ink-900 whitespace-pre-wrap leading-relaxed">
+                  {testResult.reply}
+                </div>
+                <p className="text-[11px] text-ink-400 mt-1.5 ml-1">
+                  {testResult.model} &middot; {testResult.latencyMs.toLocaleString()} ms
+                </p>
+              </div>
+            </div>
+
+            {/* Expandable system prompt */}
+            <button
+              onClick={() => setShowSystemPrompt((v) => !v)}
+              className="text-[12px] text-ink-400 hover:text-ink-600 underline-offset-2 hover:underline transition ml-11"
+            >
+              {showSystemPrompt ? "ซ่อน System Prompt" : "ดู System Prompt ที่ใช้จริง"}
+            </button>
+            {showSystemPrompt && (
+              <div className="bg-ink-950 rounded-xl p-4 text-[11px] font-mono text-ink-200 whitespace-pre-wrap leading-relaxed overflow-auto max-h-72 ml-11">
+                {testResult.systemPrompt}
+              </div>
+            )}
+          </div>
+        )}
       </Section>
 
       {/* Save footer */}

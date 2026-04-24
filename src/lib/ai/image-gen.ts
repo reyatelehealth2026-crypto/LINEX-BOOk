@@ -4,7 +4,7 @@ const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 // gemini-2.5-flash-image is GA and optimised for high-volume image generation.
 // Override with GEMINI_IMAGE_GEN_MODEL if a newer model is available.
 const IMAGE_GEN_MODEL = process.env.GEMINI_IMAGE_GEN_MODEL ?? "gemini-2.5-flash-image";
-const IMAGE_GEN_TIMEOUT_MS = 35_000;
+const IMAGE_GEN_TIMEOUT_MS = Math.min(60_000, Math.max(5_000, Number(process.env.AI_IMAGE_GEN_TIMEOUT_MS ?? 45_000)));
 
 export type ImageGenResult =
   | { ok: true; imageBase64: string; mimeType: string; caption?: string }

@@ -135,7 +135,13 @@ export async function resolveAiRoute(params: { shopId: number; text: string }): 
     return { kind: "hours", message: hours.message };
   }
 
-  if (/(?:สร้าง(?:รูป|ภาพ)|วาด(?:รูป|ภาพ)|ออกแบบ(?:เล็บ|ทรง|ผม|รูป|ภาพ)|ดีไซน์(?:เล็บ|ทรง|ผม|รูป|ภาพ)|(?:รูป|ภาพ)ตัวอย่าง|ตัวอย่าง(?:เล็บ|ทรงผม)|preview.*(?:เล็บ|ทรง|ผม|nail|hair)|gen(?:erate)?.*image|create.*image|draw.*(?:nail|hair|เล็บ|ทรง)|imagine\b)/i.test(trimmed)) {
+  // image_gen: สร้างรูป/ภาพ/ตัวอย่าง/AI, วาด, ออกแบบ/สไตล์, ดีไซน์, ขอรูป, อยากเห็นแบบ, มีดีไซน์ไหน, เล็บแบบไหน, ทรงผมแบบ, สปาสไตล์, โชว์รูป, AI วาด/สร้าง, render
+  // Booking signal guard: if text also contains จอง|นัด|booking, booking intent already matched above — skip image_gen.
+  const hasBookingSignal = /จอง|นัด|booking/i.test(trimmed);
+  if (
+    !hasBookingSignal &&
+    /(?:สร้าง(?:รูป|ภาพ|ตัวอย่าง|AI)|วาด(?:รูป|ภาพ)|ออกแบบ(?:เล็บ|ทรง|ผม|รูป|ภาพ|สไตล์)|ดีไซน์(?:เล็บ|ทรง|ผม|รูป|ภาพ)|(?:รูป|ภาพ)ตัวอย่าง|ตัวอย่าง(?:เล็บ|ทรงผม)|ขอ(?:รูป|ภาพ|ตัวอย่าง)|อยากเห็น(?:แบบ|รูป|ตัวอย่าง)|มี(?:แบบ|ดีไซน์)ไหน|เล็บแบบไหน|ทรงผมแบบ|สปาสไตล์|โชว์(?:รูป|ภาพ)|AI\s*(?:วาด|สร้าง)|preview.*(?:เล็บ|ทรง|ผม|nail|hair)|gen(?:erate)?.*image|create.*image|draw.*(?:nail|hair|เล็บ|ทรง)|imagine\b|\brender\b)/i.test(trimmed)
+  ) {
     return { kind: "image_gen", prompt: trimmed };
   }
 
