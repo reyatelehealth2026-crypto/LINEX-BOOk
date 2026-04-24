@@ -288,7 +288,7 @@ export default function HealthcheckPage() {
       <div className="card p-4 text-sm text-ink-500">
         <div className="flex items-start gap-2">
           <div>
-            <strong>เคล็ดลับ:</strong> หากมีรายการที่ขึ้น "ยังไม่ได้ตั้งค่า"
+            <strong>เคล็ดลับ:</strong> หากมีรายการที่ขึ้น &ldquo;ยังไม่ได้ตั้งค่า&rdquo;
             ให้กลับไปที่หน้า{" "}
             <a href="/admin/setup" className="text-ink-700 underline">
               ตั้งค่าร้าน

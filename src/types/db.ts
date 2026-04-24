@@ -72,6 +72,11 @@ export type Customer = {
   notes?: string | null;
   registered_at: string | null;
   created_at: string;
+  // migration 008 (loyalty)
+  lifetime_points: number;
+  // migration 009 (churn/expiry)
+  last_visit_at: string | null;
+  churn_push_at: string | null;
 };
 
 export type LineAdminSession = {
@@ -105,6 +110,10 @@ export type Booking = {
   price: number;
   points_earned: number;
   reminded_at: string | null;
+  // migration 002 / 006
+  reminded_2h_at: string | null;
+  reminded_24h_at: string | null;
+  review_requested_at: string | null;
   created_at: string;
   updated_at: string;
 };

@@ -50,6 +50,16 @@ export type Shop = {
   onboarding_status: "pending" | "setup_in_progress" | "completed";
   theme_id: string | null;
   points_per_baht: number;
+  // migration 002
+  cron_last_run: string | null;
+  // migration 008 (loyalty tiers)
+  tier_silver_points: number;
+  tier_gold_points: number;
+  tier_platinum_points: number;
+  birthday_bonus_points: number;
+  referral_bonus_points: number;
+  points_expiry_days: number | null;
+  last_birthday_run: string | null;
 };
 
 // Small in-memory cache to avoid hammering the shops table on every request.

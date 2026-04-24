@@ -106,7 +106,7 @@ export async function verifyAdmin(req: NextRequest): Promise<AdminIdentity | nul
             shopId,
             adminUserId: u.id,
             email: u.email ?? undefined,
-            role: u.role as any,
+            role: u.role as AdminIdentity["role"],
           };
         }
       }
@@ -139,7 +139,7 @@ export async function verifyAdmin(req: NextRequest): Promise<AdminIdentity | nul
         adminUserId: admin.id,
         lineUserId: identity.sub,
         displayName: admin.display_name ?? identity.name,
-        role: admin.role as any,
+        role: admin.role as AdminIdentity["role"],
       };
     }
 

@@ -173,7 +173,7 @@ export default function ReviewsPage() {
                   <div className="border-t border-ink-100 p-4 bg-ink-50 space-y-3 animate-fade-up">
                     {rv.comment && (
                       <p className="text-sm text-ink-700 italic bg-white rounded-xl px-3 py-2.5 border border-ink-100">
-                        "{rv.comment}"
+                        &ldquo;{rv.comment}&rdquo;
                       </p>
                     )}
                     <div>

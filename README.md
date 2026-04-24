@@ -150,9 +150,9 @@ ngrok http 3000
 
 ## 🛣️ Next steps (TODO)
 
-- [ ] หน้า admin `services` / `staff` / `hours` สำหรับแก้ catalog
-- [ ] หน้า admin `customers` (list + CRM drill-down)
-- [ ] Cron route `/api/cron/reminders` (สำหรับ Vercel cron)
-- [ ] LINE idToken verification ที่ API
-- [ ] Multi-shop (ใส่ shop_id ทุก request + RLS)
+- [x] หน้า admin `services` / `staff` / `hours` สำหรับแก้ catalog
+- [x] หน้า admin `customers` (list + CRM drill-down)
+- [x] Cron route `/api/cron/reminders` (multi-shop, Vercel cron)
+- [x] LINE idToken verification ที่ API
+- [x] Multi-shop SaaS (shop_id + subdomain routing + RLS)
 - [ ] Upload รูปบริการ/ช่างผ่าน Supabase Storage

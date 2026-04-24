@@ -17,6 +17,9 @@ npm run lint             # next lint
 npm run richmenu         # scripts/setup-richmenu.mjs — legacy single-tenant rich menu
 npm run reminders        # scripts/send-reminders.mjs  — legacy single-tenant reminder cron
 npm run seed:demo        # scripts/seed-demo.mjs
+npm run create-super-admin -- --email you@example.com --password s3cret
+npm run vercel:domains   # scripts/vercel-setup-domains.mjs — attach shop subdomains to Vercel
+npm run cf:dns           # scripts/cloudflare-setup-dns.mjs — Cloudflare DNS setup
 ```
 
 There is no test suite. Type-checking runs via `next build` / `next lint`; there is no separate `tsc` script.
@@ -42,6 +45,14 @@ Routing rules live in `src/proxy.ts`:
 - Root-only paths (`/signup`, `/api/signup`) accessed on a tenant subdomain → 302 to root.
 - Tenant-only paths on the root domain → 302 to `/`, **except** `/api/line/webhook`, `/api/cron/*`, `/api/signup` which are intentionally multi-tenant-aware and allowed on root.
 
+### IDN domains & alias roots
+
+The proxy normalizes IDN (internationalized) hostnames via `toAsciiDomain()` — both `จองคิว.net` (Unicode U-label) and `xn--42cfc0k1a8b.net` (Punycode A-label) are treated as the same root. `ADDITIONAL_ROOT_DOMAINS` (comma-separated) registers alias roots that behave identically, e.g. `likesms.net`.
+
+### Path-based fallback
+
+When Vercel subdomain certs aren't attached (missing `VERCEL_TOKEN`/`VERCEL_PROJECT_ID`/`VERCEL_TEAM_ID`), signup returns a path-based URL instead: `${ROOT_DOMAIN}/<slug>/admin/...`. The proxy detects path-based slug access and sets a `tenant_slug` cookie so subsequent requests resolve the shop without repeating the slug in the path.
+
 ## Super-admin (platform operator)
 
 Separate from the per-shop admin system. Super admins are NOT scoped to a shop — they can list/edit every shop and impersonate any shop's admin.
@@ -63,9 +74,22 @@ Per-shop, not global. `verifyAdmin(req)` in `src/lib/admin-auth.ts`:
 
 Password hashing uses node's built-in `crypto.scryptSync` (no bcrypt dep) — format `scrypt$<salt-hex>$<hash-hex>`.
 
+### Three admin entry points
+
+There are three distinct ways to reach the admin panel, each with its own auth mechanism:
+1. **`/admin`** — password auth via `x-admin-password` header (stored in `sessionStorage`).
+2. **`/liff/admin`** — LINE idToken auth (no password needed, accessed inside LINE app).
+3. **Super-admin impersonation** — super admin mints token → opens `/<slug>/admin/impersonate?token=…` → plants a 30-min cookie.
+
+## Business presets
+
+Three preset configs in `src/lib/presets/` — `salon.ts`, `nail.ts`, `spa.ts`. Each defines services, staff roles, default working hours, message templates, and a mapped `theme_id`. `installPreset(shopId, key)` in `src/lib/presets/index.ts` is idempotent (uses `ON CONFLICT DO NOTHING`).
+
 ## Signup & onboarding flow
 
-`/signup` → `/api/signup` creates the shop row with slug, LINE credentials, business_type. Then `installPreset(shopId, key)` (`src/lib/presets/index.ts`) seeds services, working hours, message templates, and one placeholder staff linked to every service. Redirects to `https://<slug>.<ROOT_DOMAIN>/admin/setup` where the owner can click "install rich menu" (calls `uploadRichMenuForShop`, `src/lib/rich-menu.ts`) to push a LINE rich menu using the shop's own token.
+`/signup` is a 4-step client form: shop info (name + slug + phone) → preset selection → LINE credentials (verified via `/api/signup/verify-line`) → admin account (email + password).
+
+`/api/signup/create` runs transactionally: creates shop row → installs preset → creates admin_users row → optionally attaches Vercel subdomain (non-blocking). Redirects to `https://<slug>.<ROOT_DOMAIN>/admin/setup` (or path-based fallback) where the owner can click "install rich menu" (calls `uploadRichMenuForShop`, `src/lib/rich-menu.ts`).
 
 `shops.onboarding_status` (`pending` → `setup_in_progress` → `completed`) gates which shops the cron iterates.
 
@@ -79,13 +103,32 @@ Enforced at the DB layer via a Postgres exclusion constraint (`EXCLUDE USING gis
 - **LIFF pages** (`src/app/liff/*`) — client components that call `/api/*` with `lineUserId` from the LIFF SDK. MVP trusts the client-supplied userId; production should verify the idToken server-side (see note in README).
 - **Admin panel** (`src/app/admin/*`) — subscribes to Supabase Realtime channels for live queue updates; auth via `x-admin-password` stored in `sessionStorage` and passed through `AdminContext` (`src/app/admin/_ctx.ts`).
 
-## Flex messages & i18n
+## Theme system
 
-All Flex message builders live in `src/lib/flex.ts`. They accept a theme id (see `src/lib/shop-theme.ts`, migration 010) and render per-shop colors. i18n via `src/lib/i18n.tsx` (th default, en toggle inside LIFF).
+15 industry-specific themes in `src/lib/themes.ts` (LINEX default, Beauty, Spa, Food, Healthcare, Fitness, etc.). Each theme defines primary/secondary/accent/surface colors with WCAG AA contrast validation. Shops pick a theme at signup (via preset) or change it in `/admin/theme`.
+
+- `themeCssVars(theme)` serializes a theme to CSS custom properties (`--primary`, `--primary-light`, etc.).
+- `applyThemeToRoot(theme)` sets them on `document.documentElement` client-side.
+- `ThemeProvider` (`src/lib/theme-context.tsx`) wraps the admin/LIFF layouts.
+- Flex messages (`src/lib/flex.ts`) also read the shop's `theme_id` to render per-shop colors in LINE.
+
+## i18n
+
+Thai default, English toggle inside LIFF. Locale files in `src/locales/{th,en}.json`, switcher component in `src/lib/i18n.tsx`.
 
 ## Cron
 
 `vercel.json` schedules `/api/cron/reminders` every 10 min. Handler loops over shops with `onboarding_status = 'completed'`, and for each shop calls `runWithShopContext({ shop, accessToken, channelSecret }, () => ...)` so the inner push/DB code picks up the correct credentials automatically. Optional `CRON_SECRET` env — if set, handler requires `Authorization: Bearer <secret>`.
+
+## Tailwind palette
+
+`tailwind.config.ts` defines a custom editorial palette — do not use default Tailwind color names like `gray-*`:
+- **forest**: primary greens (500: `#2f6a37`, 800: `#0d2614`)
+- **paper**: cream backgrounds (1–4 scale)
+- **ink**: warm-tinted neutrals (replaces `gray`)
+- **ochre, clay, sage**: secondary accents
+- **brand**: LINE green (legacy compat)
+- Fonts: `font-sans` = IBM Plex Sans Thai Looped + Noto Sans Thai; `font-display` = Fraunces (serif headlines)
 
 ## Things that will bite you
 

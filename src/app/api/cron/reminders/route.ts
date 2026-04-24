@@ -5,6 +5,31 @@ import { runWithShopContext, currentAccessToken } from "@/lib/request-context";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Local types for Supabase join results (no generated types available)
+type BookingJoin = {
+  id: number;
+  starts_at: string;
+  ends_at: string;
+  price?: number;
+  service: { name: string } | null;
+  staff: { nickname: string } | null;
+  customer: { line_user_id: string; display_name?: string; full_name?: string } | null;
+};
+
+type CronCustomer = {
+  id: number;
+  line_user_id: string | null;
+  full_name: string | null;
+  display_name: string | null;
+  points: number;
+  lifetime_points?: number;
+  birthday?: string | null;
+  last_visit_at?: string | null;
+  churn_push_at?: string | null;
+};
+
+type ShopCronRow = { birthday_bonus_points?: number; last_birthday_run?: string | null; points_expiry_days?: number | null };
+
 // Per-invocation token — set by runWithShopContext per shop.
 function currentToken(): string {
   return currentAccessToken() || process.env.LINE_CHANNEL_ACCESS_TOKEN || "";
@@ -25,7 +50,7 @@ async function pushLine(userId: string, text: string) {
   return true;
 }
 
-async function pushLineMessages(userId: string, messages: any[]) {
+async function pushLineMessages(userId: string, messages: Record<string, unknown>[]) {
   const token = currentToken();
   if (!token) return false;
   const res = await fetch("https://api.line.me/v2/bot/message/push", {
@@ -113,11 +138,11 @@ async function runForShop(shop: Shop, now: Date, results: Results) {
       .eq("shop_id", shop.id).eq("status", "confirmed").is("reminded_at", null)
       .gte("starts_at", windowStart).lte("starts_at", windowEnd);
     if (error) { console.error("[cron] 1h", shop.slug, error.message); results.errors++; }
-    else for (const b of data ?? []) {
-      const userId = (b.customer as any)?.line_user_id;
+    else for (const b of (data ?? []) as unknown as BookingJoin[]) {
+      const userId = b.customer?.line_user_id;
       if (!userId) continue;
-      const svcName = (b.service as any)?.name ?? "-";
-      const staffName = (b.staff as any)?.nickname ?? "—";
+      const svcName = b.service?.name ?? "-";
+      const staffName = b.staff?.nickname ?? "—";
       const text = `⏰ เตือนคิว (อีก 1 ชั่วโมง)\nบริการ: ${svcName}\nเวลา: ${fmtTime(b.starts_at, tz)} – ${fmtTime(b.ends_at, tz)}\nช่าง: ${staffName}`;
       const ok = await pushLine(userId, text);
       if (ok) { await db.from("bookings").update({ reminded_at: now.toISOString() }).eq("id", b.id); results.reminded_1h++; }
@@ -135,13 +160,13 @@ async function runForShop(shop: Shop, now: Date, results: Results) {
       .eq("shop_id", shop.id).eq("status", "confirmed").is("reminded_2h_at", null)
       .gte("starts_at", windowStart).lte("starts_at", windowEnd);
     if (error) { console.error("[cron] 2h", shop.slug, error.message); results.errors++; }
-    else for (const b of data ?? []) {
-      const userId = (b.customer as any)?.line_user_id;
+    else for (const b of (data ?? []) as unknown as BookingJoin[]) {
+      const userId = b.customer?.line_user_id;
       if (!userId) continue;
       const flex = reminder2hFlex({
         bookingId: b.id,
-        serviceName: (b.service as any)?.name ?? "บริการ",
-        staffName: (b.staff as any)?.nickname ?? "ช่างที่ได้รับมอบหมาย",
+        serviceName: b.service?.name ?? "บริการ",
+        staffName: b.staff?.nickname ?? "ช่างที่ได้รับมอบหมาย",
         timeRange: `${fmtTime(b.starts_at, tz)} – ${fmtTime(b.ends_at, tz)}`,
         price: Number(b.price ?? 0),
       });
@@ -161,13 +186,13 @@ async function runForShop(shop: Shop, now: Date, results: Results) {
       .eq("shop_id", shop.id).eq("status", "confirmed").is("reminded_24h_at", null)
       .gte("starts_at", windowStart).lte("starts_at", windowEnd);
     if (error) { console.error("[cron] 24h", shop.slug, error.message); results.errors++; }
-    else for (const b of data ?? []) {
-      const userId = (b.customer as any)?.line_user_id;
+    else for (const b of (data ?? []) as unknown as BookingJoin[]) {
+      const userId = b.customer?.line_user_id;
       if (!userId) continue;
       const flex = reminder24hFlex({
         bookingId: b.id,
-        serviceName: (b.service as any)?.name ?? "บริการ",
-        staffName: (b.staff as any)?.nickname ?? "ช่างที่ได้รับมอบหมาย",
+        serviceName: b.service?.name ?? "บริการ",
+        staffName: b.staff?.nickname ?? "ช่างที่ได้รับมอบหมาย",
         dateLabel: fmtDate(b.starts_at, tz),
         timeRange: `${fmtTime(b.starts_at, tz)} – ${fmtTime(b.ends_at, tz)}`,
       });
@@ -189,11 +214,11 @@ async function runForShop(shop: Shop, now: Date, results: Results) {
     if (error) { console.error("[cron] review", shop.slug, error.message); results.errors++; }
     else {
       const liffId = shop.liff_id ?? process.env.NEXT_PUBLIC_LIFF_ID ?? "";
-      for (const b of data ?? []) {
-        const userId = (b.customer as any)?.line_user_id;
+      for (const b of (data ?? []) as unknown as BookingJoin[]) {
+        const userId = b.customer?.line_user_id;
         if (!userId) continue;
-        const svcName = (b.service as any)?.name ?? "บริการ";
-        const customerName = (b.customer as any)?.full_name ?? (b.customer as any)?.display_name ?? "คุณลูกค้า";
+        const svcName = b.service?.name ?? "บริการ";
+        const customerName = b.customer?.full_name ?? b.customer?.display_name ?? "คุณลูกค้า";
         const reviewLink = liffId ? `\nhากรุณารีวิวได้ที่ → https://liff.line.me/${liffId}/review?booking=${b.id}` : "";
         const text = `💛 ขอบคุณที่ใช้บริการนะคะ ${customerName}\nหวังว่า${svcName}จะถูกใจนะคะ\nรบกวนรีวิวสักนิดได้เลยค่ะ ⭐${reviewLink}`;
         const ok = await pushLine(userId, text);
@@ -207,33 +232,35 @@ async function runForShop(shop: Shop, now: Date, results: Results) {
   {
     const todayYmd = now.toISOString().slice(0, 10);
     const { data: shopRow } = await db.from("shops").select("birthday_bonus_points, last_birthday_run").eq("id", shop.id).maybeSingle();
-    const alreadyRanToday = (shopRow as any)?.last_birthday_run === todayYmd;
-    const bonus = Number((shopRow as any)?.birthday_bonus_points ?? 0);
+    const sr = shopRow as unknown as ShopCronRow | null;
+    const alreadyRanToday = sr?.last_birthday_run === todayYmd;
+    const bonus = Number(sr?.birthday_bonus_points ?? 0);
     if (!alreadyRanToday && bonus > 0) {
       const monthDay = todayYmd.slice(5);
       const { data: celebs } = await db
         .from("customers")
         .select("id, line_user_id, full_name, display_name, points, lifetime_points, birthday")
         .eq("shop_id", shop.id).not("birthday", "is", null);
-      const todays = (celebs ?? []).filter((c: any) => String(c.birthday ?? "").slice(5) === monthDay);
-      for (const c of todays as any[]) {
+      const allCelebs = (celebs ?? []) as unknown as CronCustomer[];
+      const todays = allCelebs.filter((c) => String(c.birthday ?? "").slice(5) === monthDay);
+      for (const c of todays) {
         await db.from("customers").update({
           points: (c.points ?? 0) + bonus,
           lifetime_points: (c.lifetime_points ?? 0) + bonus,
         }).eq("id", c.id);
         if (c.line_user_id) {
           const name = c.full_name ?? c.display_name ?? "คุณลูกค้า";
-          await pushLine(c.line_user_id, `🎂 สุขสันต์วันเกิด ${name} ค่ะ!\nทางร้านมอบแต้มพิเศษ ${bonus} แต้มเป็นของขวัญ ใช้แลกส่วนลดในการจองครั้งถัดไปได้เลยนะคะ 🎁`).catch(() => {});
+          await pushLine(c.line_user_id, `🎂 สุขสันต์วันเกิด ${name} ค่ะ!\nทางร้านมอบแต้มพิเศษ ${bonus} แต้มเป็นของขวัญ ใช้แลกส่วนลดในการจองครั้งถัดไปได้เลยนะคะ 🎁`).catch((err) => { console.warn("[cron] birthday push failed", err); results.errors++; });
         }
       }
-      await db.from("shops").update({ last_birthday_run: todayYmd } as any).eq("id", shop.id);
+      await db.from("shops").update({ last_birthday_run: todayYmd }).eq("id", shop.id);
     }
   }
 
   // ── Pass 5: Points expiry ──
   {
     const { data: shopRow } = await db.from("shops").select("points_expiry_days").eq("id", shop.id).maybeSingle();
-    const expiryDays = Number((shopRow as any)?.points_expiry_days ?? 0);
+    const expiryDays = Number((shopRow as unknown as ShopCronRow | null)?.points_expiry_days ?? 0);
     if (expiryDays > 0) {
       const cutoff = new Date(now.getTime() - expiryDays * 86_400_000).toISOString();
       const warnCutoff = new Date(now.getTime() - (expiryDays - 7) * 86_400_000).toISOString();
@@ -242,13 +269,13 @@ async function runForShop(shop: Shop, now: Date, results: Results) {
         .select("id, line_user_id, full_name, display_name, points, last_visit_at")
         .eq("shop_id", shop.id).gt("points", 0).not("last_visit_at", "is", null)
         .lte("last_visit_at", warnCutoff).gt("last_visit_at", cutoff);
-      for (const c of (expiring ?? []) as any[]) {
+      for (const c of (expiring ?? []) as unknown as CronCustomer[]) {
         const name = c.full_name ?? c.display_name ?? "คุณลูกค้า";
         if (c.line_user_id) {
-          await pushLine(c.line_user_id, `⚠️ แต้มสะสม ${c.points} แต้มของ ${name} ใกล้หมดอายุแล้วค่ะ!\nกรุณาจองบริการหรือแลกแต้มภายใน 7 วัน ก่อนแต้มหมดอายุนะคะ 🏃`).catch(() => {});
+          await pushLine(c.line_user_id, `⚠️ แต้มสะสม ${c.points} แต้มของ ${name} ใกล้หมดอายุแล้วค่ะ!\nกรุณาจองบริการหรือแลกแต้มภายใน 7 วัน ก่อนแต้มหมดอายุนะคะ 🏃`).catch((err) => { console.warn("[cron] expiry push failed", err); results.errors++; });
         }
       }
-      await db.from("customers").update({ points: 0 } as any)
+      await db.from("customers").update({ points: 0 })
         .eq("shop_id", shop.id).gt("points", 0).not("last_visit_at", "is", null).lte("last_visit_at", cutoff);
     }
   }
@@ -264,18 +291,18 @@ async function runForShop(shop: Shop, now: Date, results: Results) {
       .select("id, line_user_id, full_name, display_name, points, churn_push_at")
       .eq("shop_id", shop.id).gte("visit_count", 2).not("last_visit_at", "is", null)
       .lte("last_visit_at", churnDate).gte("last_visit_at", activityDate);
-    for (const c of (atRisk ?? []) as any[]) {
+    for (const c of (atRisk ?? []) as unknown as CronCustomer[]) {
       if (c.churn_push_at && String(c.churn_push_at).slice(0, 10) > new Date(now.getTime() - 30 * 86_400_000).toISOString().slice(0, 10)) continue;
       if (!c.line_user_id) continue;
       const name = c.full_name ?? c.display_name ?? "คุณลูกค้า";
       const pointsText = c.points > 0 ? `\n(คุณมีแต้มสะสม ${c.points} แต้ม รอแลกส่วนลดอยู่นะคะ 🎁)` : "";
-      await pushLine(c.line_user_id, `😢 ไม่ได้เจอ ${name} นานมากเลยค่ะ!\nทางร้านคิดถึงนะคะ ลองจองบริการใหม่ได้เลย มีโปรโมชั่นรอคุณอยู่ค่ะ 💚${pointsText}`).catch(() => {});
-      await db.from("customers").update({ churn_push_at: todayYmd } as any).eq("id", c.id);
+      await pushLine(c.line_user_id, `😢 ไม่ได้เจอ ${name} นานมากเลยค่ะ!\nทางร้านคิดถึงนะคะ ลองจองบริการใหม่ได้เลย มีโปรโมชั่นรอคุณอยู่ค่ะ 💚${pointsText}`).catch((err) => { console.warn("[cron] churn push failed", err); results.errors++; });
+      await db.from("customers").update({ churn_push_at: todayYmd }).eq("id", c.id);
     }
     results.churn_pushed += (atRisk ?? []).length;
   }
 
-  await db.from("shops").update({ cron_last_run: now.toISOString() } as any).eq("id", shop.id);
+  await db.from("shops").update({ cron_last_run: now.toISOString() }).eq("id", shop.id);
 }
 
 export async function GET(req: NextRequest) {
@@ -297,8 +324,7 @@ export async function GET(req: NextRequest) {
     .select("*")
     .or("line_channel_access_token.not.is.null,id.eq." + Number(process.env.DEFAULT_SHOP_ID ?? 1));
 
-  for (const raw of (shops ?? []) as any[]) {
-    const shop = raw as Shop;
+  for (const shop of (shops ?? []) as Shop[]) {
     const token = shop.line_channel_access_token || process.env.LINE_CHANNEL_ACCESS_TOKEN || "";
     if (!token) continue; // no credentials — skip
     await runWithShopContext(
@@ -314,6 +340,5 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  console.log("[cron/reminders] done", results);
   return NextResponse.json({ ok: true, ...results, ran_at: now.toISOString(), shops_processed: (shops ?? []).length });
 }

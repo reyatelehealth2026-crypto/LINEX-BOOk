@@ -95,7 +95,7 @@ export default function ReviewPage() {
               <Star key={i} size={24} className={i <= existingReview.rating ? "fill-amber-400 text-amber-400" : "text-ink-200"} />
             ))}
           </div>
-          {existingReview.comment && <p className="text-ink-600 text-sm">"{existingReview.comment}"</p>}
+          {existingReview.comment && <p className="text-ink-600 text-sm">&ldquo;{existingReview.comment}&rdquo;</p>}
         </div>
       </div>
     );
