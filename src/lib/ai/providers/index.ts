@@ -22,4 +22,4 @@ export function getAiProvider(name?: string): AiProvider {
   return providers[key] ?? providers.gemini;
 }
 
-export type { AiChatMessage, AiProvider, AiProviderFailure, AiProviderRequest, AiProviderResult } from "./types";
+export type { AiChatMessage, AiImagePart, AiProvider, AiProviderFailure, AiProviderRequest, AiProviderResult } from "./types";

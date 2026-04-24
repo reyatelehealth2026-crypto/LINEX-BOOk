@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRateLimiter } from "@/lib/rate-limit";
-import { verifySignature, replyMessage, getProfile, pushMessage, startLoading } from "@/lib/line";
+import { verifySignature, replyMessage, getProfile, pushMessage, startLoading, getMessageContent } from "@/lib/line";
 import { supabaseAdmin, SHOP_ID, getShopByLineOaId, getShopById } from "@/lib/supabase";
 import { runWithShopContext } from "@/lib/request-context";
 import { availableSlots } from "@/lib/booking";
@@ -41,7 +41,8 @@ import {
   bookInLiffMessage,
 } from "@/lib/flex";
 import { getShopThemeId } from "@/lib/shop-theme";
-import { askGLM } from "@/lib/zai";
+import { askGLM, askGLMWithImage } from "@/lib/zai";
+import { generateImage, uploadGeneratedImage } from "@/lib/ai/image-gen";
 import { getOpenHandoff, requestHandoff, takeHandoff, closeHandoff, notifyAdminsOfHandoff } from "@/lib/handoff";
 import { verifyPassword } from "@/lib/admin-auth";
 import type { BookingWithJoins, Customer, LineAdminSession } from "@/types/db";
@@ -589,6 +590,17 @@ async function handleEvent(ev: any) {
       }
     }
   }
+
+  if (ev.type === "message" && ev.message?.type === "image") {
+    try {
+      return await handleImageMessage(ev, customer);
+    } finally {
+      const totalMs = Date.now() - eventStartedAt;
+      if (totalMs >= 2000) {
+        console.info("[line-webhook] slow image handled", { userId, totalMs });
+      }
+    }
+  }
 }
 
 // ───────────────── postback handler ─────────────────
@@ -952,6 +964,119 @@ async function handlePostback(ev: any, customer: Customer) {
   }
 }
 
+// ───────────────── image message handler ─────────────────
+
+// Simple per-user cooldown: 1 vision request per 30 seconds to control cost.
+const _visionLastAt = new Map<string, number>();
+
+async function handleImageMessage(ev: any, customer: Customer) {
+  const rt: string = ev.replyToken;
+  const userId: string = ev.source?.userId;
+  const messageId: string = ev.message?.id;
+
+  if (process.env.AI_VISION_ENABLED === "false") {
+    return replyMessage(rt, [textMessage("ขออภัยค่ะ ฟีเจอร์วิเคราะห์รูปยังไม่เปิดใช้งานในตอนนี้", defaultQuickReply())]);
+  }
+
+  const now = Date.now();
+  const lastAt = _visionLastAt.get(userId) ?? 0;
+  if (now - lastAt < 30_000) {
+    return replyMessage(rt, [textMessage("กรุณารอสักครู่ก่อนส่งรูปใหม่นะคะ 🙏", defaultQuickReply())]);
+  }
+  _visionLastAt.set(userId, now);
+
+  try { await startLoading(userId, 10); } catch {}
+
+  const content = await getMessageContent(messageId);
+  if (!content) {
+    return replyMessage(rt, [textMessage("ขออภัยค่ะ ดาวน์โหลดรูปไม่สำเร็จ ลองส่งใหม่อีกครั้งนะคะ", defaultQuickReply())]);
+  }
+
+  let aiReply: string | null = null;
+  try {
+    aiReply = await askGLMWithImage(userId, content.buffer, content.contentType);
+  } catch (err) {
+    console.error("[line-webhook] askGLMWithImage threw", err);
+  }
+
+  if (aiReply) {
+    return replyMessage(rt, [textMessage(aiReply, defaultQuickReply())]);
+  }
+  return replyMessage(rt, [textMessage(
+    "ขออภัยค่ะ วิเคราะห์รูปไม่สำเร็จในขณะนี้ ลองส่งรูปอื่นหรือพิมพ์ถามมาได้เลยค่ะ ☺️",
+    defaultQuickReply(),
+  )]);
+}
+
+// ───────────────── image generation handler ─────────────────
+
+// Max 3 image generations per user per hour to control cost.
+const _imageGenUsage = new Map<string, { count: number; resetAt: number }>();
+
+function isImageGenRateLimited(userId: string): boolean {
+  const entry = _imageGenUsage.get(userId);
+  if (!entry || Date.now() > entry.resetAt) return false;
+  return entry.count >= 3;
+}
+
+function incrementImageGenUsage(userId: string): void {
+  const entry = _imageGenUsage.get(userId);
+  if (!entry || Date.now() > entry.resetAt) {
+    _imageGenUsage.set(userId, { count: 1, resetAt: Date.now() + 3_600_000 });
+  } else {
+    entry.count += 1;
+  }
+}
+
+async function handleImageGen(rt: string, prompt: string, userId: string) {
+  if (process.env.AI_IMAGE_GEN_ENABLED === "false") {
+    return replyMessage(rt, [textMessage("ขออภัยค่ะ ฟีเจอร์สร้างรูปยังไม่เปิดใช้งาน", defaultQuickReply())]);
+  }
+
+  if (isImageGenRateLimited(userId)) {
+    return replyMessage(rt, [textMessage("ใช้งานฟีเจอร์สร้างรูปได้สูงสุด 3 ครั้ง/ชั่วโมงนะคะ ลองใหม่ในอีกสักครู่ค่ะ 🙏", defaultQuickReply())]);
+  }
+
+  try { await startLoading(userId, 15); } catch {}
+
+  // Fetch shop name to use as style context
+  const db = supabaseAdmin();
+  const { data: shop } = await db.from("shops").select("name, business_type").eq("id", SHOP_ID).maybeSingle();
+  const shopContext = shop?.name ? `ร้าน${shop.name}` : undefined;
+
+  const result = await generateImage(prompt, shopContext);
+
+  if (!result.ok) {
+    console.warn("[line-webhook] image gen failed", { code: result.code, message: result.message });
+    return replyMessage(rt, [textMessage(
+      result.code === "not_configured"
+        ? "ขออภัยค่ะ ฟีเจอร์สร้างรูปยังไม่ได้ตั้งค่า GEMINI_API_KEY"
+        : "ขออภัยค่ะ สร้างรูปไม่สำเร็จในขณะนี้ ลองใหม่อีกครั้งนะคะ ☺️",
+      defaultQuickReply(),
+    )]);
+  }
+
+  incrementImageGenUsage(userId);
+
+  const imageUrl = await uploadGeneratedImage(result.imageBase64, result.mimeType, Number(SHOP_ID));
+  if (!imageUrl) {
+    return replyMessage(rt, [textMessage(
+      "สร้างรูปสำเร็จแล้วค่ะ แต่อัพโหลดไม่สำเร็จ ลองใหม่อีกครั้งนะคะ ☺️",
+      defaultQuickReply(),
+    )]);
+  }
+
+  const messages: any[] = [
+    { type: "image", originalContentUrl: imageUrl, previewImageUrl: imageUrl },
+  ];
+  if (result.caption) {
+    messages.push(textMessage(result.caption, defaultQuickReply()));
+  } else {
+    messages.push(textMessage("นี่คือตัวอย่างที่สร้างให้ค่ะ 🎨 ถ้าสนใจบริการนี้ พิมพ์ว่า 'จอง' ได้เลยค่ะ", defaultQuickReply()));
+  }
+  return replyMessage(rt, messages);
+}
+
 // ───────────────── message handler ─────────────────
 
 async function handleMessage(ev: any, customer: Customer) {
@@ -1085,6 +1210,10 @@ async function handleMessage(ev: any, customer: Customer) {
 
   if (route.kind === "hours") {
     return replyMessage(rt, [textMessage(route.message, defaultQuickReply())]);
+  }
+
+  if (route.kind === "image_gen") {
+    return handleImageGen(rt, route.prompt, userId);
   }
 
   if (route.kind === "handoff") {

@@ -3,11 +3,18 @@ export type AiChatMessage = {
   content: string;
 };
 
+export type AiImagePart = {
+  mimeType: string;
+  data: string; // base64-encoded
+};
+
 export type AiProviderRequest = {
   model: string;
   messages: AiChatMessage[];
   temperature: number;
   maxTokens: number;
+  /** Optional image(s) prepended to the last user turn (multimodal/vision). */
+  imageParts?: AiImagePart[];
 };
 
 export type AiProviderSuccess = {

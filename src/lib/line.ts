@@ -106,6 +106,27 @@ export async function getProfile(userId: string, accessToken?: string) {
   };
 }
 
+/**
+ * Download image/video/audio content sent by a LINE user.
+ * Returns the raw bytes and the content-type, or null on failure.
+ */
+export async function getMessageContent(
+  messageId: string,
+  accessToken?: string,
+): Promise<{ buffer: Buffer; contentType: string } | null> {
+  const token = accessToken || envToken();
+  const res = await fetch(`https://api-data.line.me/v2/bot/message/${messageId}/content`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    console.error(`[line] getMessageContent ${messageId} ${res.status}`);
+    return null;
+  }
+  const contentType = res.headers.get("Content-Type") ?? "image/jpeg";
+  const arrayBuffer = await res.arrayBuffer();
+  return { buffer: Buffer.from(arrayBuffer), contentType };
+}
+
 /** Fetch the OA's own info — used to validate a shop's credentials on signup. */
 export async function getBotInfo(accessToken: string): Promise<{
   userId: string;
