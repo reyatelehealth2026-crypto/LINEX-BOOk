@@ -56,6 +56,32 @@ const LIFF_URL = (path = "") => {
   return `https://liff.line.me/${id}${normalized}`;
 };
 
+// Public base URL used to serve brand illustrations under /public/brand/*.
+// LINE Flex `image.url` must be a publicly reachable https URL, so we fall
+// back to emoji rendering whenever this env is not configured (local dev
+// without tunnels, preview builds, etc.) — `infoRowImg` / `brandImageHero`
+// detect the null and gracefully degrade.
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
+
+function brandAssetUrl(file: string): string | null {
+  if (!APP_URL || !/^https:\/\//i.test(APP_URL)) return null;
+  return `${APP_URL}/brand/${file}`;
+}
+
+/** 2:1 image hero using a pre-rendered brand banner. Returns null when no
+ *  public URL is configured so callers can fall back to `brandHeader`. */
+function brandImageHero(file: string) {
+  const url = brandAssetUrl(file);
+  if (!url) return null;
+  return {
+    type: "image",
+    url,
+    size: "full",
+    aspectRatio: "2:1",
+    aspectMode: "cover",
+  };
+}
+
 export function textMessage(text: string, quickReply?: object) {
   return quickReply ? { type: "text", text, quickReply } : { type: "text", text };
 }
@@ -430,19 +456,31 @@ export function myBookingsMessage(bookings: BookingWithJoins[]) {
 }
 
 export function bookingConfirmedMessage(b: BookingWithJoins) {
+  const imageHero = brandImageHero("hero-confirmed.png");
+  const hero = imageHero ?? brandHeader({
+    kicker: "BOOKING CONFIRMED",
+    title: "จองคิวสำเร็จ",
+    subtitle: "ขอบคุณที่ไว้วางใจให้เราดูแล",
+    chips: ["เรียบร้อย", "พร้อมเสิร์ฟ", "รอคุณที่ร้าน"],
+    tone: "success"
+  });
+
+  const headerLabelBlock = imageHero
+    ? [
+        { type: "text", text: "BOOKING CONFIRMED", size: "xs", weight: "bold", color: BRAND },
+        { type: "text", text: "จองคิวสำเร็จ", size: "xl", weight: "bold", color: TEXT_MAIN, margin: "xs", wrap: true },
+        { type: "text", text: "ขอบคุณที่ไว้วางใจให้เราดูแล", size: "sm", color: TEXT_MUTED, margin: "xs", wrap: true },
+        { type: "separator", margin: "md", color: BORDER }
+      ]
+    : [];
+
   return {
     type: "flex",
     altText: `ยืนยันการจอง ${b.service?.name}`,
     contents: {
       type: "bubble",
       size: "giga",
-      hero: brandHeader({
-        kicker: "BOOKING CONFIRMED",
-        title: "จองคิวสำเร็จ",
-        subtitle: "ขอบคุณที่ไว้วางใจให้เราดูแล",
-        chips: ["เรียบร้อย", "พร้อมเสิร์ฟ", "รอคุณที่ร้าน"],
-        tone: "success"
-      }),
+      hero,
       body: {
         type: "box",
         layout: "vertical",
@@ -450,10 +488,11 @@ export function bookingConfirmedMessage(b: BookingWithJoins) {
         paddingAll: "18px",
         backgroundColor: PANEL,
         contents: [
-          infoRow("บริการ", b.service?.name ?? "-", "✂️"),
-          infoRow("วันที่", formatDateTH(b.starts_at), "📅"),
-          infoRow("เวลา", formatTimeRange(b.starts_at, b.ends_at), "🕐"),
-          infoRow("ช่าง", b.staff?.nickname ?? b.staff?.name ?? "ไม่ระบุ", "💇"),
+          ...headerLabelBlock,
+          infoRowImg("บริการ", b.service?.name ?? "-", "tile-service.png", "✂️"),
+          infoRowImg("วันที่", formatDateTH(b.starts_at), "tile-calendar.png", "📅"),
+          infoRowImg("เวลา", formatTimeRange(b.starts_at, b.ends_at), "tile-time.png", "🕐"),
+          infoRowImg("ช่าง", b.staff?.nickname ?? b.staff?.name ?? "ไม่ระบุ", "tile-staff.png", "💇"),
           totalCard("ยอดรวม", `${b.price.toLocaleString()} บาท`),
           thankYouCard(),
           { type: "text", text: `หมายเลขจอง #${b.id}`, size: "xs", color: TEXT_MUTED, align: "center" }
@@ -499,10 +538,10 @@ export function reminderMessage(b: BookingWithJoins) {
         paddingAll: "18px",
         backgroundColor: PANEL,
         contents: [
-          infoRow("บริการ", b.service?.name ?? "-", "✂️"),
-          infoRow("วันที่", formatDateTH(b.starts_at), "📅"),
-          infoRow("เวลา", formatTimeRange(b.starts_at, b.ends_at), "🕐"),
-          infoRow("ช่าง", b.staff?.nickname ?? b.staff?.name ?? "ไม่ระบุ", "💇"),
+          infoRowImg("บริการ", b.service?.name ?? "-", "tile-service.png", "✂️"),
+          infoRowImg("วันที่", formatDateTH(b.starts_at), "tile-calendar.png", "📅"),
+          infoRowImg("เวลา", formatTimeRange(b.starts_at, b.ends_at), "tile-time.png", "🕐"),
+          infoRowImg("ช่าง", b.staff?.nickname ?? b.staff?.name ?? "ไม่ระบุ", "tile-staff.png", "💇"),
           thankYouCard({ title: "💜 รอพบคุณที่ร้าน", subtitle: "อีกไม่นานเจอกัน" })
         ]
       }
@@ -1144,10 +1183,10 @@ export function aiBookingConfirmMessage(opts: {
         paddingAll: "18px",
         backgroundColor: PANEL,
         contents: [
-          infoRow("บริการ", `${opts.serviceName} · ${opts.durationMin} นาที`, "✂️"),
-          infoRow("วันที่", opts.dateDisplay, "📅"),
-          infoRow("เวลา", opts.timeRange, "🕐"),
-          infoRow("ช่าง", opts.staffName, "💇"),
+          infoRowImg("บริการ", `${opts.serviceName} · ${opts.durationMin} นาที`, "tile-service.png", "✂️"),
+          infoRowImg("วันที่", opts.dateDisplay, "tile-calendar.png", "📅"),
+          infoRowImg("เวลา", opts.timeRange, "tile-time.png", "🕐"),
+          infoRowImg("ช่าง", opts.staffName, "tile-staff.png", "💇"),
           totalCard("ยอดรวม", `${opts.price.toLocaleString()} บาท`)
         ]
       },
@@ -1885,10 +1924,10 @@ export function confirmBookingFlex(opts: {
         paddingAll: "18px",
         backgroundColor: PANEL,
         contents: [
-          infoRow("บริการ", opts.serviceName, "✂️"),
-          infoRow("วัน", opts.dateDisplay, "📅"),
-          infoRow("เวลา", opts.timeRange, "🕐"),
-          infoRow("ช่าง", opts.staffName, "💇"),
+          infoRowImg("บริการ", opts.serviceName, "tile-service.png", "✂️"),
+          infoRowImg("วัน", opts.dateDisplay, "tile-calendar.png", "📅"),
+          infoRowImg("เวลา", opts.timeRange, "tile-time.png", "🕐"),
+          infoRowImg("ช่าง", opts.staffName, "tile-staff.png", "💇"),
           totalCard("ราคา", `${opts.price.toLocaleString()} บาท`)
         ]
       },
@@ -1935,6 +1974,47 @@ function infoPanel(title: string, items: string[]) {
     contents: [
       { type: "text", text: title, size: "sm", weight: "bold", color: TEXT_MAIN, wrap: true },
       ...items.map((item) => ({ type: "text", text: "• " + item, size: "sm", color: TEXT_MUTED, wrap: true }))
+    ]
+  };
+}
+
+/**
+ * Image-enhanced info row. When `NEXT_PUBLIC_APP_URL` is configured the row
+ * renders with a 72px brand tile PNG; otherwise it transparently degrades to
+ * the emoji-badge `infoRow` so local dev / preview builds keep working.
+ */
+function infoRowImg(label: string, value: string, imgFile: string, fallbackEmoji: string) {
+  const url = brandAssetUrl(imgFile);
+  if (!url) return infoRow(label, value, fallbackEmoji);
+  return {
+    type: "box",
+    layout: "horizontal",
+    spacing: "md",
+    paddingAll: "12px",
+    backgroundColor: "#ffffff",
+    cornerRadius: "16px",
+    borderWidth: "1px",
+    borderColor: BORDER,
+    contents: [
+      {
+        type: "image",
+        url,
+        size: "72px",
+        aspectRatio: "1:1",
+        aspectMode: "cover",
+        flex: 0,
+      },
+      {
+        type: "box",
+        layout: "vertical",
+        flex: 1,
+        justifyContent: "center",
+        spacing: "xs",
+        contents: [
+          { type: "text", text: label, size: "xs", color: TEXT_MUTED },
+          { type: "text", text: value, size: "md", color: TEXT_MAIN, weight: "bold", wrap: true }
+        ]
+      }
     ]
   };
 }

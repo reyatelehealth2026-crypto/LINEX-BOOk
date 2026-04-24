@@ -44,7 +44,7 @@ const RESERVED_FIRST_SEG = new Set([
   "api", "_next",
   "admin", "liff", "booking", "profile", "services", "my-bookings",
   "super",
-  "favicon.ico", "robots.txt", "sitemap.xml", "assets", "images",
+  "favicon.ico", "robots.txt", "sitemap.xml", "assets", "images", "brand",
   "www",
 ]);
 
@@ -192,6 +192,6 @@ export function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|assets|images|robots.txt|sitemap.xml).*)",
+    "/((?!_next/static|_next/image|favicon.ico|assets|images|brand|robots.txt|sitemap.xml).*)",
   ],
 };
