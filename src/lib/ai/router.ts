@@ -24,6 +24,7 @@ export type AiRouteDecision =
   | { kind: "keyword_cancel" }
   | { kind: "services" }
   | { kind: "hours"; message: string }
+  | { kind: "image_gen"; prompt: string }
   | { kind: "handoff" }
   | { kind: "ai_fallback" };
 
@@ -132,6 +133,10 @@ export async function resolveAiRoute(params: { shopId: number; text: string }): 
   if (/(?:เปิด(?:กี่โมง|ตอน[กก]ี่|วันไหน)|ปิดกี่โมง|เวลาทำการ|เวลาเปิดปิด|opening hours|hours)/i.test(trimmed)) {
     const hours = await getHoursSummary(shopId);
     return { kind: "hours", message: hours.message };
+  }
+
+  if (/(?:สร้างรูป|วาดรูป|วาดภาพ|ออกแบบเล็บ|ออกแบบทรง|ดีไซน์เล็บ|ดีไซน์ทรง|ตัวอย่างเล็บ|ตัวอย่างทรงผม|preview.*เล็บ|preview.*ทรง|gen(?:erate)?.*image|create.*image|imagine\b)/i.test(trimmed)) {
+    return { kind: "image_gen", prompt: trimmed };
   }
 
   if (detectHandoffIntent(trimmed)) {
