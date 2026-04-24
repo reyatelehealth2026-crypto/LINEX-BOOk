@@ -140,7 +140,7 @@ export async function resolveAiRoute(params: { shopId: number; text: string }): 
   const hasBookingSignal = /จอง|นัด|booking/i.test(trimmed);
   if (
     !hasBookingSignal &&
-    /(?:สร้าง(?:รูป|ภาพ|ตัวอย่าง|AI)|วาด(?:รูป|ภาพ)|ออกแบบ(?:เล็บ|ทรง|ผม|รูป|ภาพ|สไตล์)|ดีไซน์(?:เล็บ|ทรง|ผม|รูป|ภาพ)|(?:รูป|ภาพ)ตัวอย่าง|ตัวอย่าง(?:เล็บ|ทรงผม)|ขอ(?:รูป|ภาพ|ตัวอย่าง)|อยากเห็น(?:แบบ|รูป|ตัวอย่าง)|มี(?:แบบ|ดีไซน์)ไหน|เล็บแบบไหน|ทรงผมแบบ|สปาสไตล์|โชว์(?:รูป|ภาพ)|AI\s*(?:วาด|สร้าง)|preview.*(?:เล็บ|ทรง|ผม|nail|hair)|gen(?:erate)?.*image|create.*image|draw.*(?:nail|hair|เล็บ|ทรง)|imagine\b|\brender\b)/i.test(trimmed)
+    /(?:สร้าง(?:รูป|ภาพ|ตัวอย่าง|AI)|วาด(?:รูป|ภาพ|ให้|หน่อย)?|ออกแบบ(?:เล็บ|ทรง|ผม|รูป|ภาพ|สไตล์)?|ดีไซน์(?:เล็บ|ทรง|ผม|รูป|ภาพ)?|เจน(?:รูป|ภาพ)|เจนเนอร์เรท|gen(?:erate)?\s*(?:รูป|ภาพ|image|img|pic)?|(?:รูป|ภาพ)ตัวอย่าง|ตัวอย่าง(?:เล็บ|ทรงผม|รูป|ภาพ)|ขอ(?:รูป|ภาพ|ตัวอย่าง|pic|image)|อยาก(?:เห็น|ดู)(?:แบบ|รูป|ภาพ|ตัวอย่าง)|มี(?:แบบ|ดีไซน์|รูป|ภาพ)ไหน|เล็บแบบไหน|ทรงผมแบบ|สปาสไตล์|โชว์(?:รูป|ภาพ)|ทำ(?:รูป|ภาพ)(?:ให้)?|AI\s*(?:วาด|สร้าง|generate|gen)|banana\b|nano\s*banana|dalle\b|imagen\b|preview.*(?:เล็บ|ทรง|ผม|nail|hair)|create.*image|draw.*(?:nail|hair|เล็บ|ทรง|me\b|a\b|an\b)|\bimagine\b|\brender\b|\bpicture\b|\bphoto\b)/i.test(trimmed)
   ) {
     return { kind: "image_gen", prompt: trimmed };
   }

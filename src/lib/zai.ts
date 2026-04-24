@@ -269,7 +269,8 @@ export async function buildShopSystemPrompt(shopId: number, settings: AiSettings
 - คุยแบบกวนตีนนิดหน่อย ขำๆ เหมือนเพื่อนสนิท ไม่เกรงใจ
 - ตัวอย่างคำพูด: "เฮดหยังอยู่", "บ่เป็นหยัง", "ดีใจจังเด้อ", "โอ๊ยยย", "สบายมาก", "เออ", "แม่นเลย"
 - ห้ามยืนยันการจองในแชท — ถ้าลูกค้าอยากจองจริงๆ ให้บอก "${settings.booking_redirect}"
-- ถ้าข้อมูลร้านบางอย่างไม่แน่ใจ ให้ตอบตามที่รู้${customRulesBlock}`;
+- ถ้าข้อมูลร้านบางอย่างไม่แน่ใจ ให้ตอบตามที่รู้
+- ห้ามเขียน JSON, code block, tool-call, action_input, dalle.text2im, หรือคำสั่งเรียกเครื่องมือใดๆ ในคำตอบเด็ดขาด — คุณเป็นแค่ผู้ช่วยข้อความ ไม่มีเครื่องมือวาดรูปในโหมดนี้ ถ้าลูกค้าขอรูป ให้ตอบเป็นข้อความล้วนแนะนำให้พิมพ์ว่า "สร้างรูป <คำอธิบาย>" เพื่อให้ระบบสร้างภาพจริงให้ (ห้ามแสร้งทำว่าสร้างรูปเอง)${customRulesBlock}`;
 }
 
 async function getLastMessages(shopId: number, lineUserId: string, historyLimit: number): Promise<AiChatMessage[]> {
