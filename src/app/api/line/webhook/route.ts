@@ -59,6 +59,27 @@ type AdminWizardStep = "shop_name" | "shop_phone" | "shop_address" | "service_na
 
 const lineEventQueues = ((globalThis as any).__lineEventQueues ??= new Map<string, Promise<unknown>>()) as Map<string, Promise<unknown>>;
 
+// Dedup LINE webhook retries: store webhookEventId → received-at timestamp.
+// LINE retries with the SAME webhookEventId — skip duplicates to prevent
+// double-counting rate limits and double-sending replies.
+const _seenWebhookEvents: Map<string, number> = (globalThis as any).__seenWebhookEvents ??= new Map();
+const SEEN_WEBHOOK_TTL_MS = 5 * 60 * 1000; // 5 min — longer than LINE retry window
+
+function markWebhookEventSeen(eventId: string): boolean {
+  // Returns true if the event was already seen (i.e., this is a retry).
+  purgeStaleSeenEvents();
+  if (_seenWebhookEvents.has(eventId)) return true;
+  _seenWebhookEvents.set(eventId, Date.now());
+  return false;
+}
+
+function purgeStaleSeenEvents() {
+  const cutoff = Date.now() - SEEN_WEBHOOK_TTL_MS;
+  for (const [id, at] of _seenWebhookEvents) {
+    if (at < cutoff) _seenWebhookEvents.delete(id);
+  }
+}
+
 // 20 events per minute per LINE userId — prevents a single user from exhausting DB resources
 const _userEventLimiter = createRateLimiter(20, 60 * 1000);
 
@@ -475,6 +496,18 @@ export async function POST(req: NextRequest) {
 }
 
 async function enqueueLineEvent(ev: any) {
+  // Skip LINE webhook retries — same webhookEventId means we already queued
+  // this event. Without dedup, slow ops (image gen ~35s) cause LINE to retry
+  // 3×, tripling rate-limit counters before the user sees any reply.
+  const webhookEventId: string | undefined = ev.webhookEventId;
+  if (webhookEventId) {
+    const isDuplicate = markWebhookEventSeen(webhookEventId);
+    if (isDuplicate) {
+      console.warn("[line-webhook] duplicate event skipped", { webhookEventId, type: ev.type, userId: ev.source?.userId });
+      return;
+    }
+  }
+
   const userId: string | undefined = ev.source?.userId;
   if (!userId) {
     return handleEvent(ev);
@@ -1016,7 +1049,11 @@ const _imageGenUsage = new Map<string, { count: number; resetAt: number }>();
 function isImageGenRateLimited(userId: string): boolean {
   const entry = _imageGenUsage.get(userId);
   if (!entry || Date.now() > entry.resetAt) return false;
-  return entry.count >= 3;
+  const limited = entry.count >= 3;
+  if (limited) {
+    console.warn("[image-gen] rate limited", { userId, count: entry.count, resetAt: new Date(entry.resetAt).toISOString() });
+  }
+  return limited;
 }
 
 function incrementImageGenUsage(userId: string): void {
@@ -1037,6 +1074,9 @@ async function handleImageGen(rt: string, prompt: string, userId: string) {
     return replyMessage(rt, [textMessage("ใช้งานฟีเจอร์สร้างรูปได้สูงสุด 3 ครั้ง/ชั่วโมงนะคะ ลองใหม่ในอีกสักครู่ค่ะ 🙏", defaultQuickReply())]);
   }
 
+  const currentEntry = _imageGenUsage.get(userId);
+  console.log("[image-gen] starting", { userId, currentCount: currentEntry?.count ?? 0, prompt: prompt.slice(0, 60) });
+
   try { await startLoading(userId, 15); } catch {}
 
   // Fetch shop name to use as style context
@@ -1044,10 +1084,12 @@ async function handleImageGen(rt: string, prompt: string, userId: string) {
   const { data: shop } = await db.from("shops").select("name, business_type").eq("id", SHOP_ID).maybeSingle();
   const shopContext = shop?.name ? `ร้าน${shop.name}` : undefined;
 
+  const genStart = Date.now();
   const result = await generateImage(prompt, shopContext);
+  console.log("[image-gen] generateImage done", { userId, ok: result.ok, elapsedMs: Date.now() - genStart });
 
   if (!result.ok) {
-    console.warn("[line-webhook] image gen failed", { code: result.code, message: result.message });
+    console.warn("[image-gen] failed", { userId, code: result.code, message: result.message });
     return replyMessage(rt, [textMessage(
       result.code === "not_configured"
         ? "ขออภัยค่ะ ฟีเจอร์สร้างรูปยังไม่ได้ตั้งค่า GEMINI_API_KEY"
@@ -1057,6 +1099,7 @@ async function handleImageGen(rt: string, prompt: string, userId: string) {
   }
 
   incrementImageGenUsage(userId);
+  console.log("[image-gen] incremented usage", { userId, newCount: (_imageGenUsage.get(userId)?.count ?? 0) });
 
   const imageUrl = await uploadGeneratedImage(result.imageBase64, result.mimeType, Number(SHOP_ID));
   if (!imageUrl) {
