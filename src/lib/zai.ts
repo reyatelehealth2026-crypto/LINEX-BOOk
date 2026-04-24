@@ -4,7 +4,10 @@ import { getAiProvider, providerForModel, type AiChatMessage, type AiProviderFai
 const AI_SETTINGS_CACHE_TTL_MS = 30_000;
 const SHOP_CONTEXT_CACHE_TTL_MS = 60_000;
 const MAX_RUNTIME_HISTORY = 6;
-const MAX_RUNTIME_TOKENS = 500;
+// Raised from 500 → 1200. Gemini 3 Flash needs headroom so a 2-paragraph reply
+// isn't cut off mid-sentence. 1200 still fits comfortably inside LINE's
+// 5000-char message limit.
+const MAX_RUNTIME_TOKENS = 1200;
 
 export type AiSettings = {
   enabled: boolean;
@@ -281,7 +284,9 @@ export async function askGLM(lineUserId: string, userText: string): Promise<stri
           model,
           messages,
           temperature: attempt === 0 ? settings.temperature : Math.min(settings.temperature + 0.1, 1.0),
-          maxTokens: attempt === 0 ? runtimeMaxTokens : Math.min(runtimeMaxTokens, 160), // smaller on retry
+          // Keep full token budget on retry — shrinking to 160 was producing
+          // truncated half-replies when the first attempt timed out.
+          maxTokens: runtimeMaxTokens,
         });
 
         if (result.ok) {

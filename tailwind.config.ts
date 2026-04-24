@@ -131,20 +131,19 @@ const config: Config = {
       },
       fontFamily: {
         sans: [
-          "'IBM Plex Sans Thai Looped'",
-          "'IBM Plex Sans Thai'",
+          "'Mitr'",
           "ui-sans-serif",
           "system-ui",
           "'Noto Sans Thai'",
           "sans-serif",
         ],
         display: [
-          "'Fraunces'",
-          "Georgia",
-          "'IBM Plex Sans Thai Looped'",
-          "serif",
+          "'Mitr'",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif",
         ],
-        serif: ["'Fraunces'", "Georgia", "serif"],
+        serif: ["'Mitr'", "Georgia", "serif"],
         mono: ["'JetBrains Mono'", "'Fira Code'", "ui-monospace", "monospace"],
       },
       borderRadius: {

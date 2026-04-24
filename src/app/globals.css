@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=IBM+Plex+Sans+Thai+Looped:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Mitr:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -62,9 +62,9 @@
   --border-strong: var(--paper-4);
   --primary-rgb: 47, 106, 55;
 
-  /* Type */
-  --font-display: "Fraunces", Georgia, serif;
-  --font-body: "IBM Plex Sans Thai Looped", "IBM Plex Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  /* Type — Mitr (single-family system) */
+  --font-display: "Mitr", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Mitr", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
@@ -121,9 +121,9 @@ body {
 .pill-cream  { @apply pill bg-paper-2 text-ink-700; }
 .pill-dark   { @apply pill bg-ink-900 text-paper-1; }
 
-/* ── Typography ──────────────────────────────────────── */
-.h-display { @apply font-display font-normal tracking-tight text-ink-900; letter-spacing: -0.02em; }
-.h-display-italic { @apply font-display italic text-forest-600; letter-spacing: -0.02em; }
+/* ── Typography — Mitr is geometric; use weight contrast, not italic ── */
+.h-display { @apply font-display font-semibold tracking-tight text-ink-900; letter-spacing: -0.015em; }
+.h-display-italic { @apply font-display font-light text-forest-600; letter-spacing: -0.01em; }
 .section-title { @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500; }
 .eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-forest-600; }
 .eyebrow-muted { @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-500; }

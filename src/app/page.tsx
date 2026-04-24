@@ -12,20 +12,22 @@ import {
   MessageSquareText,
   Gift,
   Users,
+  Sparkles,
+  Clock,
 } from "lucide-react";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-paper-1 text-ink-900">
+    <main className="min-h-screen bg-paper-1 text-ink-900 font-sans">
       {/* ── Top nav ───────────────────────────────────────── */}
-      <header className="border-b border-paper-3 bg-paper-1">
+      <header className="sticky top-0 z-30 border-b border-paper-3 bg-paper-1/85 backdrop-blur">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-14 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-[10px] bg-forest-500 text-white grid place-items-center font-display font-semibold text-[16px]">
+            <span className="w-9 h-9 rounded-[10px] bg-forest-500 text-white grid place-items-center font-semibold text-[15px]">
               จก
             </span>
             <span className="flex flex-col leading-tight">
-              <span className="font-display text-[19px] tracking-tight text-ink-900">
+              <span className="font-semibold text-[18px] tracking-tight text-ink-900">
                 LineBook
               </span>
               <span className="text-[10px] text-ink-500 font-mono tracking-[0.1em] uppercase">
@@ -49,22 +51,40 @@ export default function Home() {
 
       {/* ── Hero ──────────────────────────────────────────── */}
       <section className="relative overflow-hidden">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-14 pt-16 lg:pt-20 pb-16 lg:pb-24 grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 items-center">
+        {/* Soft backdrop grid */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage:
+              "linear-gradient(var(--paper-3) 1px, transparent 1px), linear-gradient(90deg, var(--paper-3) 1px, transparent 1px)",
+            backgroundSize: "64px 64px",
+            maskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 30%, black 30%, transparent 75%)",
+          }}
+        />
+
+        <div className="relative max-w-[1280px] mx-auto px-6 lg:px-14 pt-16 lg:pt-24 pb-16 lg:pb-28 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center">
           <div className="animate-fade-up">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-forest-50 border border-forest-100 text-[12px] text-forest-700 mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-forest-500" />
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-forest-50 border border-forest-100 text-[12px] text-forest-700 mb-7">
+              <Sparkles size={13} className="text-forest-500" />
               ใหม่ · แจ้งเตือนอัตโนมัติผ่าน LINE OA
             </div>
-            <h1 className="font-display font-normal tracking-[-0.03em] text-[44px] sm:text-[64px] lg:text-[72px] leading-[1.02] text-ink-900">
-              รับจองคิว
-              <br />
-              <span className="italic text-forest-600">ด้วยลิงก์เดียว</span>
+
+            <h1 className="tracking-[-0.02em] text-[44px] sm:text-[60px] lg:text-[76px] leading-[0.98] text-ink-900">
+              <span className="font-light block">รับจองคิว</span>
+              <span className="font-semibold text-forest-600">
+                ด้วยลิงก์เดียว
+                <span className="text-forest-500">.</span>
+              </span>
             </h1>
-            <p className="mt-6 text-[17px] leading-[1.65] text-ink-600 max-w-[520px]">
-              จัดการนัดหมายลูกค้า พนักงาน และรายได้ของร้าน ในระบบเดียว
-              ครบเครื่องตั้งแต่ลูกค้ากดจอง จนถึงการวิเคราะห์ยอดขาย
+
+            <p className="mt-7 text-[17px] leading-[1.65] text-ink-600 max-w-[540px]">
+              จัดการนัดหมายลูกค้า พนักงาน และรายได้ของร้านในระบบเดียว —
+              ตั้งแต่ลูกค้ากดจอง จนถึงการวิเคราะห์ยอดขายรายสัปดาห์
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+
+            <div className="mt-9 flex flex-col sm:flex-row gap-3">
               <Link href="/signup" className="btn-primary text-[14px] px-5 py-3">
                 เริ่มใช้งานฟรี <ArrowRight size={14} />
               </Link>
@@ -72,7 +92,8 @@ export default function Home() {
                 <Eye size={14} /> ดูตัวอย่างระบบ
               </Link>
             </div>
-            <div className="mt-9 flex flex-wrap gap-x-7 gap-y-2 text-[12px] text-ink-500">
+
+            <div className="mt-10 flex flex-wrap gap-x-7 gap-y-2 text-[12px] text-ink-500">
               <span>✓ ไม่ต้องใส่บัตรเครดิต</span>
               <span>✓ ตั้งค่าได้ใน 5 นาที</span>
               <span>✓ รองรับภาษาไทย</span>
@@ -80,14 +101,14 @@ export default function Home() {
           </div>
 
           {/* ── Stacked hero mockups ─────────────────── */}
-          <div className="relative h-[460px] lg:h-[560px] hidden lg:block">
+          <div className="relative h-[480px] lg:h-[580px] hidden lg:block">
             {/* Calendar card */}
             <div
-              className="absolute right-0 top-4 w-[420px] bg-paper-0 rounded-[16px] shadow-editorial border border-paper-3 p-5"
-              style={{ transform: "rotate(2deg)" }}
+              className="absolute right-0 top-2 w-[420px] bg-paper-0 rounded-[18px] shadow-editorial border border-paper-3 p-5"
+              style={{ transform: "rotate(2.5deg)" }}
             >
               <div className="flex items-center justify-between mb-4">
-                <div className="font-display text-[15px]">เมษายน 2569</div>
+                <div className="font-medium text-[15px]">เมษายน 2569</div>
                 <div className="flex gap-1">
                   <span className="w-5 h-5 rounded bg-paper-2" />
                   <span className="w-5 h-5 rounded bg-paper-2" />
@@ -119,17 +140,24 @@ export default function Home() {
                   );
                 })}
               </div>
+              <div className="mt-4 flex items-center gap-2 text-[10px] text-ink-500">
+                <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-forest-200" /> ว่าง</span>
+                <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-clay-200" /> เต็ม</span>
+                <span className="ml-auto font-mono">34 / 42 slots</span>
+              </div>
             </div>
 
             {/* Booking card */}
             <div
-              className="absolute left-2 bottom-8 w-[280px] bg-paper-0 rounded-[16px] shadow-editorial border border-paper-3 p-5"
+              className="absolute left-0 bottom-10 w-[290px] bg-paper-0 rounded-[18px] shadow-editorial border border-paper-3 p-5"
               style={{ transform: "rotate(-3deg)" }}
             >
-              <div className="text-[11px] text-ink-500 mb-1">วันนี้ · 14:30</div>
-              <div className="font-display text-[18px] mb-3">ตัดผม + สระไดร์</div>
+              <div className="flex items-center gap-1.5 text-[11px] text-ink-500 mb-1">
+                <Clock size={11} /> วันนี้ · 14:30
+              </div>
+              <div className="font-semibold text-[19px] mb-3 tracking-tight">ตัดผม + สระไดร์</div>
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-8 h-8 rounded-full bg-ochre-200 grid place-items-center text-[11px] font-semibold text-ink-900">
+                <div className="w-9 h-9 rounded-full bg-ochre-200 grid place-items-center text-[12px] font-semibold text-ink-900">
                   ณฐ
                 </div>
                 <div>
@@ -148,9 +176,9 @@ export default function Home() {
             </div>
 
             {/* Revenue card */}
-            <div className="absolute right-16 bottom-14 w-[200px] bg-forest-700 text-white rounded-[16px] shadow-editorial p-5">
-              <div className="text-[10px] opacity-70 uppercase tracking-[0.1em]">สัปดาห์นี้</div>
-              <div className="font-display text-[30px] font-medium mt-1 leading-none">
+            <div className="absolute right-14 bottom-16 w-[210px] bg-forest-800 text-white rounded-[18px] shadow-editorial p-5">
+              <div className="text-[10px] opacity-70 uppercase tracking-[0.12em]">สัปดาห์นี้</div>
+              <div className="font-semibold text-[32px] mt-1 leading-none tracking-tight">
                 ฿48,320
               </div>
               <div className="text-[11px] text-sage-200 mt-1">↑ 18.2% จากสัปดาห์ก่อน</div>
@@ -169,9 +197,9 @@ export default function Home() {
 
         {/* Mobile hero companion */}
         <div className="lg:hidden max-w-[420px] mx-auto px-6 pb-12">
-          <div className="bg-forest-700 text-white rounded-[16px] shadow-editorial p-5">
-            <div className="text-[10px] opacity-70 uppercase tracking-[0.1em]">สัปดาห์นี้</div>
-            <div className="font-display text-[30px] font-medium mt-1 leading-none">฿48,320</div>
+          <div className="bg-forest-800 text-white rounded-[18px] shadow-editorial p-5">
+            <div className="text-[10px] opacity-70 uppercase tracking-[0.12em]">สัปดาห์นี้</div>
+            <div className="font-semibold text-[32px] mt-1 leading-none">฿48,320</div>
             <div className="text-[11px] text-sage-200 mt-1">↑ 18.2% จากสัปดาห์ก่อน</div>
             <div className="flex items-end gap-1 h-10 mt-3">
               {[30, 45, 25, 60, 40, 70, 85].map((h, i) => (
@@ -186,15 +214,25 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Stats band ───────────────────────────────────── */}
+      <section className="border-y border-paper-3 bg-paper-0">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-14 py-8 grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4">
+          <Stat kpi="2,800+" label="ร้านทั่วไทย" />
+          <Stat kpi="1.2M" label="นัดหมาย / ปี" />
+          <Stat kpi="94%" label="อัตราการมาตามนัด" />
+          <Stat kpi="5 นาที" label="ตั้งค่าเสร็จ" />
+        </div>
+      </section>
+
       {/* ── Logo strip ────────────────────────────────────── */}
-      <section className="border-y border-paper-3 bg-paper-1">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-14 py-7 flex flex-wrap items-center justify-between gap-x-10 gap-y-4">
+      <section className="bg-paper-1">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-14 py-10 flex flex-wrap items-center justify-between gap-x-10 gap-y-4">
           <span className="text-[11px] uppercase tracking-[0.14em] text-ink-500">
-            ใช้โดยธุรกิจกว่า 2,800 แห่งทั่วไทย
+            ได้รับความไว้วางใจจาก
           </span>
           {["Siam Salon", "บ้านนวด", "Bloom & Co", "ทันตกรรมฟ้าใส", "Studio K", "Pet Care +"].map(
             (n) => (
-              <span key={n} className="font-display italic text-[17px] text-ink-400">
+              <span key={n} className="font-light text-[18px] text-ink-400 tracking-tight">
                 {n}
               </span>
             ),
@@ -203,15 +241,15 @@ export default function Home() {
       </section>
 
       {/* ── Features ──────────────────────────────────────── */}
-      <section id="features" className="bg-paper-1">
+      <section id="features" className="border-t border-paper-3 bg-paper-1">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-14 py-20 lg:py-24">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-10 lg:gap-12 mb-14">
             <div>
               <div className="eyebrow mb-3">— ฟีเจอร์หลัก</div>
-              <h2 className="h-display text-[36px] sm:text-[44px] leading-[1.08]">
-                ทุกอย่างที่ร้านคุณ
+              <h2 className="tracking-tight text-[36px] sm:text-[46px] leading-[1.05]">
+                <span className="font-light">ทุกอย่างที่ร้านคุณ</span>
                 <br />
-                <span className="italic text-forest-600">ต้องการ</span>
+                <span className="font-semibold text-forest-600">ต้องการ</span>
               </h2>
             </div>
             <p className="text-[16px] leading-[1.7] text-ink-600 self-end">
@@ -265,26 +303,26 @@ export default function Home() {
                 <div className="text-[11px] uppercase tracking-[0.14em] text-sage-200 mb-3">
                   — แดชบอร์ด
                 </div>
-                <h2 className="font-display text-[36px] sm:text-[44px] leading-[1.08] tracking-[-0.02em]">
-                  ภาพรวมร้าน
+                <h2 className="text-[36px] sm:text-[46px] leading-[1.05] tracking-tight">
+                  <span className="font-light">ภาพรวมร้าน</span>
                   <br />
-                  <span className="italic text-sage-200">ในหน้าเดียว</span>
+                  <span className="font-semibold text-sage-200">ในหน้าเดียว</span>
                 </h2>
               </div>
-              <p className="text-white/65 max-w-[380px] text-[14px] leading-[1.65]">
+              <p className="text-white/70 max-w-[380px] text-[14px] leading-[1.65]">
                 เห็นทุกอย่างที่สำคัญตั้งแต่แรกเข้า — นัดหมายวันนี้ รายได้
                 และพนักงานที่ว่างในแต่ละช่วงเวลา
               </p>
             </div>
 
-            <div className="mt-10 rounded-t-[12px] overflow-hidden bg-paper-1 text-ink-900 border border-paper-3 shadow-[0_-20px_60px_rgba(0,0,0,0.3)]">
+            <div className="mt-10 rounded-t-[14px] overflow-hidden bg-paper-1 text-ink-900 border border-paper-3 shadow-[0_-20px_60px_rgba(0,0,0,0.3)]">
               <div className="flex">
-                <div className="hidden md:flex flex-col w-[180px] bg-forest-800 text-paper-1 p-4 gap-1">
+                <div className="hidden md:flex flex-col w-[190px] bg-forest-800 text-paper-1 p-4 gap-1">
                   {["แดชบอร์ด","ปฏิทิน","วิเคราะห์","บริการ","พนักงาน","ลูกค้า","สะสมแต้ม"].map((n, i) => (
                     <div
                       key={n}
-                      className={`text-[11px] px-2 py-1.5 rounded ${
-                        i === 0 ? "bg-forest-600 text-white" : "text-white/70"
+                      className={`text-[12px] px-2.5 py-1.5 rounded-md ${
+                        i === 0 ? "bg-forest-600 text-white font-medium" : "text-white/70"
                       }`}
                     >
                       {n}
@@ -295,8 +333,8 @@ export default function Home() {
                   <div className="text-[10px] uppercase tracking-[0.14em] text-ink-500">
                     วันพฤหัสที่ 23 เมษายน 2569
                   </div>
-                  <div className="font-display text-[28px] mt-1">แดชบอร์ด</div>
-                  <div className="grid grid-cols-4 gap-3 mt-5">
+                  <div className="font-semibold text-[28px] mt-1 tracking-tight">แดชบอร์ด</div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
                     <MiniKpi tone="forest" label="นัดวันนี้" value="18" />
                     <MiniKpi tone="dark" label="รายได้" value="฿14,280" />
                     <MiniKpi tone="cream" label="ลูกค้าใหม่" value="12" />
@@ -314,9 +352,9 @@ export default function Home() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-14 py-20 lg:py-24">
           <div className="mb-10 max-w-2xl">
             <div className="eyebrow mb-3">— พรีเซทธุรกิจ</div>
-            <h2 className="h-display text-[32px] sm:text-[40px] leading-[1.08]">
-              เลือกประเภทร้าน ได้ระบบพร้อมใช้ใน
-              <span className="italic text-forest-600"> 10 นาที</span>
+            <h2 className="tracking-tight text-[32px] sm:text-[42px] leading-[1.06]">
+              <span className="font-light">เลือกประเภทร้าน ได้ระบบพร้อมใช้ใน </span>
+              <span className="font-semibold text-forest-600">10 นาที</span>
             </h2>
             <p className="mt-4 text-ink-600 text-[15px] leading-[1.65]">
               เลือก 1 ใน 3 พรีเซท ระบบจะติดตั้งบริการเริ่มต้น เวลาทำการ และข้อความอัตโนมัติให้ทันที —
@@ -341,8 +379,9 @@ export default function Home() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-14 py-20 lg:py-24">
           <div className="text-center mb-12 max-w-2xl mx-auto">
             <div className="eyebrow mb-3">— แผนการใช้งาน</div>
-            <h2 className="h-display text-[36px] sm:text-[44px] leading-[1.08]">
-              ราคาที่<span className="italic text-forest-600">เหมาะกับร้านคุณ</span>
+            <h2 className="tracking-tight text-[36px] sm:text-[46px] leading-[1.05]">
+              <span className="font-light">ราคาที่</span>
+              <span className="font-semibold text-forest-600">เหมาะกับร้านคุณ</span>
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-[1100px] mx-auto">
@@ -372,11 +411,34 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── CTA band ─────────────────────────────────────── */}
+      <section className="bg-ink-900 text-paper-1">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-14 py-16 lg:py-20 flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+          <div>
+            <h3 className="tracking-tight text-[28px] sm:text-[36px] leading-[1.1]">
+              <span className="font-light">พร้อมเปิดระบบจองของร้านคุณ</span>{" "}
+              <span className="font-semibold text-sage-200">วันนี้</span>
+            </h3>
+            <p className="text-white/60 text-[14px] mt-2 max-w-md">
+              ทดลองใช้ฟรี 14 วัน ไม่ต้องใส่บัตรเครดิต ยกเลิกได้ทุกเมื่อ
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Link href="/signup" className="btn bg-forest-500 text-white hover:bg-forest-600 text-[14px] px-5 py-3">
+              สมัครใช้งานฟรี <ArrowRight size={14} />
+            </Link>
+            <Link href="/login" className="btn bg-transparent text-paper-1 border border-white/20 hover:bg-white/5 text-[14px] px-5 py-3">
+              เข้าสู่ระบบ
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ── Footer ────────────────────────────────────────── */}
-      <footer className="bg-ink-900 text-paper-2">
+      <footer className="bg-ink-900 text-paper-2 border-t border-white/10">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-14 py-12 flex flex-col sm:flex-row sm:items-start justify-between gap-10">
           <div>
-            <div className="font-display text-[26px] text-white">
+            <div className="font-semibold text-[24px] text-white tracking-tight">
               LineBook<span className="text-forest-300">.</span>
             </div>
             <div className="text-[11px] text-white/40 mt-1">
@@ -420,6 +482,17 @@ export default function Home() {
 
 /* ---------- sub-components ---------- */
 
+function Stat({ kpi, label }: { kpi: string; label: string }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="font-semibold text-[28px] sm:text-[32px] tracking-tight leading-none text-ink-900">
+        {kpi}
+      </div>
+      <div className="text-[12px] text-ink-500">{label}</div>
+    </div>
+  );
+}
+
 function FeatureCard({
   icon,
   title,
@@ -434,21 +507,21 @@ function FeatureCard({
   const featured = variant === "featured";
   return (
     <div
-      className={`rounded-[16px] p-7 min-h-[220px] flex flex-col justify-between border ${
+      className={`rounded-[18px] p-7 min-h-[220px] flex flex-col justify-between border transition-colors ${
         featured
           ? "bg-ink-900 text-paper-1 border-transparent"
-          : "bg-paper-0 text-ink-900 border-paper-3"
+          : "bg-paper-0 text-ink-900 border-paper-3 hover:border-forest-200"
       }`}
     >
       <div
-        className={`w-11 h-11 rounded-[10px] grid place-items-center ${
+        className={`w-11 h-11 rounded-[12px] grid place-items-center ${
           featured ? "bg-forest-500 text-white" : "bg-forest-50 text-forest-600"
         }`}
       >
         {icon}
       </div>
       <div className="mt-6">
-        <div className="font-display text-[22px] font-medium tracking-tight">{title}</div>
+        <div className="font-semibold text-[20px] tracking-tight">{title}</div>
         <div className={`text-[13px] leading-[1.55] mt-1.5 ${featured ? "text-white/65" : "text-ink-500"}`}>
           {desc}
         </div>
@@ -477,7 +550,7 @@ function MiniKpi({
       <div className={`text-[9px] uppercase tracking-[0.14em] ${tone === "cream" ? "text-ink-500" : "opacity-75"}`}>
         {label}
       </div>
-      <div className="font-display text-[22px] font-medium leading-none mt-1">
+      <div className="font-semibold text-[22px] leading-none mt-1 tracking-tight">
         {value}
       </div>
     </div>
@@ -496,11 +569,11 @@ function PresetCard({
   services: number;
 }) {
   return (
-    <div className="card p-6 flex flex-col gap-3">
-      <div className="w-11 h-11 rounded-[10px] bg-forest-50 text-forest-600 grid place-items-center">
+    <div className="card p-6 flex flex-col gap-3 hover:border-forest-200 transition-colors">
+      <div className="w-11 h-11 rounded-[12px] bg-forest-50 text-forest-600 grid place-items-center">
         {icon}
       </div>
-      <div className="font-display text-[18px] mt-1">{name}</div>
+      <div className="font-semibold text-[18px] mt-1 tracking-tight">{name}</div>
       <div className="text-[13px] text-ink-500">{desc}</div>
       <div className="mt-auto pt-4 border-t border-paper-3 text-[11px] text-ink-500 font-mono">
         {services} บริการเริ่มต้น
@@ -530,14 +603,14 @@ function PricingCard({
   const subCls = featured ? "text-white/65" : "text-ink-500";
 
   return (
-    <div className={`rounded-[16px] border ${surfaceCls} p-8 relative shadow-soft`}>
+    <div className={`rounded-[18px] border ${surfaceCls} p-8 relative shadow-soft`}>
       {featured && (
         <span className="absolute -top-3 left-6 pill bg-ochre-200 text-ochre-700">แนะนำ</span>
       )}
-      <div className="font-display text-[24px] font-medium">{name}</div>
+      <div className="font-semibold text-[22px] tracking-tight">{name}</div>
       <div className={`text-[12px] ${subCls} mt-0.5 mb-5`}>{desc}</div>
       <div className="flex items-baseline gap-1.5 mb-6">
-        <span className="font-display text-[48px] font-medium leading-none">฿{price}</span>
+        <span className="font-semibold text-[48px] leading-none tracking-tight">฿{price}</span>
         <span className={`text-[13px] ${subCls}`}>{per}</span>
       </div>
       <div className="flex flex-col gap-2.5 mb-6">

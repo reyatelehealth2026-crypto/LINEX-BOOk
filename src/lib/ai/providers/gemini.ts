@@ -1,7 +1,17 @@
 import type { AiProvider, AiProviderRequest, AiProviderResult, AiChatMessage } from "./types";
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
-const GEMINI_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS ?? 10_000);
+const GEMINI_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS ?? 20_000);
+// Gemini 3 Flash thinks by default and can burn the entire output budget on
+// reasoning tokens, producing empty or truncated replies. For a customer-facing
+// chatbot we want a direct answer. 0 = thinking disabled; override with
+// GEMINI_THINKING_BUDGET env if you want dynamic (-1) or a specific number.
+const GEMINI_THINKING_BUDGET = (() => {
+  const raw = process.env.GEMINI_THINKING_BUDGET;
+  if (raw === undefined || raw === "") return 0;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+})();
 
 function toGeminiContents(messages: AiChatMessage[]) {
   // Gemini uses "contents" array with role "user"/"model" and "systemInstruction"
@@ -62,12 +72,18 @@ export function createGeminiProvider(): AiProvider {
       const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
 
       try {
+        const generationConfig: Record<string, unknown> = {
+          temperature: request.temperature,
+          maxOutputTokens: request.maxTokens,
+        };
+        // Only Gemini 2.5+/3.x support thinkingConfig. Harmless on older
+        // models (ignored), but we gate on name to avoid noisy 400s.
+        if (/^gemini-(2\.5|3)/i.test(request.model)) {
+          generationConfig.thinkingConfig = { thinkingBudget: GEMINI_THINKING_BUDGET };
+        }
         const body: Record<string, unknown> = {
           contents,
-          generationConfig: {
-            temperature: request.temperature,
-            maxOutputTokens: request.maxTokens,
-          },
+          generationConfig,
         };
         if (systemInstruction) {
           body.systemInstruction = systemInstruction;
@@ -97,7 +113,26 @@ export function createGeminiProvider(): AiProvider {
         }
 
         const json = await res.json();
-        const text: string | null = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+        // Gemini can return multiple parts (e.g. thought + text) — concatenate
+        // every non-thought text part so we don't miss the answer when the
+        // model emits reasoning first. Skip parts explicitly flagged `thought`.
+        const parts: Array<{ text?: string; thought?: boolean }> =
+          json?.candidates?.[0]?.content?.parts ?? [];
+        const joined = parts
+          .filter((p) => !p?.thought && typeof p?.text === "string")
+          .map((p) => p.text as string)
+          .join("");
+        const text: string | null = joined.length > 0 ? joined : null;
+        const finishReason: string | undefined = json?.candidates?.[0]?.finishReason;
+        if (!text || finishReason === "MAX_TOKENS") {
+          console.warn("[ai:gemini] suspicious completion", {
+            model: request.model,
+            finishReason,
+            partsCount: parts.length,
+            hasText: !!text,
+            maxOutputTokens: request.maxTokens,
+          });
+        }
         return {
           ok: true,
           text,
