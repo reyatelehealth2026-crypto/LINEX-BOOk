@@ -25,6 +25,8 @@
 - **Admin panel** realtime — confirm / complete (บวกแต้มอัตโนมัติ) / cancel / no-show
 - **i18n ไทย/อังกฤษ** toggle ใน LIFF
 - **Double-booking prevention** ที่ DB ผ่าน exclusion constraint
+- **AI Vision** — ลูกค้าส่งรูป reference (เล็บ/ทรงผม) → Gemini `gemini-2.5-flash` วิเคราะห์และแนะนำบริการของร้าน
+- **AI Image Generation** — ลูกค้าพิมพ์ "สร้างรูปเล็บ..." → Gemini `gemini-2.5-flash-image` สร้างภาพ preview ก่อนจอง
 
 ---
 
@@ -39,6 +41,52 @@ LINE App
 Admin browser ──fetch+realtime──► /api/bookings, /api/admin/*
                                    Supabase Realtime channel
 ```
+
+---
+
+## 🤖 AI Multimodal (Vision + Image Generation)
+
+### Phase 1 — Vision (อ่านรูปที่ลูกค้าส่ง)
+
+```
+ลูกค้าส่งรูป → LINE webhook (image event)
+  → ดาวน์โหลดจาก LINE Content API
+  → ส่งให้ Gemini gemini-2.5-flash (multimodal)
+  → วิเคราะห์ + แนะนำบริการของร้าน
+  → ตอบกลับเป็น LINE text message
+```
+
+- Rate limit: 1 รูป / 30 วินาที ต่อผู้ใช้ (in-memory)
+- Toggle: `AI_VISION_ENABLED=false` เพื่อปิด global หรือปิดต่อร้านใน `ai_settings.vision_enabled`
+
+### Phase 2 — Image Generation (สร้างรูป preview)
+
+```
+ลูกค้าพิมพ์ "สร้างรูปเล็บสีชมพู..."
+  → intent router ตรวจจับ image_gen
+  → Gemini gemini-2.5-flash-image สร้าง PNG
+  → อัพโหลดไป Supabase Storage bucket "ai-generated"
+  → ส่งกลับเป็น LINE image message
+```
+
+- Rate limit: 3 รูป / ชั่วโมง ต่อผู้ใช้ (in-memory)
+- Toggle: `AI_IMAGE_GEN_ENABLED=true` (default: false — เปิดเมื่อพร้อม)
+- **ต้องรัน migration 013** เพื่อสร้าง Storage bucket: `supabase/migrations/013_ai_multimodal.sql`
+
+### Environment Variables ที่ต้องเพิ่ม
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `GEMINI_API_KEY` | ✅ | — | Google AI Studio API key |
+| `GEMINI_VISION_MODEL` | — | `gemini-2.5-flash` | Model สำหรับวิเคราะห์รูป |
+| `GEMINI_IMAGE_GEN_MODEL` | — | `gemini-2.5-flash-image` | Model สำหรับสร้างรูป |
+| `AI_VISION_ENABLED` | — | `true` | Global toggle สำหรับ vision |
+| `AI_IMAGE_GEN_ENABLED` | — | `false` | Global toggle สำหรับ image gen |
+
+### Manual Test
+
+**Vision:** ส่งรูปเล็บหรือทรงผมใน LINE chat → bot ควรตอบกลับเป็นภาษาไทยพร้อมแนะนำบริการ  
+**Image gen:** พิมพ์ `สร้างรูปเล็บสีชมพูแบบ French manicure` → bot ควรส่งรูปกลับมา
 
 ---
 

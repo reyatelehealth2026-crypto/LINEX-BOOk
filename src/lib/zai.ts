@@ -1,5 +1,5 @@
 import { supabaseAdmin, getCurrentShopId } from "@/lib/supabase";
-import { getAiProvider, providerForModel, type AiChatMessage, type AiProviderFailure, type AiProviderResult } from "@/lib/ai/providers";
+import { getAiProvider, providerForModel, type AiChatMessage, type AiImagePart, type AiProviderFailure, type AiProviderResult } from "@/lib/ai/providers";
 
 const AI_SETTINGS_CACHE_TTL_MS = 30_000;
 const SHOP_CONTEXT_CACHE_TTL_MS = 60_000;
@@ -246,6 +246,81 @@ async function saveMessages(shopId: number, lineUserId: string, userText: string
 
   if (error) {
     console.error("[ai] failed to persist chat history", { shopId, lineUserId, error: error.message });
+  }
+}
+
+// Default vision model — operator can override with GEMINI_VISION_MODEL env var.
+// gemini-2.5-flash is GA and supports multimodal image input.
+const VISION_MODEL = process.env.GEMINI_VISION_MODEL ?? "gemini-2.5-flash";
+// 30s for vision since image download + analysis takes longer than text chat.
+const VISION_TIMEOUT_MS = 30_000;
+
+/**
+ * Analyze a LINE image with Gemini vision and return a Thai-language recommendation
+ * of which shop services best match what was depicted.
+ * Saves "[รูปภาพ]" as the user turn in chat_history so follow-up context works.
+ */
+export async function askGLMWithImage(
+  lineUserId: string,
+  imageBuffer: Buffer,
+  mimeType: string,
+  caption?: string,
+): Promise<string | null> {
+  try {
+    const shopId = await getCurrentShopId();
+    const settings = await getAiSettings(shopId);
+    if (!settings.enabled) return null;
+
+    const context = await getShopPromptContext(shopId);
+    const captionLine = caption
+      ? `ลูกค้าส่งรูปพร้อมข้อความ: "${caption}"`
+      : "ลูกค้าส่งรูปภาพมาให้ดู";
+
+    const systemPrompt = `คุณคือ${settings.bot_name}ของร้าน ${context.shopName} — ผู้เชี่ยวชาญด้านความงาม
+${captionLine}
+วิเคราะห์รูปที่ลูกค้าส่งมาและแนะนำบริการของร้านที่เหมาะสม
+
+บริการของร้าน: ${context.serviceSummary || "ยังไม่มีข้อมูล"}
+
+กรุณา:
+1. อธิบายสั้นๆ ว่าเห็นอะไรในรูป (เช่น ทรงผม สีเล็บ ลาย สไตล์)
+2. แนะนำบริการของร้านที่ตรงหรือใกล้เคียงที่สุด
+3. ถ้าสนใจ บอกว่า "จอง" เพื่อดำเนินการต่อ
+ตอบเป็นธรรมชาติ ไม่เกิน 4-5 ประโยค`;
+
+    const messages: AiChatMessage[] = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: caption || "วิเคราะห์รูปนี้หน่อยนะคะ" },
+    ];
+
+    const imageParts: AiImagePart[] = [{ mimeType, data: imageBuffer.toString("base64") }];
+    const provider = providerForModel(VISION_MODEL);
+    const runtimeMaxTokens = Math.min(settings.max_tokens, MAX_RUNTIME_TOKENS);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), VISION_TIMEOUT_MS);
+
+    let result;
+    try {
+      result = await provider.chat({ model: VISION_MODEL, messages, temperature: 0.7, maxTokens: runtimeMaxTokens, imageParts });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (result.ok && result.text) {
+      const userEntry = caption ? `[รูปภาพ] ${caption}` : "[รูปภาพ]";
+      await saveMessages(shopId, lineUserId, userEntry, result.text);
+      console.info("[ai:vision] completion", { shopId, model: VISION_MODEL, replyChars: result.text.length, latencyMs: result.latencyMs });
+      return result.text;
+    }
+
+    if (!result.ok) {
+      console.warn("[ai:vision] provider failed", { code: result.code, model: VISION_MODEL, message: result.message });
+    }
+    return null;
+  } catch (err) {
+    console.error("[ai] askGLMWithImage exception", err);
+    return null;
   }
 }
 

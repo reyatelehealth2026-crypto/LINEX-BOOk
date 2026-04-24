@@ -1,4 +1,4 @@
-import type { AiProvider, AiProviderRequest, AiProviderResult, AiChatMessage } from "./types";
+import type { AiProvider, AiProviderRequest, AiProviderResult, AiChatMessage, AiImagePart } from "./types";
 
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const GEMINI_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS ?? 20_000);
@@ -13,10 +13,14 @@ const GEMINI_THINKING_BUDGET = (() => {
   return Number.isFinite(n) ? n : 0;
 })();
 
-function toGeminiContents(messages: AiChatMessage[]) {
+type GeminiPart =
+  | { text: string }
+  | { inlineData: { mimeType: string; data: string } };
+
+function toGeminiContents(messages: AiChatMessage[], imageParts?: AiImagePart[]) {
   // Gemini uses "contents" array with role "user"/"model" and "systemInstruction"
   const systemParts: string[] = [];
-  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+  const contents: Array<{ role: string; parts: GeminiPart[] }> = [];
 
   for (const msg of messages) {
     if (msg.role === "system") {
@@ -37,6 +41,20 @@ function toGeminiContents(messages: AiChatMessage[]) {
       last.parts.push(...c.parts);
     } else {
       merged.push({ role: c.role, parts: [...c.parts] });
+    }
+  }
+
+  // Inject image inline_data into the last user turn (prepend before text so
+  // Gemini sees image context first, matching the multimodal content ordering).
+  if (imageParts && imageParts.length > 0) {
+    const inlineImages: GeminiPart[] = imageParts.map((p) => ({
+      inlineData: { mimeType: p.mimeType, data: p.data },
+    }));
+    const last = merged[merged.length - 1];
+    if (last && last.role === "user") {
+      last.parts = [...inlineImages, ...last.parts];
+    } else {
+      merged.push({ role: "user", parts: inlineImages });
     }
   }
 
@@ -65,7 +83,7 @@ export function createGeminiProvider(): AiProvider {
         };
       }
 
-      const { systemInstruction, contents } = toGeminiContents(request.messages);
+      const { systemInstruction, contents } = toGeminiContents(request.messages, request.imageParts);
       const url = `${GEMINI_API_URL}/${request.model}:generateContent?key=${apiKey}`;
 
       const controller = new AbortController();
