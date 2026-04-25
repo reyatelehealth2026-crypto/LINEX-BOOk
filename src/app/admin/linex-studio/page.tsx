@@ -546,6 +546,7 @@ function OutputPanel({
         <div className="rounded-xl bg-forest-50 p-4">
           <pre className="whitespace-pre-wrap font-body text-sm leading-7 text-ink-700">{output.script_text}</pre>
         </div>
+        <ScriptVariationsSection project={project} />
       </div>
 
       {/* Storyboard */}
@@ -710,6 +711,68 @@ function OutputPanel({
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Script Variations Section ─────────────────────────────────────── */
+
+function ScriptVariationsSection({ project }: { project: ProjectRow | null }) {
+  const [expanded, setExpanded] = useState(false);
+  const variations = project?.linex_studio_output_variations ?? [];
+  const scriptVars = variations.filter((v) => v.section === "script");
+  if (scriptVars.length === 0) return null;
+
+  const winner = scriptVars.find((v) => v.selected) ?? scriptVars[0];
+
+  return (
+    <div className="mt-4 space-y-3">
+      <button
+        onClick={() => setExpanded((s) => !s)}
+        className="w-full flex items-center justify-between text-sm"
+      >
+        <div className="flex items-center gap-2 text-forest-800">
+          <Sparkles size={16} />
+          <span className="font-medium">สคริปต์ {scriptVars.length} แบบ (Auto-score)</span>
+          {winner && (
+            <span className="pill bg-ochre-100 text-ochre-800 text-xs">Winner: {winner.output_json.name}</span>
+          )}
+        </div>
+        {expanded ? <ChevronUp size={16} className="text-ink-400" /> : <ChevronDown size={16} className="text-ink-400" />}
+      </button>
+      {expanded && (
+        <div className="space-y-3">
+          {scriptVars.map((v) => {
+            const isWinner = v.selected;
+            const breakdown = v.score_breakdown_json ?? {};
+            return (
+              <div
+                key={v.id ?? v.variation_index}
+                className={`rounded-xl border p-4 ${isWinner ? "border-ochre-400 bg-ochre-50/60" : "border-paper-3 bg-paper-0"}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-ink-900">{v.output_json.name}</span>
+                    {isWinner && <CheckCircle2 size={16} className="text-ochre-600" />}
+                  </div>
+                  <span className="text-sm font-mono font-semibold text-forest-700">{v.score_total} pts</span>
+                </div>
+                <div className="grid grid-cols-5 gap-2 text-xs mb-3">
+                  {Object.entries(breakdown).map(([key, val]) => (
+                    <div key={key} className="text-center">
+                      <div className="font-semibold text-forest-700">{val}</div>
+                      <div className="text-ink-500 capitalize">{key.replace(/([A-Z])/g, " $1").trim()}</div>
+                    </div>
+                  ))}
+                </div>
+                <pre className="whitespace-pre-wrap text-xs leading-6 text-ink-700 bg-white/60 rounded-lg p-3 border border-paper-3">
+                  {v.output_json.script}
+                </pre>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

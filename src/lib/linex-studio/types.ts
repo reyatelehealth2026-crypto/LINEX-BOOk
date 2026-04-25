@@ -59,6 +59,45 @@ export type CaptionOutput = {
   platformNote: string;
 };
 
+export type ScriptVariation = {
+  name: string;
+  script: string;
+};
+
+export type ScoreBreakdown = {
+  hookStrength: number;
+  clarity: number;
+  ctaProminence: number;
+  platformFit: number;
+  brandToneMatch: number;
+};
+
+export type ScoredVariation = ScriptVariation & {
+  score: number;
+  scoreBreakdown: ScoreBreakdown;
+};
+
+export type TTSVoiceoverMeta = {
+  provider: "google_cloud_tts";
+  voice_config: {
+    languageCode: string;
+    name: string;
+    ssmlGender: "MALE" | "FEMALE" | "NEUTRAL";
+  };
+  audio_config: {
+    audioEncoding: "MP3" | "OGG_OPUS" | "LINEAR16";
+    speakingRate: number;
+    pitch: number;
+    volumeGainDb: number;
+  };
+  ssml_input: string;
+  estimated_cost_usd: number;
+  estimated_duration_sec: number;
+  cache_key: string;
+  cache_hit: boolean;
+  billable_chars: number;
+};
+
 export type ContentPackage = {
   structuredBrief: StructuredBrief;
   strategy: StrategyOutput;
@@ -69,4 +108,7 @@ export type ContentPackage = {
   caption: CaptionOutput;
   editorNotes: string;
   markdown: string;
+  scriptVariations?: ScoredVariation[];
+  winningVariationName?: string;
+  voiceover: TTSVoiceoverMeta | null;
 };

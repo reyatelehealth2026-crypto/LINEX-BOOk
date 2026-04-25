@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { generateContentPackage } from "@/lib/linex-studio/generator";
-import type { StudioBrief } from "@/lib/linex-studio/types";
+import type { StudioBrief, ScoredVariation } from "@/lib/linex-studio/types";
 
 async function logAgentRun(projectId: number, agentName: string, input: unknown, output: unknown, startedAt: number) {
   try {
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("linex_studio_video_projects")
-    .select("*, linex_studio_video_project_outputs(*)")
+    .select("*, linex_studio_video_project_outputs(*), linex_studio_output_variations(*)")
     .eq("shop_id", admin.shopId)
     .order("created_at", { ascending: false })
     .limit(20);
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
 
   await logAgentRun(project.id, "brief_intake", body, pkg.structuredBrief, started);
   await logAgentRun(project.id, "content_strategist", pkg.structuredBrief, pkg.strategy, started);
-  await logAgentRun(project.id, "script_writer", pkg.strategy, { script: pkg.script }, started);
+  await logAgentRun(project.id, "script_writer", pkg.strategy, { script: pkg.script, variations: pkg.scriptVariations?.map((v) => v.name) }, started);
 
   const { data: output, error: outputError } = await db
     .from("linex_studio_video_project_outputs")
@@ -102,5 +102,32 @@ export async function POST(req: NextRequest) {
 
   if (outputError) return NextResponse.json({ error: outputError.message }, { status: 500 });
 
-  return NextResponse.json({ project, output, package: pkg });
+  // Store script variations with scores
+  if (pkg.scriptVariations && pkg.scriptVariations.length > 0) {
+    const variationRows = pkg.scriptVariations.map((v: ScoredVariation, idx: number) => ({
+      project_id: project.id,
+      agent_name: "script_writer",
+      section: "script",
+      variation_index: idx,
+      output_json: { name: v.name, script: v.script, scoreBreakdown: v.scoreBreakdown },
+      score_total: v.score,
+      score_breakdown_json: v.scoreBreakdown,
+      selected: idx === 0,
+      selected_by: "auto",
+    }));
+    const { error: varError } = await db.from("linex_studio_output_variations").insert(variationRows);
+    if (varError) {
+      console.error("linex_studio_variations_insert_failed", varError);
+    }
+  }
+
+  // Fetch inserted variations for the response
+  const { data: variations } = await db
+    .from("linex_studio_output_variations")
+    .select("*")
+    .eq("project_id", project.id)
+    .eq("section", "script")
+    .order("variation_index", { ascending: true });
+
+  return NextResponse.json({ project, output, package: pkg, variations: variations ?? [] });
 }
