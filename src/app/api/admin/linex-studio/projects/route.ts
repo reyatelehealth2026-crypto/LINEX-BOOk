@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { generateContentPackage } from "@/lib/linex-studio/generator";
-import type { StudioBrief, ScoredVariation } from "@/lib/linex-studio/types";
+import type { StudioBrief, ScoredVariation, TTSVoiceoverMeta } from "@/lib/linex-studio/types";
 
 async function logAgentRun(projectId: number, agentName: string, input: unknown, output: unknown, startedAt: number) {
   try {
@@ -16,6 +16,29 @@ async function logAgentRun(projectId: number, agentName: string, input: unknown,
     });
   } catch (error) {
     console.error("linex_studio_agent_run_log_failed", { agentName, error });
+  }
+}
+
+async function storeTTSOutput(
+  projectId: number,
+  voiceover: TTSVoiceoverMeta | null,
+  variationId?: number
+) {
+  if (!voiceover) return;
+  const db = supabaseAdmin();
+  const { error } = await db.from("linex_studio_tts_outputs").insert({
+    project_id: projectId,
+    variation_id: variationId ?? null,
+    provider: voiceover.provider,
+    voice_id: voiceover.voice_config.name,
+    ssml_input: voiceover.ssml_input,
+    audio_url: null, // dry-run: no audio yet
+    duration_sec: voiceover.estimated_duration_sec,
+    cost_usd: voiceover.estimated_cost_usd,
+    cache_hit: voiceover.cache_hit,
+  });
+  if (error) {
+    console.error("linex_studio_tts_output_insert_failed", error);
   }
 }
 
@@ -84,6 +107,10 @@ export async function POST(req: NextRequest) {
   await logAgentRun(project.id, "content_strategist", pkg.structuredBrief, pkg.strategy, started);
   await logAgentRun(project.id, "script_writer", pkg.strategy, { script: pkg.script, variations: pkg.scriptVariations?.map((v) => v.name) }, started);
 
+  if (pkg.voiceover) {
+    await logAgentRun(project.id, "tts_director", { tone: brief.tone }, pkg.voiceover, started);
+  }
+
   const { data: output, error: outputError } = await db
     .from("linex_studio_video_project_outputs")
     .insert({
@@ -128,6 +155,9 @@ export async function POST(req: NextRequest) {
     .eq("project_id", project.id)
     .eq("section", "script")
     .order("variation_index", { ascending: true });
+
+  // Persist dry-run TTS metadata (audio_url=null until synthesis happens)
+  await storeTTSOutput(project.id, pkg.voiceover);
 
   return NextResponse.json({ project, output, package: pkg, variations: variations ?? [] });
 }
