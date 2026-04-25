@@ -175,14 +175,23 @@ export default function LinexStudioPage() {
   useEffect(() => {
     if (!adminPw) return;
     fetch("/api/admin/linex-studio/projects", { headers: { "x-admin-password": adminPw } })
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => {
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({ error: "โหลดรายการไม่สำเร็จ" }));
+          throw new Error(err.error ?? "โหลดรายการไม่สำเร็จ");
+        }
+        return r.json();
+      })
       .then((d) => {
-        const list: ProjectRow[] = d?.projects ?? [];
+        const list: ProjectRow[] = Array.isArray(d?.projects) ? d.projects : [];
         setProjects(list);
         setActiveProjectIndex(0);
         setActiveOutputIndex(0);
       })
-      .catch(() => setProjects([]));
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "โหลดรายการไม่สำเร็จ");
+        setProjects([]);
+      });
   }, [adminPw]);
 
   const activeProject = projects[activeProjectIndex] ?? null;
@@ -203,8 +212,8 @@ export default function LinexStudioPage() {
 
       const newProject: ProjectRow = {
         ...data.project,
-        linex_studio_video_project_outputs: [data.output as ProjectOutput],
-        linex_studio_output_variations: data.variations as VariationRow[],
+        linex_studio_video_project_outputs: Array.isArray(data.output) ? data.output : data.output ? [data.output as ProjectOutput] : [],
+        linex_studio_output_variations: Array.isArray(data.variations) ? data.variations as VariationRow[] : [],
       };
       setProjects((prev) => [newProject, ...prev]);
       setActiveProjectIndex(0);

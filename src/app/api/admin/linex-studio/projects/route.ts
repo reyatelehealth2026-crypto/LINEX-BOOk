@@ -4,6 +4,16 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { generateContentPackage } from "@/lib/linex-studio/generator";
 import type { StudioBrief, ScoredVariation, TTSVoiceoverMeta } from "@/lib/linex-studio/types";
 
+const VALID_PLATFORMS = new Set(["tiktok", "reels", "shorts", "voom", "facebook"]);
+const VALID_TONES = new Set([
+  "professional", "friendly", "funny", "luxury",
+  "local_thai", "aggressive_sales", "soft_sales", "expert",
+]);
+
+function thaiError(message: string, status: number = 400) {
+  return NextResponse.json({ error: message }, { status });
+}
+
 async function logAgentRun(projectId: number, agentName: string, input: unknown, output: unknown, startedAt: number) {
   try {
     await supabaseAdmin().from("linex_studio_agent_runs").insert({
@@ -14,8 +24,8 @@ async function logAgentRun(projectId: number, agentName: string, input: unknown,
       status: "completed",
       latency_ms: Date.now() - startedAt,
     });
-  } catch (error) {
-    console.error("linex_studio_agent_run_log_failed", { agentName, error });
+  } catch {
+    // Silently ignore logging failures — don't break the user flow
   }
 }
 
@@ -32,19 +42,31 @@ async function storeTTSOutput(
     provider: voiceover.provider,
     voice_id: voiceover.voice_config.name,
     ssml_input: voiceover.ssml_input,
-    audio_url: null, // dry-run: no audio yet
+    audio_url: null,
     duration_sec: voiceover.estimated_duration_sec,
     cost_usd: voiceover.estimated_cost_usd,
     cache_hit: voiceover.cache_hit,
   });
   if (error) {
-    console.error("linex_studio_tts_output_insert_failed", error);
+    // Silently ignore TTS metadata persistence failures
   }
+}
+
+function validateBody(body: unknown): body is Partial<StudioBrief> {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return false;
+  const b = body as Record<string, unknown>;
+  if (b.platform !== undefined && typeof b.platform === "string" && !VALID_PLATFORMS.has(b.platform)) return false;
+  if (b.tone !== undefined && typeof b.tone === "string" && !VALID_TONES.has(b.tone)) return false;
+  if (b.durationSeconds !== undefined) {
+    const n = Number(b.durationSeconds);
+    if (!Number.isFinite(n) || n < 5 || n > 300) return false;
+  }
+  return true;
 }
 
 export async function GET(req: NextRequest) {
   const admin = await verifyAdmin(req);
-  if (!admin) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!admin) return thaiError("ไม่ได้รับอนุญาต กรุณาเข้าสู่ระบบใหม่", 401);
 
   const db = supabaseAdmin();
   const { data, error } = await db
@@ -54,17 +76,27 @@ export async function GET(req: NextRequest) {
     .order("created_at", { ascending: false })
     .limit(20);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return thaiError("โหลดรายการไม่สำเร็จ ลองใหม่อีกครั้ง", 500);
   return NextResponse.json({ projects: data ?? [] });
 }
 
 export async function POST(req: NextRequest) {
   const admin = await verifyAdmin(req);
-  if (!admin) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!admin) return thaiError("ไม่ได้รับอนุญาต กรุณาเข้าสู่ระบบใหม่", 401);
 
-  const body = (await req.json().catch(() => ({}))) as Partial<StudioBrief>;
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return thaiError("ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบฟอร์มแล้วลองใหม่", 400);
+  }
+
+  if (!validateBody(body)) {
+    return thaiError("ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบ platform, tone, หรือความยาวคลิป", 400);
+  }
+
   const started = Date.now();
-  const pkg = generateContentPackage(body);
+  const pkg = generateContentPackage(body as Partial<StudioBrief>);
   const brief = pkg.structuredBrief;
   const db = supabaseAdmin();
 
@@ -82,7 +114,7 @@ export async function POST(req: NextRequest) {
     .select("id")
     .single();
 
-  if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 });
+  if (profileError) return thaiError("บันทึกข้อมูลธุรกิจไม่สำเร็จ ลองใหม่อีกครั้ง", 500);
 
   const { data: project, error: projectError } = await db
     .from("linex_studio_video_projects")
@@ -101,7 +133,7 @@ export async function POST(req: NextRequest) {
     .select("*")
     .single();
 
-  if (projectError) return NextResponse.json({ error: projectError.message }, { status: 500 });
+  if (projectError) return thaiError("สร้างโปรเจกต์ไม่สำเร็จ ลองใหม่อีกครั้ง", 500);
 
   await logAgentRun(project.id, "brief_intake", body, pkg.structuredBrief, started);
   await logAgentRun(project.id, "content_strategist", pkg.structuredBrief, pkg.strategy, started);
@@ -127,9 +159,8 @@ export async function POST(req: NextRequest) {
     .select("*")
     .single();
 
-  if (outputError) return NextResponse.json({ error: outputError.message }, { status: 500 });
+  if (outputError) return thaiError("บันทึกผลลัพธ์ไม่สำเร็จ ลองใหม่อีกครั้ง", 500);
 
-  // Store script variations with scores
   if (pkg.scriptVariations && pkg.scriptVariations.length > 0) {
     const variationRows = pkg.scriptVariations.map((v: ScoredVariation, idx: number) => ({
       project_id: project.id,
@@ -144,19 +175,21 @@ export async function POST(req: NextRequest) {
     }));
     const { error: varError } = await db.from("linex_studio_output_variations").insert(variationRows);
     if (varError) {
-      console.error("linex_studio_variations_insert_failed", varError);
+      // Silently ignore variation insert failures — the main output already saved
     }
   }
 
-  // Fetch inserted variations for the response
-  const { data: variations } = await db
+  const { data: variations, error: varFetchError } = await db
     .from("linex_studio_output_variations")
     .select("*")
     .eq("project_id", project.id)
     .eq("section", "script")
     .order("variation_index", { ascending: true });
 
-  // Persist dry-run TTS metadata (audio_url=null until synthesis happens)
+  if (varFetchError) {
+    // Non-fatal: return project without variations
+  }
+
   await storeTTSOutput(project.id, pkg.voiceover);
 
   return NextResponse.json({ project, output, package: pkg, variations: variations ?? [] });

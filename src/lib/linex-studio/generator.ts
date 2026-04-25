@@ -7,6 +7,8 @@ import type {
   StrategyOutput,
   StructuredBrief,
   StudioBrief,
+  StudioPlatform,
+  StudioTone,
   TTSVoiceoverMeta,
   VisualDirection,
 } from "./types";
@@ -178,6 +180,28 @@ function clean(input: string | undefined, fallback: string) {
   return value && value.length > 0 ? value : fallback;
 }
 
+const VALID_PLATFORMS: StudioPlatform[] = ["tiktok", "reels", "shorts", "voom", "facebook"];
+const VALID_TONES: StudioTone[] = [
+  "professional", "friendly", "funny", "luxury",
+  "local_thai", "aggressive_sales", "soft_sales", "expert",
+];
+
+function clampDuration(v: unknown): number {
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n) || n <= 0) return 30;
+  return Math.max(15, Math.min(60, n));
+}
+
+function validatePlatform(v: unknown): StudioPlatform {
+  if (typeof v === "string" && VALID_PLATFORMS.includes(v as StudioPlatform)) return v as StudioPlatform;
+  return "tiktok";
+}
+
+function validateTone(v: unknown): StudioTone {
+  if (typeof v === "string" && VALID_TONES.includes(v as StudioTone)) return v as StudioTone;
+  return "friendly";
+}
+
 export function normalizeBrief(input: Partial<StudioBrief>): StructuredBrief {
   return {
     title: clean(input.title, "คลิปโปรโมทธุรกิจ"),
@@ -186,9 +210,9 @@ export function normalizeBrief(input: Partial<StudioBrief>): StructuredBrief {
     offer: clean(input.offer, "บริการหลักของร้าน"),
     targetAudience: clean(input.targetAudience, "ลูกค้าในพื้นที่"),
     goal: clean(input.goal, "เพิ่มยอดจองและยอดทัก LINE"),
-    platform: input.platform ?? "tiktok",
-    durationSeconds: Number(input.durationSeconds || 30),
-    tone: input.tone ?? "friendly",
+    platform: validatePlatform(input.platform),
+    durationSeconds: clampDuration(input.durationSeconds),
+    tone: validateTone(input.tone),
     brief: clean(input.brief, "อยากได้คลิปสั้นที่ทำให้ลูกค้าเข้าใจและกดจอง/ทัก LINE"),
     language: "th",
     contentFormat: "short_video",
@@ -289,7 +313,27 @@ export function buildEditorNotes(brief: StructuredBrief) {
 
 export function buildMarkdown(pkg: Omit<ContentPackage, "markdown">) {
   const b = pkg.structuredBrief;
-  const storyboard = pkg.storyboard
+  const safeStrategy = pkg.strategy ?? {
+    angle: "",
+    mainMessage: "",
+    emotionalTrigger: "",
+    cta: "",
+    conversionPath: "",
+  };
+  const safeStoryboard = pkg.storyboard ?? [];
+  const safeVisual = pkg.visualDirection ?? {
+    mood: "",
+    palette: [],
+    cameraStyle: "",
+    lighting: "",
+    dos: [],
+    donts: [],
+  };
+  const safeAssetPrompts = pkg.assetPrompts ?? [];
+  const safeCaption = pkg.caption ?? { caption: "", hashtags: [], platformNote: "" };
+  const safeEditorNotes = pkg.editorNotes ?? "";
+
+  const storyboard = safeStoryboard
     .map((s) => `| ${s.time} | ${s.scene} | ${s.visual} | ${s.textOverlay} | ${s.audio} |`)
     .join("\n");
   let variationBlock = "";
@@ -299,7 +343,7 @@ export function buildMarkdown(pkg: Omit<ContentPackage, "markdown">) {
       .map((v, i) => `### ${i + 1}. ${v.name} (Score: ${v.score})\n\n- hookStrength: ${v.scoreBreakdown.hookStrength}\n- clarity: ${v.scoreBreakdown.clarity}\n- ctaProminence: ${v.scoreBreakdown.ctaProminence}\n- platformFit: ${v.scoreBreakdown.platformFit}\n- brandToneMatch: ${v.scoreBreakdown.brandToneMatch}\n\n${v.script}${v.name === winner.name ? "\n\n✅ Selected winner" : ""}`)
       .join("\n\n---\n\n") + "\n";
   }
-  return `# ${b.title}\n\n## Brief\n- Business: ${b.businessName}\n- Type: ${b.businessType}\n- Offer: ${b.offer}\n- Audience: ${b.targetAudience}\n- Goal: ${b.goal}\n- Platform: ${b.platform}\n- Tone: ${toneLabels[b.tone] ?? b.tone}\n\n## Strategy\n- Angle: ${pkg.strategy.angle}\n- Main message: ${pkg.strategy.mainMessage}\n- Emotional trigger: ${pkg.strategy.emotionalTrigger}\n- CTA: ${pkg.strategy.cta}\n- Conversion path: ${pkg.strategy.conversionPath}\n\n## Script (Selected)\n${pkg.script}${variationBlock}\n\n## Storyboard\n| Time | Scene | Visual | Text Overlay | Audio |\n|---|---|---|---|---|\n${storyboard}\n\n## Visual Direction\n- Mood: ${pkg.visualDirection.mood}\n- Palette: ${pkg.visualDirection.palette.join(", ")}\n- Camera: ${pkg.visualDirection.cameraStyle}\n- Lighting: ${pkg.visualDirection.lighting}\n\n## Asset Prompts\n${pkg.assetPrompts.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\n## Caption\n${pkg.caption.caption}\n\nHashtags: ${pkg.caption.hashtags.join(" ")}\n\nPlatform note: ${pkg.caption.platformNote}\n\n## Editor Checklist\n${pkg.editorNotes}\n`;
+  return `# ${b.title}\n\n## Brief\n- Business: ${b.businessName}\n- Type: ${b.businessType}\n- Offer: ${b.offer}\n- Audience: ${b.targetAudience}\n- Goal: ${b.goal}\n- Platform: ${b.platform}\n- Tone: ${toneLabels[b.tone] ?? b.tone}\n\n## Strategy\n- Angle: ${safeStrategy.angle}\n- Main message: ${safeStrategy.mainMessage}\n- Emotional trigger: ${safeStrategy.emotionalTrigger}\n- CTA: ${safeStrategy.cta}\n- Conversion path: ${safeStrategy.conversionPath}\n\n## Script (Selected)\n${pkg.script}${variationBlock}\n\n## Storyboard\n| Time | Scene | Visual | Text Overlay | Audio |\n|---|---|---|---|---|\n${storyboard}\n\n## Visual Direction\n- Mood: ${safeVisual.mood}\n- Palette: ${safeVisual.palette.join(", ")}\n- Camera: ${safeVisual.cameraStyle}\n- Lighting: ${safeVisual.lighting}\n\n## Asset Prompts\n${safeAssetPrompts.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\n## Caption\n${safeCaption.caption}\n\nHashtags: ${safeCaption.hashtags.join(" ")}\n\nPlatform note: ${safeCaption.platformNote}\n\n## Editor Checklist\n${safeEditorNotes}\n`;
 }
 
 export function generateContentPackage(input: Partial<StudioBrief>): ContentPackage {

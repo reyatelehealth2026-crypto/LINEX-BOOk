@@ -95,11 +95,13 @@ export function buildSsml(text: string, tone: TonePreset): string {
  * Adjusted by speakingRate.
  */
 export function estimateDurationSec(text: string, speakingRate: number): number {
-  const thaiChars = (text.match(/[\u0E00-\u0E7F]/g) || []).length;
-  const otherChars = text.length - thaiChars;
+  const trimmed = text.trim();
+  if (!trimmed) return 0;
+  const thaiChars = (trimmed.match(/[\u0E00-\u0E7F]/g) || []).length;
+  const otherChars = trimmed.length - thaiChars;
   const thaiDuration = thaiChars / (5.0 * speakingRate);
   const otherDuration = otherChars / (12.0 * speakingRate);
-  return Math.max(1, Math.round((thaiDuration + otherDuration) * 10) / 10);
+  return Math.max(0.5, Math.round((thaiDuration + otherDuration) * 10) / 10);
 }
 
 /**
