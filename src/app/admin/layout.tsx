@@ -23,6 +23,7 @@ import {
   Star,
   Palette,
   ArrowRightLeft,
+  Clapperboard,
 } from "lucide-react";
 
 type NavItem = {
@@ -42,6 +43,7 @@ const NAV: NavItem[] = [
   { href: "/admin/coupons", label: "คูปอง", icon: Tag },
   { href: "/admin/reviews", label: "รีวิว", icon: Star },
   { href: "/admin/templates", label: "เทมเพลต", icon: MessageSquareText },
+  { href: "/admin/linex-studio", label: "LINEX Studio", icon: Clapperboard },
   { href: "/admin/ai-settings", label: "AI แชท", icon: Bot },
   { href: "/admin/theme", label: "ธีมของร้าน", icon: Palette },
   { href: "/admin/setup", label: "ตั้งค่า", icon: Settings },
