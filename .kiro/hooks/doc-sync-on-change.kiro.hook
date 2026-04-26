@@ -1,0 +1,22 @@
+{
+  "enabled": true,
+  "name": "Documentation Sync",
+  "description": "Monitors TypeScript source files and prompts agent to update documentation in README.md or /docs folder when code changes are saved",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "*.ts",
+      "*.tsx",
+      "*.sql",
+      "package.json",
+      "tsconfig.json"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "The source code has been modified. Please review the changes and update the relevant documentation in README.md or the /docs folder to reflect any new features, API changes, or important modifications."
+  },
+  "workspaceFolderName": "LINEX-BOOk",
+  "shortName": "doc-sync-on-change"
+}

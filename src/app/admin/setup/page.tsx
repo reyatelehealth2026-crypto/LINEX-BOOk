@@ -8,16 +8,12 @@ import {
   RefreshCw,
   Settings,
   MessageSquare,
-  Database,
-  Shield,
   Store,
   ChevronRight,
-  ChevronDown,
   ExternalLink,
   Copy,
   Check,
   Globe,
-  Rocket,
   Sparkles,
 } from "lucide-react";
 
@@ -147,75 +143,55 @@ export default function SetupPage() {
   // Build full setup checklist (auto + manual items)
   const setupSteps = [
     {
-      id: "step_sb",
-      title: "ตั้งค่า Supabase (ฐานข้อมูล)",
-      subtitle: "สร้างที่เก็บข้อมูลออนไลน์สำหรับร้าน",
-      icon: Database,
-      auto: findCheck(health, "sb_url") && findCheck(health, "sb_anon") && findCheck(health, "sb_service"),
-      link: "https://supabase.com",
-      detail: (
-        <>
-          <p><strong>ทำอะไร:</strong> สร้างฐานข้อมูลฟรีที่ Supabase แล้วนำค่ามาใส่ในไฟล์ <code className="bg-ink-100 px-1 rounded">.env</code></p>
-          <ol className="list-decimal list-inside space-y-1 mt-2">
-            <li>ไปที่ <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="text-ink-700 underline">supabase.com</a> → สมัครสมาชิก → สร้างโปรเจกต์ใหม่</li>
-            <li>รอสักครู่ให้โปรเจกต์สร้างเสร็จ</li>
-            <li>เข้าเมนู <strong>Settings → API</strong></li>
-            <li>คัดลอก <strong>Project URL</strong> → ใส่ใน <code className="bg-ink-100 px-1 rounded">NEXT_PUBLIC_SUPABASE_URL</code></li>
-            <li>คัดลอก <strong>anon public</strong> key → ใส่ใน <code className="bg-ink-100 px-1 rounded">NEXT_PUBLIC_SUPABASE_ANON_KEY</code></li>
-            <li>คัดลอก <strong>service_role</strong> key → ใส่ใน <code className="bg-ink-100 px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code></li>
-          </ol>
-          <p className="mt-2 text-xs text-ink-400"> ข้อมูลทั้งหมดเก็บใน Supabase — ร้านคุณเป็นเจ้าของข้อมูล 100%</p>
-        </>
-      ),
-    },
-    {
       id: "step_line",
-      title: "ตั้งค่า LINE Official Account",
-      subtitle: "เชื่อมระบบจองเข้ากับ LINE ของร้าน",
+      title: "เชื่อม LINE Official Account",
+      subtitle: "ใส่ Channel access token + Channel secret ของ LINE OA ร้านคุณ",
       icon: MessageSquare,
       auto: findCheck(health, "line_token") && findCheck(health, "line_secret"),
-      link: "https://developers.line.biz/console/",
+      link: "/admin/shop-info",
       detail: (
         <>
-          <p><strong>ทำอะไร:</strong> สร้าง LINE Bot เพื่อให้ลูกค้าจองคิวผ่าน LINE ได้</p>
+          <p><strong>ทำอะไร:</strong> เชื่อมระบบจองคิวเข้ากับ LINE OA ร้านคุณ ลูกค้าจะคุย/จองผ่าน LINE ได้เลย</p>
           <ol className="list-decimal list-inside space-y-1 mt-2">
-            <li>ไปที่ <a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer" className="text-ink-700 underline">LINE Developers Console</a></li>
-            <li>สร้าง <strong>Provider</strong> (ชื่อร้านคุณ)</li>
-            <li>สร้าง <strong>Channel</strong> ประเภท <strong>Messaging API</strong></li>
-            <li>เข้าเมนู <strong>Messaging API</strong> tab</li>
-            <li>คัดลอก <strong>Channel access token</strong> → ใส่ใน <code className="bg-ink-100 px-1 rounded">LINE_CHANNEL_ACCESS_TOKEN</code></li>
-            <li>กลับไป <strong>Basic settings</strong> tab</li>
-            <li>คัดลอก <strong>Channel secret</strong> → ใส่ใน <code className="bg-ink-100 px-1 rounded">LINE_CHANNEL_SECRET</code></li>
+            <li>เปิด <a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer" className="text-ink-700 underline">LINE Developers Console</a> → เข้า Provider/Channel ของร้าน (ประเภท <strong>Messaging API</strong>)</li>
+            <li>แท็บ <strong>Messaging API</strong> → คัดลอก <strong>Channel access token</strong> (long-lived)</li>
+            <li>แท็บ <strong>Basic settings</strong> → คัดลอก <strong>Channel secret</strong></li>
+            <li>กลับมาที่หน้านี้ → กด <a href="/admin/shop-info" className="text-ink-700 underline font-semibold">ตั้งค่าร้าน → ข้อมูลร้าน/LINE</a> → วางทั้งสองค่า แล้วกดบันทึก</li>
           </ol>
-          <p className="mt-2 text-xs text-ink-400"> ต้องมี LINE Official Account ก่อน — ถ้ายังไม่มี สมัครฟรีที่ LINE Developers</p>
+          <p className="mt-2 text-xs text-ink-400">ยังไม่มี LINE OA? สมัครฟรีที่ <a href="https://entry.line.biz/start/jp/" target="_blank" rel="noopener noreferrer" className="underline">LINE for Business</a></p>
+          <a href="/admin/shop-info" className="btn-primary mt-3 inline-flex">ไปหน้าตั้งค่า LINE</a>
         </>
       ),
     },
     {
       id: "step_liff",
       title: "สร้าง LIFF App",
-      subtitle: "หน้าจองคิวที่ลูกค้าเห็นใน LINE",
+      subtitle: "หน้าจองคิวที่ลูกค้าเปิดได้จากใน LINE",
       icon: Settings,
       auto: findCheck(health, "liff_id"),
-      link: "https://developers.line.biz/console/",
+      link: "/admin/shop-info",
       detail: (
         <>
-          <p><strong>ทำอะไร:</strong> สร้างหน้าเว็บสำหรับลูกค้าจองคิว ที่เปิดได้จากใน LINE เลย</p>
-          <ol className="list-decimal list-inside space-y-1 mt-2">
-            <li>เข้า Channel ที่สร้างในขั้นตอนก่อนหน้า</li>
-            <li>เข้าเมนู <strong>LIFF</strong></li>
-            <li>กด <strong>Add</strong> สร้าง LIFF app ใหม่</li>
-            <li>ตั้งชื่อ เช่น &ldquo;ร้านจองคิว&rdquo;</li>
-            <li>ตั้ง <strong>Size</strong> เป็น <strong>Tall</strong></li>
-            <li>ใส่ <strong>Endpoint URL</strong> เป็น URL ร้านคุณ</li>
-            <li>คัดลอก <strong>LIFF ID</strong> → ใส่ใน <code className="bg-ink-100 px-1 rounded">NEXT_PUBLIC_LIFF_ID</code></li>
-          </ol>
+          <p><strong>ทำอะไร:</strong> สร้างหน้าเว็บจองคิวที่เปิดในแอป LINE — ใช้ Endpoint URL ของร้านคุณ</p>
           {sv.liffUrl && (
-            <div className="mt-3">
-              <p className="text-xs text-ink-500 mb-1">URL หน้าจองคิวของร้าน:</p>
-              <CopyButton text={sv.liffUrl} label="คัดลอก LIFF URL" />
+            <div className="mt-2 p-3 bg-ink-50 rounded-lg space-y-2 border border-ink-200">
+              <p className="text-xs text-ink-500">Endpoint URL ของร้าน (ใช้ตอนสร้าง LIFF):</p>
+              <div className="flex items-center gap-2">
+                <code className="bg-white px-2 py-1.5 rounded text-xs break-all flex-1 border border-ink-200">{sv.liffUrl}</code>
+                <CopyButton text={sv.liffUrl} label="คัดลอก" />
+              </div>
             </div>
           )}
+          <ol className="list-decimal list-inside space-y-1 mt-3">
+            <li>เปิด <a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer" className="text-ink-700 underline">LINE Developers Console</a> → เข้า Channel เดิม → แท็บ <strong>LIFF</strong></li>
+            <li>กด <strong>Add</strong> สร้าง LIFF app ใหม่</li>
+            <li>ตั้งชื่อ เช่น &ldquo;จองคิว&rdquo; / Size = <strong>Tall</strong></li>
+            <li>วาง <strong>Endpoint URL</strong> ที่คัดลอกไว้ด้านบน</li>
+            <li>Scopes: เลือก <code className="bg-ink-100 px-1 rounded">profile</code> + <code className="bg-ink-100 px-1 rounded">openid</code></li>
+            <li>กด Add → คัดลอก <strong>LIFF ID</strong></li>
+            <li>กลับมา <a href="/admin/shop-info" className="text-ink-700 underline font-semibold">ตั้งค่าร้าน → ข้อมูลร้าน/LINE</a> → วาง LIFF ID แล้วกดบันทึก</li>
+          </ol>
+          <a href="/admin/shop-info" className="btn-primary mt-3 inline-flex">ไปหน้าตั้งค่า LIFF</a>
         </>
       ),
     },
@@ -228,63 +204,44 @@ export default function SetupPage() {
       manualKey: "webhook" as keyof ManualItems,
       detail: (
         <>
-          <p><strong>ทำอะไร:</strong> บอก LINE ว่าให้ส่งข้อความจากลูกค้ามาที่ URL ไหน</p>
+          <p><strong>ทำอะไร:</strong> บอก LINE ว่าให้ส่งข้อความจากลูกค้ามาที่ URL ของระบบ</p>
           <ol className="list-decimal list-inside space-y-1 mt-2">
-            <li>เข้า Channel → เมนู <strong>Messaging API</strong></li>
+            <li>LINE Console → Channel → แท็บ <strong>Messaging API</strong></li>
             <li>หาส่วน <strong>Webhook settings</strong></li>
-            <li>ใส่ Webhook URL ด้านล่างนี้ลงไป</li>
-            <li>กด <strong>Verify</strong> เพื่อทดสอบ (ถ้ามี)</li>
-            <li>เปิด <strong>Use webhook</strong> → <strong>Enabled</strong></li>
+            <li>วาง Webhook URL ด้านล่างนี้</li>
+            <li>กด <strong>Verify</strong> ทดสอบ → เปิด <strong>Use webhook</strong> = Enabled</li>
+            <li>ปิด <strong>Auto-reply messages</strong> = Disabled (ให้บอทตอบเองได้)</li>
           </ol>
           {sv.webhookUrl ? (
             <div className="mt-3 space-y-2">
-              <p className="text-xs text-ink-500">Webhook URL ของร้าน — คัดลอกไปใส่ใน LINE Console:</p>
+              <p className="text-xs text-ink-500">Webhook URL ของร้าน — คัดลอกไปวางใน LINE Console:</p>
               <div className="flex items-center gap-2">
                 <code className="bg-ink-100 px-2 py-1 rounded text-xs break-all flex-1">{sv.webhookUrl}</code>
                 <CopyButton text={sv.webhookUrl} label="คัดลอก" />
               </div>
             </div>
           ) : (
-            <p className="mt-2 text-xs text-amber-600">ยังไม่มี APP_URL — ใส่ NEXT_PUBLIC_APP_URL ใน .env ก่อน ถึงจะเห็น Webhook URL</p>
+            <p className="mt-2 text-xs text-amber-600">ยังไม่เห็น URL — ลองโหลดหน้านี้ใหม่หลังเชื่อม LINE เสร็จ</p>
           )}
-          <p className="mt-2 text-xs text-ink-400"> ถ้ากด Verify แล้วไม่ผ่าน ให้ลอง Deploy แล้วกลับมาตั้ง Webhook ใหม่</p>
-        </>
-      ),
-    },
-    {
-      id: "step_admin",
-      title: "ตั้งรหัสผ่านแอดมิน",
-      subtitle: "รหัสผ่านสำหรับเข้าหน้าจัดการร้านนี้",
-      icon: Shield,
-      auto: findCheck(health, "admin_pw"),
-      detail: (
-        <>
-          <p><strong>ทำอะไร:</strong> ตั้งรหัสผ่านสำหรับเข้าหน้าจัดการร้าน (หน้านี้)</p>
-          <ol className="list-decimal list-inside space-y-1 mt-2">
-            <li>เปิดไฟล์ <code className="bg-ink-100 px-1 rounded">.env</code></li>
-            <li>หาบรรทัด <code className="bg-ink-100 px-1 rounded">ADMIN_PASSWORD=</code></li>
-            <li>เปลี่ยนเป็นรหัสผ่านที่คุณจำง่าย เช่น <code className="bg-ink-100 px-1 rounded">ADMIN_PASSWORD=MyShop2024</code></li>
-            <li>บันทึกไฟล์แล้ว Deploy ใหม่</li>
-          </ol>
-          <p className="mt-2 text-xs text-ink-400"> ใช้รหัสผ่านที่ยากเดา แต่จำได้ — นี่คือกุญแจเข้าหน้าจัดการร้าน</p>
+          <p className="mt-2 text-xs text-ink-400">ทำเสร็จแล้วกดที่หมายเลขด้านซ้ายเพื่อทำเครื่องหมายว่าเสร็จ</p>
         </>
       ),
     },
     {
       id: "step_shop",
-      title: "เพิ่มข้อมูลร้าน + บริการ + ช่าง",
-      subtitle: "เพิ่มชื่อร้าน รายการบริการ และพนักงาน",
+      title: "เพิ่มบริการ + ช่าง + เวลาทำการ",
+      subtitle: "เพิ่มรายการบริการ พนักงาน และเวลาเปิด-ปิด",
       icon: Store,
       auto: findCheck(health, "shop_data"),
       detail: (
         <>
-          <p><strong>ทำอะไร:</strong> เพิ่มข้อมูลร้านเพื่อให้ลูกค้าเห็นบริการและจองคิวได้</p>
+          <p><strong>ทำอะไร:</strong> ลูกค้าจะจองได้ก็ต่อเมื่อมีรายการบริการ + ช่าง + เวลาทำการ</p>
           <ol className="list-decimal list-inside space-y-1 mt-2">
-            <li>เข้าหน้า <a href="/admin/services" className="text-ink-700 underline">บริการ</a> → เพิ่มรายการบริการ เช่น &ldquo;ตัดผมชาย 30 นาที 200 บาท&rdquo;</li>
-            <li>เข้าหน้า <a href="/admin/staff" className="text-ink-700 underline">พนักงาน</a> → เพิ่มชื่อช่าง</li>
-            <li>เข้าหน้า <a href="/admin/working-hours" className="text-ink-700 underline">เวลาทำการ</a> → ตั้งเวลาเปิด-ปิดร้าน</li>
+            <li><a href="/admin/services" className="text-ink-700 underline">บริการ</a> → เพิ่มรายการ เช่น &ldquo;ตัดผมชาย 30 นาที 200 บาท&rdquo;</li>
+            <li><a href="/admin/staff" className="text-ink-700 underline">พนักงาน</a> → เพิ่มชื่อช่าง</li>
+            <li><a href="/admin/working-hours" className="text-ink-700 underline">เวลาทำการ</a> → ตั้งเวลาเปิด-ปิดร้าน</li>
           </ol>
-          <p className="mt-2 text-xs text-ink-400"> ลูกค้าจะเห็นเฉพาะบริการและช่างที่เปิดใช้งาน (active)</p>
+          <p className="mt-2 text-xs text-ink-400">ลูกค้าจะเห็นเฉพาะบริการและช่างที่เปิดใช้งาน (active)</p>
         </>
       ),
     },
