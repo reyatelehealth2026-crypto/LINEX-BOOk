@@ -17,6 +17,7 @@ import crypto from "node:crypto";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import { supabaseAdmin, getCurrentShop } from "@/lib/supabase";
 import { verifyImpersonationToken } from "@/lib/impersonation-token";
+import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/admin-session-token";
 
 const _pwLimiter = createRateLimiter(5, 15 * 60 * 1000);
 
@@ -76,6 +77,34 @@ export async function verifyAdmin(req: NextRequest): Promise<AdminIdentity | nul
     const imp = verifyImpersonationToken(impToken);
     if (imp && imp.shopId === shopId) {
       return { mode: "password", shopId, role: "owner" };
+    }
+  }
+
+  // ── 0.5) Admin session cookie (Google OAuth signup/login) ──
+  // Planted by /api/admin/auth/google/login (after Supabase Google JWT
+  // validates) or by /api/admin/auth/google/redeem (after a one-time
+  // bootstrap token from /signup is exchanged on the tenant subdomain).
+  const sessionToken = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  if (sessionToken) {
+    const decoded = verifyAdminSession(sessionToken);
+    if (decoded && decoded.shopId === shopId) {
+      const { data: user } = await db
+        .from("admin_users")
+        .select("id, email, role")
+        .eq("id", decoded.adminUserId)
+        .eq("shop_id", shopId)
+        .eq("active", true)
+        .maybeSingle();
+      if (user) {
+        await db.from("admin_users").update({ last_login_at: new Date().toISOString() }).eq("id", user.id);
+        return {
+          mode: "password",
+          shopId,
+          adminUserId: user.id,
+          email: user.email ?? undefined,
+          role: user.role as AdminIdentity["role"],
+        };
+      }
     }
   }
 

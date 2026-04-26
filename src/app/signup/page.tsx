@@ -10,10 +10,10 @@ import {
   Leaf,
   CalendarCheck,
   ArrowRight,
-  Plug,
 } from "lucide-react";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3;
 type PresetKey = "salon" | "nail" | "spa";
 
 const PRESETS: { key: PresetKey; icon: React.ReactNode; label: string; desc: string; services: number }[] = [
@@ -26,7 +26,7 @@ export default function SignupPage() {
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [done, setDone] = useState<{ redirectUrl: string; botName?: string } | null>(null);
+  const [done, setDone] = useState<{ redirectUrl: string } | null>(null);
 
   const [shopName, setShopName] = useState("");
   const [slug, setSlug] = useState("");
@@ -37,13 +37,43 @@ export default function SignupPage() {
 
   const [preset, setPreset] = useState<PresetKey | null>(null);
 
-  const [accessToken, setAccessToken] = useState("");
-  const [channelSecret, setChannelSecret] = useState("");
-  const [liffId, setLiffId] = useState("");
-  const [verifiedBot, setVerifiedBot] = useState<{ displayName: string; basicId?: string } | null>(null);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [googleAuthUserId, setGoogleAuthUserId] = useState<string | null>(null);
+  const [googleEmail, setGoogleEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stash = sessionStorage.getItem("signupWizard");
+    if (stash) {
+      try {
+        const s = JSON.parse(stash);
+        if (s.shopName) setShopName(s.shopName);
+        if (s.slug) setSlug(s.slug);
+        if (s.phone) setPhone(s.phone);
+        if (s.address) setAddress(s.address);
+        if (s.preset) setPreset(s.preset);
+        if (typeof s.step === "number") setStep(s.step as Step);
+      } catch {}
+    }
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("provider") === "google" || url.hash.includes("access_token") || url.searchParams.get("code")) {
+      (async () => {
+        try {
+          const sb = supabaseBrowser();
+          await new Promise((r) => setTimeout(r, 50));
+          const { data } = await sb.auth.getSession();
+          if (data.session?.user) {
+            setGoogleAuthUserId(data.session.user.id);
+            setGoogleEmail(data.session.user.email ?? null);
+            setEmail(data.session.user.email ?? "");
+            setStep(3);
+          }
+          window.history.replaceState({}, "", "/signup");
+        } catch {}
+      })();
+    }
+  }, []);
 
   useEffect(() => {
     if (!slug) { setSlugStatus("idle"); setSlugMsg(""); return; }
@@ -73,24 +103,27 @@ export default function SignupPage() {
 
   const step1Valid = shopName.trim().length > 0 && slugStatus === "ok";
   const step2Valid = preset !== null;
-  const step3Valid = !!verifiedBot;
-  const step4Valid = /^[^@]+@[^@]+\.[^@]+$/.test(email) && password.length >= 8;
+  const isGoogleFlow = Boolean(googleAuthUserId);
+  const step3Valid = isGoogleFlow
+    ? /^[^@]+@[^@]+\.[^@]+$/.test(email)
+    : /^[^@]+@[^@]+\.[^@]+$/.test(email) && password.length >= 8;
 
-  async function verifyLine() {
-    setErr(null); setLoading(true);
+  async function startGoogle() {
+    setErr(null);
     try {
-      const res = await fetch("/api/signup/verify-line", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessToken, channelSecret, liffId }),
+      sessionStorage.setItem("signupWizard", JSON.stringify({
+        shopName, slug, phone, address, preset, step: 3,
+      }));
+      const sb = supabaseBrowser();
+      const origin = window.location.origin;
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${origin}/signup?provider=google` },
       });
-      const json = await res.json();
-      if (!json.ok) throw new Error(json.error ?? "verify failed");
-      setVerifiedBot({ displayName: json.bot.displayName, basicId: json.bot.basicId });
+      if (error) throw error;
     } catch (e: any) {
-      setErr(e.message ?? "ตรวจสอบ LINE ไม่สำเร็จ");
-      setVerifiedBot(null);
-    } finally { setLoading(false); }
+      setErr(e.message ?? "Google sign-in failed");
+    }
   }
 
   async function submitAll() {
@@ -102,13 +135,15 @@ export default function SignupPage() {
         body: JSON.stringify({
           shop: { name: shopName, slug, phone: phone || undefined, address: address || undefined },
           preset,
-          line: { accessToken, channelSecret, liffId },
-          admin: { email, password },
+          admin: isGoogleFlow
+            ? { email, googleAuthUserId }
+            : { email, password },
         }),
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error ?? "create failed");
-      setDone({ redirectUrl: json.redirectUrl, botName: json.bot?.displayName });
+      sessionStorage.removeItem("signupWizard");
+      setDone({ redirectUrl: json.redirectUrl });
     } catch (e: any) {
       setErr(e.message ?? "สมัครไม่สำเร็จ");
     } finally { setLoading(false); }
@@ -123,9 +158,7 @@ export default function SignupPage() {
           </div>
           <div>
             <h1 className="h-display text-2xl">สร้างร้านเรียบร้อย</h1>
-            <p className="text-sm text-ink-600 mt-2">
-              {done.botName ? <>เชื่อม LINE OA <strong>{done.botName}</strong> แล้ว</> : "พร้อมใช้งาน"}
-            </p>
+            <p className="text-sm text-ink-600 mt-2">ขั้นต่อไป: เชื่อม LINE OA ในหน้าตั้งค่า</p>
           </div>
           <a href={done.redirectUrl} className="btn-primary w-full justify-center">
             เข้าหน้าแอดมินของร้าน <ArrowRight size={16} />
@@ -146,13 +179,13 @@ export default function SignupPage() {
             </span>
             <span className="font-semibold tracking-tight text-[15px] text-ink-900">LineBook</span>
           </Link>
-          <div className="text-sm text-ink-500">ขั้นที่ {step} / 4</div>
+          <div className="text-sm text-ink-500">ขั้นที่ {step} / 3</div>
         </div>
       </header>
 
       <div className="max-w-xl mx-auto px-5 pt-10 pb-16">
         <div className="flex gap-1.5 mb-8">
-          {[1, 2, 3, 4].map((n) => (
+          {[1, 2, 3].map((n) => (
             <div key={n} className={`h-1 flex-1 rounded-full ${n <= step ? "bg-ink-900" : "bg-ink-200"}`} />
           ))}
         </div>
@@ -162,7 +195,7 @@ export default function SignupPage() {
         {step === 1 && (
           <div className="card p-6 space-y-5">
             <div>
-              <div className="eyebrow">Step 1 / 4</div>
+              <div className="eyebrow">Step 1 / 3</div>
               <h2 className="h-display text-2xl mt-1">ข้อมูลร้าน</h2>
             </div>
             <Field label="ชื่อร้าน" required>
@@ -190,7 +223,7 @@ export default function SignupPage() {
         {step === 2 && (
           <div className="card p-6 space-y-5">
             <div>
-              <div className="eyebrow">Step 2 / 4</div>
+              <div className="eyebrow">Step 2 / 3</div>
               <h2 className="h-display text-2xl mt-1">ประเภทร้าน</h2>
               <p className="text-sm text-ink-600 mt-2">เลือกพรีเซท ระบบจะติดตั้งบริการเริ่มต้น เวลา และข้อความให้ แก้ทีหลังได้ทั้งหมด</p>
             </div>
@@ -224,60 +257,54 @@ export default function SignupPage() {
         {step === 3 && (
           <div className="card p-6 space-y-5">
             <div>
-              <div className="eyebrow">Step 3 / 4</div>
-              <h2 className="h-display text-2xl mt-1">เชื่อม LINE OA</h2>
-              <p className="text-sm text-ink-600 mt-2">
-                สร้าง LINE Official Account และ LIFF App ของร้านก่อน แล้วกรอก token / secret / LIFF ID ที่นี่
-                <br />
-                <a className="text-ink-900 underline text-xs" href="https://developers.line.biz" target="_blank" rel="noreferrer">
-                  LINE Developers Console
-                </a>
-              </p>
+              <div className="eyebrow">Step 3 / 3</div>
+              <h2 className="h-display text-2xl mt-1">สร้างบัญชีแอดมิน</h2>
+              <p className="text-sm text-ink-600 mt-2">ใช้เข้าหน้าแอดมินของร้าน — เลือกล็อกอินด้วย Google หรือใช้อีเมล + รหัสผ่าน</p>
             </div>
-            <Field label="Channel Access Token (long-lived)" required>
-              <textarea className="input font-mono text-xs" rows={2} value={accessToken} onChange={(e) => { setAccessToken(e.target.value); setVerifiedBot(null); }} placeholder="eyJhbGci..." />
-            </Field>
-            <Field label="Channel Secret" required>
-              <input className="input font-mono text-xs" value={channelSecret} onChange={(e) => { setChannelSecret(e.target.value); setVerifiedBot(null); }} placeholder="32-char hex" />
-            </Field>
-            <Field label="LIFF ID" required hint="เช่น 1234567890-abcdefgh">
-              <input className="input font-mono text-xs" value={liffId} onChange={(e) => { setLiffId(e.target.value); setVerifiedBot(null); }} placeholder="1234567890-abcdefgh" />
-            </Field>
-            <button onClick={verifyLine} disabled={loading || !accessToken || !channelSecret || !liffId} className="btn-secondary w-full">
-              {loading ? <Loader2 className="animate-spin" size={16} /> : <Plug size={16} />}
-              ทดสอบการเชื่อมต่อ
-            </button>
-            {verifiedBot && (
-              <div className="p-3 rounded-md border border-emerald-200 bg-emerald-50 text-sm text-emerald-900">
-                <div className="flex items-center gap-2">
-                  <Check size={16} /> เชื่อมต่อสำเร็จ — <strong>{verifiedBot.displayName}</strong>
-                  {verifiedBot.basicId && <span className="text-ink-500">({verifiedBot.basicId})</span>}
+
+            {!isGoogleFlow ? (
+              <>
+                <button
+                  onClick={startGoogle}
+                  className="btn-secondary w-full justify-center gap-2 border-ink-300"
+                  type="button"
+                >
+                  <GoogleG />
+                  เข้าสู่ระบบด้วย Google
+                </button>
+
+                <div className="flex items-center gap-3 text-xs text-ink-500">
+                  <div className="flex-1 h-px bg-ink-200" />
+                  หรือใช้อีเมล + รหัสผ่าน
+                  <div className="flex-1 h-px bg-ink-200" />
                 </div>
+
+                <Field label="Email" required>
+                  <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+                </Field>
+                <Field label="รหัสผ่าน" required hint="อย่างน้อย 8 ตัวอักษร">
+                  <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                </Field>
+              </>
+            ) : (
+              <div className="p-4 rounded-md border border-emerald-200 bg-emerald-50 text-sm text-emerald-900 space-y-1">
+                <div className="flex items-center gap-2 font-medium">
+                  <Check size={16} /> ยืนยันด้วย Google แล้ว
+                </div>
+                <div className="text-emerald-800/80 break-all">{googleEmail}</div>
               </div>
             )}
-            <Nav back={() => setStep(2)} next={() => setStep(4)} nextDisabled={!step3Valid} />
-          </div>
-        )}
 
-        {step === 4 && (
-          <div className="card p-6 space-y-5">
-            <div>
-              <div className="eyebrow">Step 4 / 4</div>
-              <h2 className="h-display text-2xl mt-1">สร้างบัญชีแอดมิน</h2>
-              <p className="text-sm text-ink-600 mt-2">ใช้เข้าหน้าแอดมินของร้าน</p>
-            </div>
-            <Field label="Email" required>
-              <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
-            </Field>
-            <Field label="รหัสผ่าน" required hint="อย่างน้อย 8 ตัวอักษร">
-              <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
-            </Field>
-            <button onClick={submitAll} disabled={loading || !step4Valid} className="btn-primary w-full justify-center">
+            <button onClick={submitAll} disabled={loading || !step3Valid} className="btn-primary w-full justify-center">
               {loading ? <><Loader2 className="animate-spin" size={16} /> กำลังสร้าง...</> : <>สร้างร้านเลย <ArrowRight size={16} /></>}
             </button>
-            <button onClick={() => setStep(3)} className="btn-secondary w-full">
+            <button onClick={() => setStep(2)} className="btn-secondary w-full">
               <ChevronLeft size={16} /> ย้อนกลับ
             </button>
+
+            <p className="text-xs text-ink-500 leading-relaxed pt-2">
+              เชื่อม LINE OA ของร้านได้หลังสมัครเสร็จ — เข้าหน้า <strong>ตั้งค่า</strong> ในแอดมินคอนโซล
+            </p>
           </div>
         )}
       </div>
@@ -305,5 +332,16 @@ function Nav({ back, next, nextDisabled }: { back?: () => void; next: () => void
         ต่อไป <ArrowRight size={16} />
       </button>
     </div>
+  );
+}
+
+function GoogleG() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35.5 24 35.5c-6.4 0-11.5-5.1-11.5-11.5S17.6 12.5 24 12.5c2.9 0 5.6 1.1 7.6 2.9l5.7-5.7C33.6 6.2 29 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.3-.4-3.5z"/>
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c2.9 0 5.6 1.1 7.6 2.9l5.7-5.7C33.6 6.7 29 5 24 5 16.3 5 9.7 9.4 6.3 14.7z"/>
+      <path fill="#4CAF50" d="M24 43c5 0 9.5-1.7 13-4.6l-6-5C29.2 34.6 26.7 35.5 24 35.5c-5.3 0-9.7-3-11.3-7.4l-6.5 5C9.6 38.5 16.3 43 24 43z"/>
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.7 2-2 3.7-3.7 4.9l6 5C42 33.5 44 29 44 24c0-1.2-.1-2.3-.4-3.5z"/>
+    </svg>
   );
 }

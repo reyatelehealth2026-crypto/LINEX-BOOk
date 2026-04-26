@@ -3,11 +3,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AdminContext } from "./_ctx";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import {
   LayoutDashboard,
   CalendarCheck,
   Settings,
-  Stethoscope,
   Sparkles,
   UserCircle2,
   Clock,
@@ -45,7 +45,6 @@ const NAV: NavItem[] = [
   { href: "/admin/ai-settings", label: "AI แชท", icon: Bot },
   { href: "/admin/theme", label: "ธีมของร้าน", icon: Palette },
   { href: "/admin/setup", label: "ตั้งค่า", icon: Settings },
-  { href: "/admin/healthcheck", label: "ตรวจระบบ", icon: Stethoscope },
 ];
 
 type ShopBadge = { name: string; slug: string };
@@ -96,6 +95,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setAuthed(true);
   }
 
+  async function loginWithGoogle() {
+    try {
+      const sb = supabaseBrowser();
+      const origin = window.location.origin;
+      await sb.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${origin}/admin/auth/google/callback` },
+      });
+    } catch (e) {
+      console.error("[admin] google sign-in failed", e);
+    }
+  }
+
   if (!authed) {
     return (
       <main className="min-h-screen flex items-center justify-center p-6 bg-paper-1 relative overflow-hidden">
@@ -132,6 +144,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button className="btn-primary w-full justify-center">
             <ShieldCheck size={16} /> เข้าสู่ระบบ
           </button>
+
+          <div className="flex items-center gap-3 text-[11px] text-ink-500">
+            <div className="flex-1 h-px bg-ink-200" />
+            หรือ
+            <div className="flex-1 h-px bg-ink-200" />
+          </div>
+
+          <button
+            type="button"
+            onClick={loginWithGoogle}
+            className="btn-secondary w-full justify-center gap-2 border-ink-300"
+          >
+            <svg width="14" height="14" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35.5 24 35.5c-6.4 0-11.5-5.1-11.5-11.5S17.6 12.5 24 12.5c2.9 0 5.6 1.1 7.6 2.9l5.7-5.7C33.6 6.2 29 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.3-.4-3.5z"/>
+              <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c2.9 0 5.6 1.1 7.6 2.9l5.7-5.7C33.6 6.7 29 5 24 5 16.3 5 9.7 9.4 6.3 14.7z"/>
+              <path fill="#4CAF50" d="M24 43c5 0 9.5-1.7 13-4.6l-6-5C29.2 34.6 26.7 35.5 24 35.5c-5.3 0-9.7-3-11.3-7.4l-6.5 5C9.6 38.5 16.3 43 24 43z"/>
+              <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.7 2-2 3.7-3.7 4.9l6 5C42 33.5 44 29 44 24c0-1.2-.1-2.3-.4-3.5z"/>
+            </svg>
+            เข้าสู่ระบบด้วย Google
+          </button>
+
           <div className="text-[11px] text-ink-500 text-center pt-1 space-y-1.5">
             <div>
               หรือเข้าผ่าน LINE (ไม่ต้องใช้รหัส){" "}

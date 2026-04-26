@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../Downloads/จองคิว"
+		}
+	],
+	"settings": {
+		"terminal.integrated.fontFamily": "'MesloLGM Nerd Font Mono', 'Symbols Nerd Font Mono', monospace",
+		"terminal.integrated.gpuAcceleration": "off"
+	}
+}

@@ -32,7 +32,9 @@
       "Bash(git restore *)",
       "WebFetch(domain:api.anthropic.com)",
       "Bash(vercel --version)",
-      "Bash(vercel whoami *)"
+      "Bash(vercel whoami *)",
+      "Bash(git rm *)",
+      "Bash(git stash *)"
     ]
   }
 }
