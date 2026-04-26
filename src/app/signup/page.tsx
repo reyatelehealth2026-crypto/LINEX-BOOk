@@ -61,7 +61,10 @@ export default function SignupPage() {
       (async () => {
         try {
           const sb = supabaseBrowser();
-          await new Promise((r) => setTimeout(r, 50));
+          const code = url.searchParams.get("code");
+          if (code) {
+            await sb.auth.exchangeCodeForSession(code).catch(() => {});
+          }
           const { data } = await sb.auth.getSession();
           if (data.session?.user) {
             setGoogleAuthUserId(data.session.user.id);

@@ -12,16 +12,28 @@ export default function GoogleAdminCallbackPage() {
     (async () => {
       try {
         const sb = supabaseBrowser();
-        await new Promise((r) => setTimeout(r, 50));
-        const { data, error } = await sb.auth.getSession();
-        if (error || !data.session?.access_token) {
-          if (!cancelled) setErr("ไม่พบ session จาก Google — ลองใหม่อีกครั้ง");
-          return;
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get("code");
+        let accessToken: string | null = null;
+        if (code) {
+          const { data, error } = await sb.auth.exchangeCodeForSession(code);
+          if (error || !data.session?.access_token) {
+            if (!cancelled) setErr("ไม่พบ session จาก Google — ลองใหม่อีกครั้ง");
+            return;
+          }
+          accessToken = data.session.access_token;
+        } else {
+          const { data, error } = await sb.auth.getSession();
+          if (error || !data.session?.access_token) {
+            if (!cancelled) setErr("ไม่พบ session จาก Google — ลองใหม่อีกครั้ง");
+            return;
+          }
+          accessToken = data.session.access_token;
         }
         const r = await fetch("/api/admin/auth/google/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ access_token: data.session.access_token }),
+          body: JSON.stringify({ access_token: accessToken }),
         });
         if (!r.ok) {
           const j = await r.json().catch(() => ({}));
