@@ -34,7 +34,11 @@
       "Bash(vercel --version)",
       "Bash(vercel whoami *)",
       "Bash(git rm *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "mcp__plugin_everything-claude-code_playwright__browser_resize",
+      "mcp__plugin_everything-claude-code_playwright__browser_navigate",
+      "Bash(npm i *)",
+      "Bash(npx playwright *)"
     ]
   }
 }

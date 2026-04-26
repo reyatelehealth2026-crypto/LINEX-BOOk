@@ -124,7 +124,7 @@ function classifyFinalFallback(failures: AiProviderFailure[]): string | null {
  * or undefined if no override is set (caller falls back to env var).
  * The key is never included in logs — pass it only in AiProviderRequest.apiKey.
  */
-function shopApiKeyForModel(model: string, settings: AiSettings): string | undefined {
+export function shopApiKeyForModel(model: string, settings: AiSettings): string | undefined {
   const lower = model.toLowerCase();
   if (lower.startsWith("gemini")) return settings.gemini_api_key ?? undefined;
   if (lower.startsWith("glm"))    return settings.zai_api_key    ?? undefined;

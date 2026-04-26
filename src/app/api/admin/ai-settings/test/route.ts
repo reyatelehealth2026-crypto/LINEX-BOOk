@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/admin-auth";
 import { createRateLimiter } from "@/lib/rate-limit";
-import { getAiSettings, buildShopSystemPrompt, type AiSettings } from "@/lib/zai";
+import { getAiSettings, buildShopSystemPrompt, shopApiKeyForModel, type AiSettings } from "@/lib/zai";
 import { providerForModel } from "@/lib/ai/providers";
 import type { AiChatMessage } from "@/lib/ai/providers";
 
@@ -94,6 +94,10 @@ export async function POST(
     temperature: settings.temperature,
     // Cap at 1200 same as runtime — prevents test calls burning huge token budgets.
     maxTokens: Math.min(settings.max_tokens, 1200),
+    // Per-shop API key — falls back to platform env if shop hasn't set one.
+    // Without this, the test endpoint silently used the platform key while
+    // the runtime webhook used the shop's key → results differed.
+    apiKey: shopApiKeyForModel(model, settings),
   });
 
   const latencyMs = Date.now() - startedAt;
@@ -155,6 +159,21 @@ function mergeSettings(base: AiSettings, override: Partial<AiSettings>): AiSetti
       typeof override.image_gen_per_hour === "number"
         ? Math.min(60, Math.max(1, override.image_gen_per_hour))
         : base.image_gen_per_hour,
+    // API keys: empty string from form clears the override (use platform env);
+    // masked roundtrip ("****abcd") leaves saved key intact; any other string
+    // is a freshly-typed key the owner is previewing without saving yet.
+    gemini_api_key:
+      typeof override.gemini_api_key === "string"
+        ? (override.gemini_api_key === "" || override.gemini_api_key.startsWith("****")
+            ? base.gemini_api_key
+            : override.gemini_api_key)
+        : base.gemini_api_key,
+    zai_api_key:
+      typeof override.zai_api_key === "string"
+        ? (override.zai_api_key === "" || override.zai_api_key.startsWith("****")
+            ? base.zai_api_key
+            : override.zai_api_key)
+        : base.zai_api_key,
   };
 }
 
