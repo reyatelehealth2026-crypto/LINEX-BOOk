@@ -13,20 +13,32 @@ Stack: Next.js 16 App Router · React 19 · Supabase (Postgres + Realtime) · LI
 ```bash
 npm run dev              # Next dev server (expects ROOT_DOMAIN=localhost for subdomain testing)
 npm run build
-npm run lint             # next lint
+npm run lint             # eslint src
+npm run tsc              # tsc --noEmit (type check only)
+npm test                 # vitest run (unit + integration + component)
+npm run test:watch       # vitest in watch mode
+npm run test:coverage    # vitest with v8 coverage report
+npm run test:e2e         # playwright test (E2E against E2E_ROOT_URL, default = production)
 npm run richmenu         # scripts/setup-richmenu.mjs — legacy single-tenant rich menu
 npm run reminders        # scripts/send-reminders.mjs  — legacy single-tenant reminder cron
 npm run seed:demo        # scripts/seed-demo.mjs
 npm run create-super-admin -- --email you@example.com --password s3cret
 npm run vercel:domains   # scripts/vercel-setup-domains.mjs — attach shop subdomains to Vercel
 npm run cf:dns           # scripts/cloudflare-setup-dns.mjs — Cloudflare DNS setup
+npm run screenshots      # scripts/screenshot-pages.mjs — capture every page (desktop + mobile) for landing
 ```
-
-There is no test suite. Type-checking runs via `next build` / `next lint`; there is no separate `tsc` script.
 
 For local subdomain dev use `ROOT_DOMAIN=localhost` — Chrome/Safari resolve `*.localhost` automatically, no `/etc/hosts` edit needed. For LINE webhook/LIFF against localhost, use `ngrok http 3000` and paste the URL into LINE console.
 
-Apply DB schema via Supabase SQL editor: run `supabase/schema.sql` first, then every file in `supabase/migrations/` **in numeric order** (001 → 011). `011_saas_multitenant.sql` is the one that turns the app from single-tenant into SaaS — without it, signup and subdomain routing won't work.
+Apply DB schema via Supabase SQL editor: run `supabase/schema.sql` first, then every file in `supabase/migrations/` **in numeric order** (001 → 017). `011_saas_multitenant.sql` turns the app from single-tenant into SaaS (signup + subdomain routing). `016_google_auth.sql` adds the Google-OAuth signup path; `017_linex_studio_foundation.sql` was renamed from 016 to resolve a prefix collision — apply 016 before 017.
+
+## Tests
+
+Vitest (jsdom + React Testing Library) for unit/component/integration; Playwright (chromium) for E2E. Configs at project root: `vitest.config.ts`, `vitest.setup.ts`, `playwright.config.ts`. Tests live next to source as `*.test.ts(x)` and E2E specs in `tests/e2e/*.spec.ts`.
+
+E2E targets the **live deployment** by default (`E2E_ROOT_URL=https://xn--42cfc0k1a8b.net`, `E2E_SHOP_BASE=https://hairx.xn--42cfc0k1a8b.net`) — read-only assertions only, **never POSTs `/api/signup/create`** (would create real shops). Override env to point at a staging URL.
+
+Module-mock pattern for API route tests: `vi.mock("@/lib/supabase", () => ({ supabaseAdmin: () => buildChain() }))` where `buildChain()` returns a chainable `from/select/eq/maybeSingle` proxy that resolves with a per-test `supaResult` so each test steers the DB response. See `src/app/api/signup/check-slug/route.test.ts` as the reference template.
 
 ## Tenant resolution — the core architectural concept
 
