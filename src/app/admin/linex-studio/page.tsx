@@ -642,7 +642,7 @@ function OutputPanel({
                 ))}
               </div>
               <div className="space-y-2">
-                <div className="text-xs font-semibold uppercase tracking-wider text-rose-700">ห้าม (Don't)</div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-rose-700">ห้าม (Don&apos;t)</div>
                 {(visual.donts ?? []).map((d, i) => (
                   <div key={i} className="flex gap-2 text-sm text-ink-700">
                     <XCircle size={16} className="shrink-0 text-rose-600 mt-0.5" />

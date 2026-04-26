@@ -10,3 +10,11 @@ out
 scripts/richmenu-image.*.generated.png
 
 .vercel
+
+# Test artifacts
+coverage/
+test-results/
+playwright-report/
+
+# Claude Code worktree caches
+.claude/worktrees/
